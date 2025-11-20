@@ -1,0 +1,1034 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Birria Fusion - Food Truck Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --orange: #ff6b35;
+            --orange-dark: #e55a2b;
+            --charcoal: #2c2c2c;
+            --white: #ffffff;
+            --gray: #666666;
+            --gray-light: #f8f8f8;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--white);
+            color: var(--charcoal);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(255, 107, 53, 0.3);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            gap: 20px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.2);
+            padding: 5px;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 32px;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            white-space: nowrap;
+        }
+
+        .hamburger-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--orange);
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            z-index: 9999;
+            color: white;
+        }
+
+        .hamburger-btn:hover {
+            background: var(--orange-dark);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+
+        .nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            border-top: 1px solid var(--border);
+            padding: 15px 0;
+            z-index: 1000;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-items {
+            display: flex;
+            justify-content: space-around;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 10px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--gray);
+            font-size: 12px;
+            font-weight: 600;
+            background: none;
+            border: none;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            color: var(--orange);
+            background: rgba(255, 107, 53, 0.1);
+        }
+
+        .nav-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .section-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: var(--charcoal);
+            border-bottom: 2px solid var(--orange);
+            padding-bottom: 10px;
+        }
+
+        .form {
+            max-width: 600px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--orange);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .btn {
+            background: var(--orange);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background: var(--orange-dark);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-secondary {
+            background: var(--charcoal);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border-color: var(--orange);
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--charcoal);
+        }
+
+        .card-meta {
+            color: var(--gray);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .card-actions .btn {
+            padding: 8px 16px;
+            font-size: 14px;
+            width: auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: var(--orange);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--gray);
+            font-size: 14px;
+        }
+
+        .extra-menu {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .extra-menu.show {
+            display: flex;
+        }
+
+        .extra-menu button {
+            background: none;
+            border: none;
+            padding: 12px 16px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 8px;
+            color: var(--charcoal);
+            font-size: 14px;
+            white-space: nowrap;
+        }
+
+        .extra-menu button:hover {
+            background: var(--orange);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="hamburger-btn" onclick="showPage('settings')">
+        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </button>
+
+    <div class="header">
+        <div class="header-content">
+            <img src="/uploads/1763192867406_birria-fusion-logo.png" alt="Logo" class="logo">
+            <h1>Birria Fusion</h1>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="page active">
+            <div class="section">
+                <h2 class="section-title">📊 Business Overview</h2>
+                <div class="stats" id="dashboardStats"></div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">🏆 Top Items by Food Cost</h2>
+                <div class="grid" id="topItems"></div>
+            </div>
+        </div>
+
+        <!-- Menu Page -->
+        <div id="menu" class="page">
+            <div class="section">
+                <h2 class="section-title">➕ Add New Recipe</h2>
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="recipeName" placeholder="Recipe Name (e.g., Birria Tacos)">
+                    </div>
+                    <div class="form-row">
+                        <select id="recipeType">
+                            <option value="Food">Food</option>
+                            <option value="Beverage">Beverage</option>
+                            <option value="Dessert">Dessert</option>
+                            <option value="Appetizer">Appetizer</option>
+                        </select>
+                        <input type="number" id="portions" placeholder="Portions" min="1" value="1">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="price" placeholder="Menu Price ($)" step="0.01">
+                        <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01">
+                    </div>
+                    <button class="btn" onclick="addRecipe()">Add Recipe</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">🍽️ Menu Items</h2>
+                <div class="grid" id="menuItems"></div>
+            </div>
+        </div>
+
+        <!-- Ingredients Page -->
+        <div id="ingredients" class="page">
+            <div class="section">
+                <h2 class="section-title">➕ Add Ingredient</h2>
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="ingredientName" placeholder="Ingredient Name (e.g., Ground Beef)">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="ingredientCost" placeholder="Cost per Unit ($)" step="0.01">
+                        <input type="text" id="ingredientUnit" placeholder="Unit (lb, oz, kg)">
+                    </div>
+                    <button class="btn" onclick="addIngredient()">Add Ingredient</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">🥩 Ingredients</h2>
+                <div class="grid" id="ingredientsList"></div>
+            </div>
+        </div>
+
+        <!-- Inventory Page -->
+        <div id="inventory" class="page">
+            <div class="section">
+                <h2 class="section-title">📦 Add to Inventory</h2>
+                <div class="form">
+                    <div class="form-group">
+                        <select id="inventoryIngredient">
+                            <option value="">Select ingredient...</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="currentStock" placeholder="Current Stock" step="0.1">
+                        <input type="number" id="minStock" placeholder="Min Stock" step="0.1" value="5">
+                    </div>
+                    <button class="btn" onclick="addInventoryItem()">Add to Inventory</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">📋 Current Inventory</h2>
+                <div class="grid" id="inventoryList"></div>
+            </div>
+        </div>
+
+        <!-- Suppliers Page -->
+        <div id="suppliers" class="page">
+            <div class="section">
+                <h2 class="section-title">➕ Add Supplier</h2>
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="supplierName" placeholder="Supplier Name">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="supplierContact" placeholder="Contact Person">
+                        <input type="tel" id="supplierPhone" placeholder="Phone Number">
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="supplierEmail" placeholder="Email">
+                    </div>
+                    <button class="btn" onclick="addSupplier()">Add Supplier</button>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2 class="section-title">🚚 Suppliers</h2>
+                <div class="grid" id="suppliersList"></div>
+            </div>
+        </div>
+
+        <!-- Tools Page -->
+        <div id="tools" class="page">
+            <div class="section">
+                <h2 class="section-title">🔧 Kitchen Tools</h2>
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="toolName" placeholder="Tool/Equipment Name">
+                    </div>
+                    <div class="form-row">
+                        <select id="toolCategory">
+                            <option value="Cooking">Cooking Equipment</option>
+                            <option value="Prep">Prep Tools</option>
+                            <option value="Storage">Storage</option>
+                            <option value="Cleaning">Cleaning</option>
+                        </select>
+                        <select id="toolStatus">
+                            <option value="Working">Working</option>
+                            <option value="Maintenance">Needs Maintenance</option>
+                            <option value="Broken">Broken</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="addTool()">Add Tool</button>
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">🛠️ Equipment List</h2>
+                <div class="grid" id="toolsList"></div>
+            </div>
+        </div>
+
+        <!-- Catering Page -->
+        <div id="catering" class="page">
+            <div class="section">
+                <h2 class="section-title">🍽️ Catering Orders</h2>
+                <div class="form">
+                    <div class="form-row">
+                        <input type="text" id="cateringClient" placeholder="Client Name">
+                        <input type="date" id="cateringDate">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1">
+                        <input type="number" id="cateringPrice" placeholder="Total Price ($)" step="0.01">
+                    </div>
+                    <button class="btn" onclick="addCateringOrder()">Add Catering Order</button>
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">📅 Upcoming Orders</h2>
+                <div class="grid" id="cateringList"></div>
+            </div>
+        </div>
+
+        <!-- Analytics Page -->
+        <div id="analytics" class="page">
+            <div class="section">
+                <h2 class="section-title">📊 Food Cost Analysis</h2>
+                <div class="stats" id="analyticsStats"></div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">📈 Detailed Analysis</h2>
+                <div class="grid" id="foodCostAnalysis"></div>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="settings" class="page">
+            <div class="section">
+                <h2 class="section-title">⚙️ Settings</h2>
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="truckName" placeholder="Food Truck Name" value="Birria Fusion">
+                    </div>
+                    <button class="btn btn-danger" onclick="clearData()">Clear All Data</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <nav class="nav">
+        <div class="nav-items">
+            <button class="nav-item active" onclick="showPage('dashboard')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                </svg>
+                <span>Dashboard</span>
+            </button>
+            <button class="nav-item" onclick="showPage('menu')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span>Menu</span>
+            </button>
+            <button class="nav-item" onclick="showPage('ingredients')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM6 9.5a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5zm0 2a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5z"/>
+                </svg>
+                <span>Ingredients</span>
+            </button>
+            <button class="nav-item" onclick="showPage('inventory')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8a1 1 0 000 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a1 1 0 100-2H3zm8 6a1 1 0 11-2 0 1 1 0 012 0z"/>
+                </svg>
+                <span>Inventory</span>
+            </button>
+            <button class="nav-item" onclick="showPage('suppliers')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/>
+                    <path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1V8a1 1 0 00-1-1h-3z"/>
+                </svg>
+                <span>Suppliers</span>
+            </button>
+            <button class="nav-item" onclick="toggleExtraMenu()">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"/>
+                </svg>
+                <span>More</span>
+            </button>
+        </div>
+        
+        <div class="extra-menu" id="extraMenu">
+            <button onclick="showPage('tools')">🔧 Tools</button>
+            <button onclick="showPage('catering')">🍽️ Catering</button>
+            <button onclick="showPage('analytics')">📊 Analytics</button>
+        </div>
+    </nav>
+
+    <script>
+        // Page Navigation
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(pageId).classList.add('active');
+            const navItem = document.querySelector(`[onclick*="${pageId}"]`);
+            if (navItem && navItem.classList.contains('nav-item')) {
+                navItem.classList.add('active');
+            }
+            
+            document.getElementById('extraMenu').classList.remove('show');
+            
+            if (pageId === 'dashboard') loadDashboard();
+            if (pageId === 'menu') loadMenu();
+            if (pageId === 'ingredients') loadIngredients();
+            if (pageId === 'inventory') loadInventory();
+            if (pageId === 'suppliers') loadSuppliers();
+            if (pageId === 'tools') loadTools();
+            if (pageId === 'catering') loadCatering();
+            if (pageId === 'analytics') loadAnalytics();
+        }
+
+        // Extra Menu
+        function toggleExtraMenu() {
+            document.getElementById('extraMenu').classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('extraMenu');
+            const btn = event.target.closest('[onclick="toggleExtraMenu()"]');
+            if (!menu.contains(event.target) && !btn) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // Dashboard Functions
+        function loadDashboard() {
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    const totalItems = items.length;
+                    const avgFoodCost = totalItems > 0 ? items.reduce((sum, item) => sum + ((item.cost / item.price) * 100), 0) / totalItems : 0;
+                    const goodItems = items.filter(item => (item.cost / item.price) * 100 >= 30).length;
+                    const totalRevenue = items.reduce((sum, item) => sum + (item.price * 10), 0);
+
+                    document.getElementById('dashboardStats').innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-number">${totalItems}</div>
+                            <div class="stat-label">Menu Items</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${avgFoodCost.toFixed(1)}%</div>
+                            <div class="stat-label">Avg Food Cost</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${goodItems}</div>
+                            <div class="stat-label">Good Items (30%+)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">$${totalRevenue.toFixed(0)}</div>
+                            <div class="stat-label">Est. Revenue</div>
+                        </div>
+                    `;
+
+                    const topItems = items.sort((a, b) => (b.cost / b.price) - (a.cost / a.price)).slice(0, 6);
+                    document.getElementById('topItems').innerHTML = topItems.map(item => {
+                        const foodCost = (item.cost / item.price) * 100;
+                        const status = foodCost >= 30 ? '🟢 Good' : foodCost >= 20 ? '🟡 Needs Attention' : '🔴 Bad - Urgent';
+                        return `
+                            <div class="card">
+                                <div class="card-title">${item.name}</div>
+                                <div class="card-meta">$${item.price} • ${foodCost.toFixed(1)}% food cost</div>
+                                <div class="card-meta">${status}</div>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+
+        // Menu Functions
+        function addRecipe() {
+            const name = document.getElementById('recipeName').value;
+            const type = document.getElementById('recipeType').value;
+            const portions = parseInt(document.getElementById('portions').value) || 1;
+            const price = parseFloat(document.getElementById('price').value);
+            const cost = parseFloat(document.getElementById('cost').value);
+
+            if (!name || !price || !cost) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            fetch('/api/menu', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price, cost, recipe_type: type, portions })
+            }).then(() => {
+                document.getElementById('recipeName').value = '';
+                document.getElementById('price').value = '';
+                document.getElementById('cost').value = '';
+                document.getElementById('portions').value = '1';
+                loadMenu();
+            });
+        }
+
+        function loadMenu() {
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    document.getElementById('menuItems').innerHTML = items.map(item => {
+                        const foodCost = (item.cost / item.price) * 100;
+                        const status = foodCost >= 30 ? '🟢 Good' : foodCost >= 20 ? '🟡 Needs Attention' : '🔴 Bad - Urgent';
+                        return `
+                            <div class="card">
+                                <div class="card-title">${item.name}</div>
+                                <div class="card-meta">${item.recipe_type} • ${item.portions} portions</div>
+                                <div class="card-meta">Price: $${item.price} • Cost: $${item.cost}</div>
+                                <div class="card-meta">Food Cost: ${foodCost.toFixed(1)}% ${status}</div>
+                                <div class="card-actions">
+                                    <button class="btn btn-danger" onclick="deleteRecipe(${item.id})">Delete</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+
+        function deleteRecipe(id) {
+            if (confirm('Delete this recipe?')) {
+                fetch(`/api/menu/${id}`, { method: 'DELETE' })
+                    .then(() => loadMenu());
+            }
+        }
+
+        // Ingredient Functions
+        function addIngredient() {
+            const name = document.getElementById('ingredientName').value;
+            const cost = parseFloat(document.getElementById('ingredientCost').value);
+            const unit = document.getElementById('ingredientUnit').value;
+
+            if (!name || !cost || !unit) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            fetch('/api/ingredients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, cost, unit })
+            }).then(() => {
+                document.getElementById('ingredientName').value = '';
+                document.getElementById('ingredientCost').value = '';
+                document.getElementById('ingredientUnit').value = '';
+                loadIngredients();
+            });
+        }
+
+        function loadIngredients() {
+            fetch('/api/ingredients')
+                .then(r => r.json())
+                .then(items => {
+                    document.getElementById('ingredientsList').innerHTML = items.map(item => `
+                        <div class="card">
+                            <div class="card-title">${item.name}</div>
+                            <div class="card-meta">$${item.cost} per ${item.unit}</div>
+                            <div class="card-actions">
+                                <button class="btn btn-danger" onclick="deleteIngredient(${item.id})">Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    // Update inventory dropdown
+                    document.getElementById('inventoryIngredient').innerHTML = 
+                        '<option value="">Select ingredient...</option>' +
+                        items.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                });
+        }
+
+        function deleteIngredient(id) {
+            if (confirm('Delete this ingredient?')) {
+                fetch(`/api/ingredients/${id}`, { method: 'DELETE' })
+                    .then(() => loadIngredients());
+            }
+        }
+
+        // Inventory Functions
+        function addInventoryItem() {
+            const ingredientId = document.getElementById('inventoryIngredient').value;
+            const currentStock = parseFloat(document.getElementById('currentStock').value) || 0;
+            const minStock = parseFloat(document.getElementById('minStock').value) || 5;
+
+            if (!ingredientId) {
+                alert('Please select an ingredient');
+                return;
+            }
+
+            fetch('/api/inventory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ingredient_id: ingredientId, current_stock: currentStock, min_stock: minStock, max_stock: 100 })
+            }).then(() => {
+                document.getElementById('inventoryIngredient').value = '';
+                document.getElementById('currentStock').value = '';
+                document.getElementById('minStock').value = '5';
+                loadInventory();
+            });
+        }
+
+        function loadInventory() {
+            fetch('/api/inventory')
+                .then(r => r.json())
+                .then(items => {
+                    document.getElementById('inventoryList').innerHTML = items.map(item => {
+                        const status = item.current_stock <= item.min_stock ? '🔴 Low Stock' : '🟢 Good';
+                        return `
+                            <div class="card">
+                                <div class="card-title">${item.name}</div>
+                                <div class="card-meta">${status}</div>
+                                <div class="card-meta">Current: ${item.current_stock} ${item.unit}</div>
+                                <div class="card-meta">Min: ${item.min_stock}</div>
+                                <div class="card-actions">
+                                    <button class="btn btn-danger" onclick="deleteInventoryItem(${item.ingredient_id})">Delete</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+
+        function deleteInventoryItem(id) {
+            if (confirm('Delete this inventory item?')) {
+                fetch(`/api/inventory/${id}`, { method: 'DELETE' })
+                    .then(() => loadInventory());
+            }
+        }
+
+        // Supplier Functions
+        function addSupplier() {
+            const name = document.getElementById('supplierName').value;
+            const contact = document.getElementById('supplierContact').value;
+            const phone = document.getElementById('supplierPhone').value;
+            const email = document.getElementById('supplierEmail').value;
+
+            if (!name) {
+                alert('Please enter supplier name');
+                return;
+            }
+
+            fetch('/api/suppliers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, contact, phone, email, category: 'Food', description: '' })
+            }).then(() => {
+                document.getElementById('supplierName').value = '';
+                document.getElementById('supplierContact').value = '';
+                document.getElementById('supplierPhone').value = '';
+                document.getElementById('supplierEmail').value = '';
+                loadSuppliers();
+            });
+        }
+
+        function loadSuppliers() {
+            fetch('/api/suppliers')
+                .then(r => r.json())
+                .then(items => {
+                    document.getElementById('suppliersList').innerHTML = items.map(item => `
+                        <div class="card">
+                            <div class="card-title">${item.name}</div>
+                            <div class="card-meta">${item.contact || 'No contact'}</div>
+                            <div class="card-meta">${item.phone || 'No phone'}</div>
+                            <div class="card-meta">${item.email || 'No email'}</div>
+                            <div class="card-actions">
+                                <button class="btn btn-danger" onclick="deleteSupplier(${item.id})">Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function deleteSupplier(id) {
+            if (confirm('Delete this supplier?')) {
+                fetch(`/api/suppliers/${id}`, { method: 'DELETE' })
+                    .then(() => loadSuppliers());
+            }
+        }
+
+        // Tools Functions
+        function addTool() {
+            const name = document.getElementById('toolName').value;
+            const category = document.getElementById('toolCategory').value;
+            const status = document.getElementById('toolStatus').value;
+            
+            if (!name) {
+                alert('Please enter tool name');
+                return;
+            }
+            
+            const tools = JSON.parse(localStorage.getItem('tools') || '[]');
+            tools.push({ id: Date.now(), name, category, status });
+            localStorage.setItem('tools', JSON.stringify(tools));
+            
+            document.getElementById('toolName').value = '';
+            loadTools();
+        }
+        
+        function loadTools() {
+            const tools = JSON.parse(localStorage.getItem('tools') || '[]');
+            document.getElementById('toolsList').innerHTML = tools.map(tool => `
+                <div class="card">
+                    <div class="card-title">${tool.name}</div>
+                    <div class="card-meta">${tool.category} • ${tool.status}</div>
+                    <div class="card-actions">
+                        <button class="btn btn-danger" onclick="deleteTool(${tool.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function deleteTool(id) {
+            if (confirm('Delete this tool?')) {
+                const tools = JSON.parse(localStorage.getItem('tools') || '[]');
+                const filtered = tools.filter(t => t.id !== id);
+                localStorage.setItem('tools', JSON.stringify(filtered));
+                loadTools();
+            }
+        }
+        
+        // Catering Functions
+        function addCateringOrder() {
+            const client = document.getElementById('cateringClient').value;
+            const date = document.getElementById('cateringDate').value;
+            const guests = document.getElementById('cateringGuests').value;
+            const price = document.getElementById('cateringPrice').value;
+            
+            if (!client || !date || !guests) {
+                alert('Please fill in required fields');
+                return;
+            }
+            
+            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+            orders.push({ id: Date.now(), client, date, guests, price });
+            localStorage.setItem('catering', JSON.stringify(orders));
+            
+            document.getElementById('cateringClient').value = '';
+            document.getElementById('cateringDate').value = '';
+            document.getElementById('cateringGuests').value = '';
+            document.getElementById('cateringPrice').value = '';
+            loadCatering();
+        }
+        
+        function loadCatering() {
+            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+            document.getElementById('cateringList').innerHTML = orders.map(order => `
+                <div class="card">
+                    <div class="card-title">${order.client}</div>
+                    <div class="card-meta">${order.date} • ${order.guests} guests</div>
+                    <div class="card-meta">$${order.price || 'TBD'}</div>
+                    <div class="card-actions">
+                        <button class="btn btn-danger" onclick="deleteCateringOrder(${order.id})">Delete</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function deleteCateringOrder(id) {
+            if (confirm('Delete this catering order?')) {
+                const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+                const filtered = orders.filter(o => o.id !== id);
+                localStorage.setItem('catering', JSON.stringify(filtered));
+                loadCatering();
+            }
+        }
+        
+        // Analytics Functions
+        function loadAnalytics() {
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    const totalItems = items.length;
+                    const goodItems = items.filter(item => (item.cost / item.price) * 100 >= 30).length;
+                    const needsAttention = items.filter(item => {
+                        const fc = (item.cost / item.price) * 100;
+                        return fc >= 20 && fc < 30;
+                    }).length;
+                    const badItems = items.filter(item => (item.cost / item.price) * 100 < 20).length;
+                    
+                    document.getElementById('analyticsStats').innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: var(--success)">${goodItems}</div>
+                            <div class="stat-label">Good Items (30%+)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: var(--warning)">${needsAttention}</div>
+                            <div class="stat-label">Needs Attention (20-29%)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" style="color: var(--danger)">${badItems}</div>
+                            <div class="stat-label">Bad Items (<20%)</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">${totalItems}</div>
+                            <div class="stat-label">Total Items</div>
+                        </div>
+                    `;
+                    
+                    document.getElementById('foodCostAnalysis').innerHTML = items.map(item => {
+                        const foodCost = (item.cost / item.price) * 100;
+                        const status = foodCost >= 30 ? 'Good' : foodCost >= 20 ? 'Needs Attention' : 'Bad - Urgent';
+                        const color = foodCost >= 30 ? 'var(--success)' : foodCost >= 20 ? 'var(--warning)' : 'var(--danger)';
+                        return `
+                            <div class="card">
+                                <div class="card-title">${item.name}</div>
+                                <div class="card-meta">Food Cost: <span style="color: ${color}">${foodCost.toFixed(1)}%</span></div>
+                                <div class="card-meta">Status: <span style="color: ${color}">${status}</span></div>
+                                <div class="card-meta">Price: $${item.price} • Cost: $${item.cost}</div>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+
+        // Settings Functions
+        function clearData() {
+            if (confirm('This will delete ALL data. Are you sure?')) {
+                localStorage.clear();
+                alert('Data cleared! Please refresh the page.');
+            }
+        }
+
+        // Initialize
+        loadDashboard();
+        loadIngredients();
+    </script>
+</body>
+</html>
