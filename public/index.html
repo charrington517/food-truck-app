@@ -305,6 +305,25 @@
             display: flex;
         }
         
+        .hamburger-menu {
+            color: var(--primary);
+            transition: all 0.2s;
+        }
+        
+        .hamburger-menu:hover {
+            color: var(--secondary);
+            transform: scale(1.1);
+        }
+        
+        .settings-menu {
+            background: var(--neutral-800);
+        }
+        
+        body.light .settings-menu {
+            background: white;
+            border: 1px solid var(--neutral-200);
+        }
+        
         .nav-item {
             display: flex;
             flex-direction: column;
@@ -413,6 +432,16 @@
             .bottom-nav {
                 height: 4rem;
                 padding: 0 0.5rem;
+            }
+            
+            .hamburger-menu {
+                top: 0.5rem !important;
+                right: 0.5rem !important;
+            }
+            
+            .settings-menu {
+                top: 3rem !important;
+                right: 0.5rem !important;
             }
             
             .nav-item {
@@ -700,12 +729,27 @@
 </head>
 <body>
     <div class="container">
-        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 3rem; gap: 2rem; padding: 2rem 0; background: linear-gradient(135deg, rgba(255, 107, 53, 0.05), rgba(0, 78, 137, 0.05)); border-radius: var(--radius-xl); border: 1px solid var(--neutral-200);">
-            <img src="logo.png" alt="Birria Fusion Logo" style="max-height: 120px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">
-            <div style="text-align: left;">
-                <h1 style="margin: 0;">Birria Fusion</h1>
-                <p style="margin: 0.5rem 0 0 0; font-style: italic; color: var(--primary); font-size: 1.125rem; font-weight: 500; letter-spacing: 0.5px; opacity: 0.8;">Dip, Drip, Devour</p>
-                <div style="width: 60px; height: 3px; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 2px; margin-top: 0.5rem;"></div>
+        <div style="position: relative;">
+            <button class="hamburger-menu" onclick="toggleSettingsMenu()" style="position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; cursor: pointer; padding: 0.5rem; z-index: 1001;">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
+                </svg>
+            </button>
+            
+            <div class="settings-menu" id="settingsMenu" style="position: absolute; top: 4rem; right: 1rem; background: var(--neutral-800); border-radius: var(--radius-lg); padding: 0.5rem; box-shadow: var(--shadow-xl); display: none; z-index: 1002; min-width: 10rem;">
+                <button class="nav-item" onclick="showPage('settings'); toggleSettingsMenu()" style="width: 100%; justify-content: flex-start; padding: 0.75rem; margin: 0;">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+                    <span class="nav-text">Settings</span>
+                </button>
+            </div>
+            
+            <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 3rem; gap: 2rem; padding: 2rem 0; background: linear-gradient(135deg, rgba(255, 107, 53, 0.05), rgba(0, 78, 137, 0.05)); border-radius: var(--radius-xl); border: 1px solid var(--neutral-200);">
+                <img src="logo.png" alt="Birria Fusion Logo" style="max-height: 120px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));">
+                <div style="text-align: left;">
+                    <h1 style="margin: 0;">Birria Fusion</h1>
+                    <p style="margin: 0.5rem 0 0 0; font-style: italic; color: var(--primary); font-size: 1.125rem; font-weight: 500; letter-spacing: 0.5px; opacity: 0.8;">Dip, Drip, Devour</p>
+                    <div style="width: 60px; height: 3px; background: linear-gradient(90deg, var(--primary), var(--secondary)); border-radius: 2px; margin-top: 0.5rem;"></div>
+                </div>
             </div>
         </div>
         
@@ -747,10 +791,7 @@
                 <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M10.496 2.132a1 1 0 00-.992 0l-7 4A1 1 0 003 8v7a1 1 0 001 1h4a1 1 0 001-1v-3a1 1 0 011-1h2a1 1 0 011 1v3a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-.504-.868l-7-4zM14 9.5a.5.5 0 01-.5.5h-7a.5.5 0 010-1h7a.5.5 0 01.5.5z"/></svg>
                 <span class="nav-text">Tools</span>
             </button>
-            <button class="nav-item" onclick="showPage('settings'); toggleMoreMenu()">
-                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
-                <span class="nav-text">Settings</span>
-            </button>
+
         </div>
         
         <div class="main-content">
@@ -1045,12 +1086,23 @@
             menu.classList.toggle('show');
         }
         
-        // Close more menu when clicking outside
+        function toggleSettingsMenu() {
+            const menu = document.getElementById('settingsMenu');
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        }
+        
+        // Close menus when clicking outside
         document.addEventListener('click', function(e) {
-            const menu = document.getElementById('moreMenu');
+            const moreMenu = document.getElementById('moreMenu');
             const moreBtn = document.querySelector('.more-btn');
-            if (!menu.contains(e.target) && !moreBtn.contains(e.target)) {
-                menu.classList.remove('show');
+            if (!moreMenu.contains(e.target) && !moreBtn.contains(e.target)) {
+                moreMenu.classList.remove('show');
+            }
+            
+            const settingsMenu = document.getElementById('settingsMenu');
+            const hamburgerBtn = document.querySelector('.hamburger-menu');
+            if (!settingsMenu.contains(e.target) && !hamburgerBtn.contains(e.target)) {
+                settingsMenu.style.display = 'none';
             }
         });
         
