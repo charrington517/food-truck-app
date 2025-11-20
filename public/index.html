@@ -8,22 +8,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #FF6B35;
-            --primary-dark: #E55A2B;
-            --secondary: #004E89;
-            --accent: #FFD23F;
-            --success: #06D6A0;
-            --warning: #F18F01;
-            --danger: #C73E1D;
-            --neutral-100: #F8FAFC;
-            --neutral-200: #E2E8F0;
-            --neutral-300: #CBD5E1;
-            --neutral-400: #94A3B8;
-            --neutral-500: #64748B;
-            --neutral-600: #475569;
-            --neutral-700: #334155;
-            --neutral-800: #1E293B;
-            --neutral-900: #0F172A;
+            --primary: #CC5500;
+            --primary-dark: #B8470A;
+            --secondary: #FF6600;
+            --accent: #FFB366;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #f44336;
+            --neutral-100: #F5E6D3;
+            --neutral-200: #E8DCC6;
+            --neutral-300: #D4C4A8;
+            --neutral-400: #A8967A;
+            --neutral-500: #7A6B5D;
+            --neutral-600: #5D4E42;
+            --neutral-700: #4A2C17;
+            --neutral-800: #3D1F0F;
+            --neutral-900: #2B1810;
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -52,7 +52,7 @@
         }
         
         body.dark { 
-            background: linear-gradient(135deg, var(--neutral-900) 0%, #0A0E1A 100%); 
+            background: linear-gradient(135deg, var(--neutral-900) 0%, #1A0F08 50%, #0D0704 100%); 
             color: var(--neutral-100); 
             min-height: 100vh; 
         }
@@ -75,10 +75,7 @@
             line-height: 1.1; 
             margin: 0 0 1rem 0; 
             letter-spacing: -0.025em; 
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: var(--primary);
         }
         
         h2 { 
@@ -277,7 +274,7 @@
         }
         
         body.dark .sidebar { 
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%); 
+            background: linear-gradient(180deg, rgba(43, 24, 16, 0.95) 0%, rgba(61, 31, 15, 0.9) 100%); 
             box-shadow: var(--shadow-xl);
             border-right-color: var(--neutral-700);
         }
@@ -589,7 +586,7 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary), var(--accent));
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
             opacity: 0;
             transition: opacity 0.3s;
         }
@@ -651,32 +648,14 @@
             margin: 1rem 0; 
             font-family: 'JetBrains Mono', monospace; 
             line-height: 1;
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
         
-        .card-good .card-number { 
-            background: linear-gradient(135deg, var(--success), #059669);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        body.dark .card-number { color: var(--primary); }
+        body.light .card-number { color: var(--primary); }
         
-        .card-warning .card-number { 
-            background: linear-gradient(135deg, var(--warning), #D97706);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .card-danger .card-number { 
-            background: linear-gradient(135deg, var(--danger), #B91C1C);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
+        .card-good .card-number { color: var(--success); }
+        .card-warning .card-number { color: var(--warning); }
+        .card-danger .card-number { color: var(--danger); }
         .menu-grid { 
             display: grid; 
             grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
