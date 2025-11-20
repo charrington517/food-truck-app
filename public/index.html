@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Truck Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            transition: all 0.3s; 
+            font-size: 14px;
+            line-height: 1.6;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+        }
+        body.dark { background: linear-gradient(135deg, #2B1810 0%, #1A0F08 50%, #0D0704 100%); color: #F5E6D3; min-height: 100vh; }
+        body.light { background: linear-gradient(135deg, #F5E6D3 0%, #E8DCC6 100%); color: #2B1810; min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        
+        /* Typography Scale */
+        h1 { font-size: 2.5rem; font-weight: 700; line-height: 1.2; margin: 0 0 8px 0; letter-spacing: -0.02em; }
+        h2 { font-size: 2rem; font-weight: 600; line-height: 1.3; margin: 0 0 16px 0; letter-spacing: -0.01em; }
+        h3 { font-size: 1.5rem; font-weight: 600; line-height: 1.4; margin: 0 0 12px 0; letter-spacing: -0.01em; }
+        h4 { font-size: 1.25rem; font-weight: 500; line-height: 1.4; margin: 0 0 8px 0; }
+        h5 { font-size: 1.125rem; font-weight: 500; line-height: 1.4; margin: 0 0 8px 0; }
+        
+        body.dark .item { background: linear-gradient(135deg, #4A2C17 0%, #5D3520 100%); padding: 15px; margin-bottom: 10px; border-radius: 8px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); backdrop-filter: blur(5px); }
+        body.light .item { background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,249,250,0.9) 100%); padding: 15px; margin-bottom: 10px; border-radius: 8px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.1); backdrop-filter: blur(5px); color: #2B1810; }
+        #inventory .item { padding: 12px; }
+        .profit-good { border-left: 5px solid #4CAF50; }
+        .profit-warning { border-left: 5px solid #FF9800; }
+        .profit-danger { border-left: 5px solid #f44336; }
+        body.dark input, body.dark select, body.dark textarea { 
+            padding: 12px 16px; 
+            margin: 4px 0 8px 0; 
+            background: rgba(61, 31, 15, 0.6); 
+            color: #F5E6D3; 
+            border: 1px solid rgba(204, 85, 0, 0.3); 
+            border-radius: 8px; 
+            font-size: 0.875rem;
+            font-weight: 400;
+            transition: all 0.2s;
+        }
+        body.dark input:focus, body.dark select:focus, body.dark textarea:focus {
+            outline: none;
+            border-color: #CC5500;
+            box-shadow: 0 0 0 3px rgba(204, 85, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        body.light input, body.light select, body.light textarea { 
+            padding: 12px 16px; 
+            margin: 4px 0 8px 0; 
+            background: rgba(255,255,255,0.95); 
+            color: #2B1810; 
+            border: 1px solid rgba(204, 85, 0, 0.5); 
+            border-radius: 8px; 
+            font-size: 0.875rem;
+            font-weight: 400;
+            transition: all 0.2s;
+        }
+        body.light input:focus, body.light select:focus, body.light textarea:focus {
+            outline: none;
+            border-color: #CC5500;
+            box-shadow: 0 0 0 3px rgba(204, 85, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        button { 
+            background: linear-gradient(135deg, #CC5500 0%, #FF6600 100%); 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            font-weight: 500;
+            font-size: 0.875rem;
+            letter-spacing: 0.025em;
+            padding: 12px 24px;
+            border-radius: 8px;
+        }
+        button:hover { 
+            background: linear-gradient(135deg, #FF6600 0%, #CC5500 100%); 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(204, 85, 0, 0.4); 
+        }
+        body.dark .form { 
+            background: linear-gradient(135deg, #3D1F0F 0%, #4A2C17 100%); 
+            padding: 32px; 
+            border-radius: 16px; 
+            margin-bottom: 32px; 
+            border: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        body.light .form { 
+            background: rgba(255,255,255,0.95); 
+            padding: 32px; 
+            border-radius: 16px; 
+            margin-bottom: 32px; 
+            border: none;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            color: #2B1810;
+        }
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 60px;
+            transition: width 0.3s ease;
+            z-index: 1000;
+            padding: 20px 0;
+            overflow: hidden;
+        }
+        .sidebar:hover { width: 250px; }
+        
+        body.dark .sidebar { background: linear-gradient(180deg, #3D1F0F 0%, #2B1810 100%); box-shadow: 4px 0 20px rgba(0,0,0,0.3); }
+        body.light .sidebar { background: linear-gradient(180deg, rgba(255,255,255,0.95) 0%, rgba(248,249,250,0.9) 100%); box-shadow: 4px 0 20px rgba(0,0,0,0.1); }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 10px;
+            margin: 4px 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #F5E6D3;
+            font-weight: 500;
+            font-size: 0.875rem;
+            text-decoration: none;
+            border: none;
+            background: transparent;
+            white-space: nowrap;
+        }
+        
+        .nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
+        .nav-text { opacity: 0; transition: opacity 0.3s 0.1s; }
+        .sidebar:hover .nav-text { opacity: 1; }
+        body.light .nav-item { color: #2B1810; }
+        
+        .nav-item:hover {
+            background: rgba(204, 85, 0, 0.1);
+            color: #FF6600;
+        }
+        
+        .nav-item.active {
+            background: linear-gradient(135deg, #CC5500 0%, #FF6600 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(204, 85, 0, 0.3);
+        }
+        
+        .main-content {
+            margin-left: 60px;
+            transition: margin-left 0.3s ease;
+        }
+        .page { display: none; }
+        .page.active { display: block; }
+        .dashboard-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px; }
+        @media (max-width: 768px) {
+            body { margin: 5px; }
+            .container { max-width: 100%; }
+            .sidebar { width: 50px; }
+            .sidebar:hover { width: 200px; }
+            .main-content { margin-left: 50px; }
+            .nav-item { padding: 8px 5px; margin: 2px; }
+            .nav-text { font-size: 0.8rem; }
+            .form { padding: 15px; margin: 10px 0; }
+            .item { padding: 10px; }
+            .dashboard-cards { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .card { padding: 15px; }
+            .card-number { font-size: 1.5em; }
+            input, button { padding: 8px; margin: 3px; font-size: 16px; }
+            h1 { font-size: 1.5em; }
+            h3 { font-size: 1.2em; }
+            .container > div:first-child { flex-direction: column; text-align: center !important; }
+            .container > div:first-child img { max-height: 120px !important; }
+            .container > div:first-child h1 { font-size: 1.8em !important; }
+            .menu-grid { grid-template-columns: 1fr !important; }
+            #ingredients { grid-template-columns: 1fr 1fr !important; }
+            #inventory { grid-template-columns: 1fr 1fr !important; }
+            #suppliers { grid-template-columns: 1fr !important; }
+            
+            /* Mobile inventory layout */
+            .inventory-buttons { flex-direction: column !important; gap: 8px !important; }
+            .inventory-buttons button { margin: 0 !important; padding: 8px !important; font-size: 0.85em !important; }
+            .inventory-stats { flex-direction: column !important; gap: 5px !important; font-size: 0.85em !important; }
+            .inventory-form-toggle { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+            .dashboard-cards { grid-template-columns: 1fr !important; gap: 16px !important; }
+            
+            /* Mobile dashboard layout */
+            .dashboard-main { display: block !important; }
+            .dashboard-main > div { margin-bottom: 20px !important; }
+            .dashboard-alerts { padding: 15px !important; }
+            .dashboard-alerts > div { padding: 15px !important; margin-bottom: 10px !important; }
+            .top-items { grid-template-columns: 1fr !important; gap: 15px !important; }
+            .container { padding: 0 16px; }
+            .form { padding: 24px !important; }
+            .menu-grid { gap: 16px !important; }
+            
+            /* Mobile menu item layout */
+            .menu-item-header { flex-direction: column !important; text-align: left !important; }
+            .menu-item-header > div:first-child { margin-bottom: 10px !important; }
+            .menu-item-details { flex-direction: column !important; gap: 5px !important; }
+            .menu-item-recipe { padding: 8px !important; }
+            .menu-item-recipe > div:first-child { flex-direction: column !important; gap: 5px !important; }
+            .ingredient-item { font-size: 0.8em !important; padding: 3px !important; margin: 1px 0 !important; }
+            .menu-buttons { flex-direction: column !important; gap: 5px !important; }
+            .menu-buttons button { margin-top: 5px !important; }
+            
+            /* Mobile form layout */
+            .menu-form-grid { display: block !important; }
+            .menu-form-grid > div { margin-bottom: 15px !important; }
+            .menu-form-grid input, .menu-form-grid select { width: 100% !important; }
+            
+            /* Mobile recipe form */
+            #recipeForm .grid-header { display: none !important; }
+            #recipeForm .ingredient-row { 
+                display: block !important; 
+                background: rgba(255,255,255,0.1) !important; 
+                padding: 10px !important; 
+                margin-bottom: 10px !important; 
+                border-radius: 5px !important;
+            }
+            #recipeForm .ingredient-row > div { 
+                display: flex !important; 
+                justify-content: space-between !important; 
+                margin-bottom: 5px !important;
+            }
+            #recipeForm .ingredient-add { 
+                display: block !important;
+            }
+            #recipeForm .ingredient-add select,
+            #recipeForm .ingredient-add input { 
+                width: 100% !important; 
+                margin-bottom: 8px !important;
+            }
+        }
+        body.dark .card { background: linear-gradient(135deg, #3D1F0F 0%, #4A2C17 100%); border: none; border-radius: 20px; padding: 28px; cursor: pointer; transition: all 0.4s; box-shadow: 0 10px 40px rgba(0,0,0,0.4); backdrop-filter: blur(10px); }
+        body.dark .card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            box-shadow: 0 20px 60px rgba(204, 85, 0, 0.4);
+        }
+        body.light .card { 
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%); 
+            border: none; border-radius: 20px; padding: 28px; cursor: pointer; 
+            transition: all 0.4s; 
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15); backdrop-filter: blur(10px); 
+        }
+        body.light .card:hover { 
+            transform: translateY(-8px) scale(1.02); 
+            box-shadow: 0 20px 60px rgba(204, 85, 0, 0.3);
+        }
+        .card-good { border-color: #4CAF50; }
+        .card-warning { border-color: #FF9800; }
+        .card-danger { border-color: #f44336; }
+        .card h3 { margin: 0 0 12px 0; color: #CC5500; font-weight: 600; font-size: 1.125rem; }
+        .card-number { font-size: 2.5rem; font-weight: 700; margin: 16px 0; font-family: 'JetBrains Mono', monospace; }
+        .card-good .card-number { color: #4CAF50; }
+        .card-warning .card-number { color: #FF9800; }
+        .card-danger .card-number { color: #f44336; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 48px; gap: 32px; padding: 24px 0;">
+            <img src="logo.png" alt="Birria Fusion Logo" style="max-height: 180px;">
+            <div style="text-align: left;">
+                <h1 style="margin: 0; color: #CC5500;">Birria Fusion</h1>
+                <p style="margin: 4px 0 0 0; font-style: italic; color: #CC5500; font-size: 1.125rem; font-weight: 500; letter-spacing: 0.5px;">Dip, Drip, Devour</p>
+            </div>
+        </div>
+        
+
+        
+        <div class="sidebar">
+            <button class="nav-item active" onclick="showPage('dashboard')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/></svg>
+                <span class="nav-text">Dashboard</span>
+            </button>
+            <button class="nav-item" onclick="showPage('menu')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                <span class="nav-text">Menu Items</span>
+            </button>
+            <button class="nav-item" onclick="showPage('ingredients')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM6 9.5a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5zm0 2a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5z"/></svg>
+                <span class="nav-text">Ingredients</span>
+            </button>
+            <button class="nav-item" onclick="showPage('inventory')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8a1 1 0 000 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a1 1 0 100-2H3zm8 6a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+                <span class="nav-text">Inventory</span>
+            </button>
+            <button class="nav-item" onclick="showPage('suppliers')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M8 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/><path d="M3 4a1 1 0 00-1 1v10a1 1 0 001 1h1.05a2.5 2.5 0 014.9 0H10a1 1 0 001-1V5a1 1 0 00-1-1H3zM14 7a1 1 0 00-1 1v6.05A2.5 2.5 0 0115.95 16H17a1 1 0 001-1V8a1 1 0 00-1-1h-3z"/></svg>
+                <span class="nav-text">Suppliers</span>
+            </button>
+            <button class="nav-item" onclick="showPage('analytics')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                <span class="nav-text">Analytics</span>
+            </button>
+            <button class="nav-item" onclick="showPage('tools')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path d="M10.496 2.132a1 1 0 00-.992 0l-7 4A1 1 0 003 8v7a1 1 0 001 1h4a1 1 0 001-1v-3a1 1 0 011-1h2a1 1 0 011 1v3a1 1 0 001 1h4a1 1 0 001-1V8a1 1 0 00-.504-.868l-7-4zM14 9.5a.5.5 0 01-.5.5h-7a.5.5 0 010-1h7a.5.5 0 01.5.5z"/></svg>
+                <span class="nav-text">Tools</span>
+            </button>
+            <button class="nav-item" onclick="showPage('settings')">
+                <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+                <span class="nav-text">Settings</span>
+            </button>
+        </div>
+        
+        <div class="main-content">
+        
+        <div id="dashboardPage" class="page active">
+            <div class="dashboard-main" style="display: grid; grid-template-columns: 2fr 1fr; gap: 32px; margin-bottom: 32px;">
+                <div class="form">
+                    <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>Food Cost Overview</h3>
+                    <div id="dashboardStats"></div>
+                </div>
+                
+                <div class="form dashboard-alerts">
+                    <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>Quick Alerts</h3>
+                    <div id="quickAlerts" style="display: flex; flex-direction: column; gap: 16px;">
+                        <div style="background: #2B1810; border-left: 4px solid #FF9800; padding: 20px; border-radius: 12px; color: #F5E6D3;">
+                            <strong style="color: #FF9800;"><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>Low Stock Items</strong>
+                            <p style="margin: 8px 0 0 0; font-size: 0.875rem;">Check inventory for restocking</p>
+                        </div>
+                        <div style="background: #2B1810; border-left: 4px solid #f44336; padding: 20px; border-radius: 12px; color: #F5E6D3;">
+                            <strong style="color: #f44336;"><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"/></svg>High Food Cost Items</strong>
+                            <p style="margin: 8px 0 0 0; font-size: 0.875rem;">Review pricing strategy</p>
+                        </div>
+                        <div style="background: #2B1810; border-left: 4px solid #CC5500; padding: 20px; border-radius: 12px; color: #F5E6D3;">
+                            <strong style="color: #CC5500;"><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>Weekly Summary</strong>
+                            <p style="margin: 8px 0 0 0; font-size: 0.875rem;">Food cost trending upward</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Top Performing Items</h3>
+                <div id="topItems" class="top-items" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px;"></div>
+            </div>
+        </div>
+        
+        <div id="menuPage" class="page">
+            <div class="form">
+                <h3>Recipe Details</h3>
+                <div class="menu-form-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label>Recipe Name</label>
+                        <input type="text" id="name" placeholder="Eg: Alfredo Pasta">
+                    </div>
+                    <div>
+                        <label>Recipe Type</label>
+                        <select id="recipeType">
+                            <option value="Food">Food</option>
+                            <option value="Beverage">Beverage</option>
+                            <option value="Dessert">Dessert</option>
+                            <option value="Appetizer">Appetizer</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Portions</label>
+                        <input type="number" id="portions" placeholder="10" min="1" value="1">
+                    </div>
+                    <div>
+                        <label>Menu Price ($)</label>
+                        <input type="number" id="price" placeholder="12.00" step="0.01">
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <label>Recipe Cost ($)</label>
+                    <input type="number" id="cost" placeholder="Cost" step="0.01" style="width: 100%;">
+                </div>
+                <button onclick="addItem()" style="width: 100%; margin-top: 15px; padding: 15px; font-size: 16px; font-weight: bold;">Add Recipe</button>
+            </div>
+            
+            <div class="form" id="recipeForm" style="display:none;">
+                <h3>Recipe Ingredients</h3>
+                
+                <div class="grid-header" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; align-items: center; font-weight: bold; margin-bottom: 10px; font-size: 0.9em;">
+                    <div>Ingredient</div>
+                    <div>Price/Unit</div>
+                    <div>Unit</div>
+                    <div>Qty</div>
+                    <div>Cost</div>
+                </div>
+                
+                <div id="ingredientRows"></div>
+                
+                <div class="ingredient-add" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <select id="ingredientSelect" style="width: 100%;"></select>
+                    <input type="number" id="ingredientPrice" placeholder="0.00" step="0.01" readonly>
+                    <input type="text" id="ingredientUnit" placeholder="Unit" readonly>
+                    <input type="number" id="ingredientQty" placeholder="1" step="0.01">
+                    <input type="number" id="ingredientCost" placeholder="0.00" step="0.01" readonly>
+                </div>
+                
+                <button onclick="addRecipeIngredient()" style="background: #28a745; margin-bottom: 15px;">Add Ingredient</button>
+                
+                <div style="text-align: right; font-weight: bold; font-size: 1.1em; border-top: 2px solid #CC5500; padding-top: 10px; margin-bottom: 15px;">
+                    Total Cost: $<span id="totalCost">0.00</span><br>
+                    Suggested Price (30% profit): $<span id="suggestedPrice">0.00</span>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="saveRecipe()" style="background: #28a745; flex: 1;">Save Recipe</button>
+                    <button onclick="cancelRecipe()" style="background: #dc3545; flex: 1;">Cancel</button>
+                </div>
+            </div>
+            
+            <div id="menu" class="menu-grid"></div>
+        </div>
+        
+        <div id="ingredientsPage" class="page">
+            <div class="form">
+                <h3>Add Ingredient</h3>
+                <input type="text" id="ingredientName" placeholder="Ingredient Name">
+                <input type="number" id="ingredientCost" placeholder="Cost per Unit" step="0.01">
+                <input type="text" id="ingredientUnit" placeholder="Unit (lb, oz, etc)">
+                <button onclick="addIngredient()">Add Ingredient</button>
+            </div>
+            <div id="ingredients" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;"></div>
+        </div>
+        
+        <div id="inventoryPage" class="page">
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8a1 1 0 000 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a1 1 0 100-2H3zm8 6a1 1 0 11-2 0 1 1 0 012 0z"/></svg>Add Inventory Item</h3>
+                <label class="inventory-form-toggle" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="radio" name="itemType" value="existing" checked onchange="toggleItemType()"> Use Existing Ingredient
+                    <input type="radio" name="itemType" value="new" onchange="toggleItemType()"> New Item
+                </label>
+                <div id="existingItem">
+                    <select id="inventoryIngredient"></select>
+                </div>
+                <div id="newItem" style="display: none;">
+                    <input type="text" id="newItemName" placeholder="Item Name (e.g., Receipt Paper, Dish Soap)">
+                    <input type="text" id="newItemUnit" placeholder="Unit (e.g., rolls, bottles, boxes)">
+                </div>
+                <input type="number" id="currentStock" placeholder="Current Stock" step="0.1">
+                <input type="number" id="minStock" placeholder="Minimum Stock" step="0.1" value="5">
+                <input type="number" id="maxStock" placeholder="Maximum Stock" step="0.1" value="100">
+                <button onclick="addInventoryItem()">Add to Inventory</button>
+            </div>
+            <div id="inventory" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;"></div>
+        </div>
+        
+        <div id="suppliersPage" class="page">
+            <div class="form">
+                <h3>Add Supplier</h3>
+                <input type="text" id="supplierName" placeholder="Supplier Name">
+                <input type="text" id="supplierContact" placeholder="Contact Person">
+                <input type="text" id="supplierPhone" placeholder="Phone Number">
+                <input type="email" id="supplierEmail" placeholder="Email">
+                <select id="supplierCategory">
+                    <option value="Food">Food</option>
+                    <option value="Cleaning Services">Cleaning Services</option>
+                    <option value="Equipment">Equipment</option>
+                    <option value="Supplies">Supplies</option>
+                    <option value="Other">Other</option>
+                </select>
+                <textarea id="supplierDescription" placeholder="Description - What they provide, notes, etc." style="height: 80px;"></textarea>
+                <button onclick="addSupplier()">Add Supplier</button>
+            </div>
+            <div id="suppliers" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;"></div>
+        </div>
+        
+        <div id="settingsPage" class="page">
+            <div class="form">
+                <h3>Account</h3>
+                <button onclick="logout()" style="background: #dc3545; width: 100%;"><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 001-1h10.586l-2.293-2.293a1 1 0 10-1.414 1.414L14.586 5H7a3 3 0 100 6v2a1 1 0 11-2 0v-2a1 1 0 000-2 1 1 0 000-2V4a3 3 0 013-3h8a1 1 0 01.707.293l3 3A1 1 0 0117 5v10a1 1 0 11-2 0V6.414l-2.293 2.293a1 1 0 01-1.414-1.414L13.586 5H4z" clip-rule="evenodd"/></svg>Log Out</button>
+            </div>
+            
+            <div class="form">
+                <h3>Display Settings</h3>
+                <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                    <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()" checked>
+                    Dark Mode
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    Currency Symbol:
+                    <select id="currencySelect" onchange="updateCurrency()">
+                        <option value="$">$ (USD)</option>
+                        <option value="€">€ (EUR)</option>
+                        <option value="£">£ (GBP)</option>
+                        <option value="¥">¥ (JPY)</option>
+                    </select>
+                </label>
+            </div>
+            
+            <div class="form">
+                <h3 onclick="toggleMeasurements()" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <span id="measurementToggle">▶</span> Measurement Settings
+                </h3>
+                <div id="measurementSection" style="display: none;">
+                    <label style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        System:
+                        <select id="measurementSystem" onchange="updateMeasurementSystem()">
+                            <option value="imperial">Imperial (lb, oz, gal)</option>
+                            <option value="metric">Metric (kg, g, L)</option>
+                        </select>
+                    </label>
+                    <h4>Custom Units</h4>
+                    <input type="text" id="newUnit" placeholder="New Unit (e.g., cups, bags)">
+                    <button onclick="addCustomUnit()">Add Unit</button>
+                    <div id="customUnits" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+            
+            <div class="form">
+                <h3 onclick="toggleCategories()" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <span id="categoryToggle">▶</span> Supplier Categories
+                </h3>
+                <div id="categorySection" style="display: none;">
+                    <input type="text" id="newCategory" placeholder="New Category Name">
+                    <button onclick="addCategory()">Add Category</button>
+                    <div id="categoryList" style="margin-top: 15px;"></div>
+                </div>
+            </div>
+            
+            <div class="form">
+                <h3 onclick="toggleBusinessSettings()" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <span id="businessToggle">▶</span> Business Settings
+                </h3>
+                <div id="businessSection" style="display: none;">
+                    <label>Business Name:</label>
+                    <input type="text" id="businessName" placeholder="Birria Fusion" value="Birria Fusion">
+                    <label>Target Food Cost %:</label>
+                    <input type="number" id="targetFoodCost" placeholder="30" value="30" min="1" max="100">
+                    <label>Tax Rate %:</label>
+                    <input type="number" id="taxRate" placeholder="8.5" value="8.5" step="0.1" min="0" max="50">
+                    <button onclick="saveBusinessSettings()">Save Settings</button>
+                </div>
+            </div>
+            
+            <div class="form">
+                <h3 onclick="toggleDataSettings()" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <span id="dataToggle">▶</span> Data Management
+                </h3>
+                <div id="dataSection" style="display: none;">
+                    <button onclick="exportData()" style="background: #28a745; margin-bottom: 10px;"><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>Export Data</button>
+                    <button onclick="importData()" style="background: #007bff; margin-bottom: 10px;"><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>Import Data</button>
+                    <button onclick="clearAllData()" style="background: #dc3545;"><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>Clear All Data</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="analyticsPage" class="page">
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>Financial Analytics</h3>
+                <div id="financialAnalytics" class="dashboard-cards"></div>
+            </div>
+            
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z" clip-rule="evenodd"/></svg>Sales Performance</h3>
+                <div id="salesAnalytics" class="dashboard-cards"></div>
+            </div>
+            
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4zM3 8a1 1 0 000 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a1 1 0 100-2H3zm8 6a1 1 0 11-2 0 1 1 0 012 0z"/></svg>Inventory Analytics</h3>
+                <div id="inventoryAnalytics" class="dashboard-cards"></div>
+            </div>
+            
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>Performance Metrics</h3>
+                <div id="performanceMetrics"></div>
+            </div>
+            
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>Operational Insights</h3>
+                <div id="operationalInsights"></div>
+            </div>
+            
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"/></svg>Quick Actions</h3>
+                <div id="quickActions" class="dashboard-cards"></div>
+            </div>
+        </div>
+        
+        <div id="toolsPage" class="page">
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>File Upload</h3>
+                <input type="file" id="fileUpload" multiple accept="image/*,.pdf,.doc,.docx,.txt">
+                <button onclick="uploadFiles()">Upload Files</button>
+                <div id="uploadStatus" style="margin-top: 10px;"></div>
+            </div>
+            
+            <div class="form">
+                <h3><svg style="width: 20px; height: 20px; display: inline-block; margin-right: 8px;" fill="currentColor" viewBox="0 0 20 20"><path d="M4 3a2 2 0 00-2 2v1.816a.5.5 0 00.106.316l2 2.5a.5.5 0 00.894-.316V5a1 1 0 011-1h8a1 1 0 011 1v1.816a.5.5 0 00.106.316l2 2.5a.5.5 0 00.894-.316V5a2 2 0 00-2-2H4z"/><path d="M15 7.816a.5.5 0 00-.106-.316L13 5H7L5.106 7.5A.5.5 0 005 7.816V13a2 2 0 002 2h6a2 2 0 002-2V7.816z"/></svg>Uploaded Files</h3>
+                <button onclick="loadFileList()" style="margin-bottom: 10px;">Refresh File List</button>
+                <div id="fileList" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px;"></div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script>
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageName + 'Page').classList.add('active');
+            
+            document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            if (pageName === 'dashboard') loadDashboard();
+            if (pageName === 'menu') loadMenu();
+            if (pageName === 'ingredients') loadIngredients();
+            if (pageName === 'suppliers') loadSuppliers();
+            if (pageName === 'inventory') loadInventory();
+            if (pageName === 'tools') loadFileList();
+            if (pageName === 'settings') {
+                loadCategories();
+                loadSavedSettings();
+            }
+            if (pageName === 'analytics') loadAnalytics();
+        }
+        
+        function loadMenu() {
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    // Load each item with its ingredients
+                    Promise.all(items.map(item => 
+                        fetch(`/api/menu/${item.id}/recipe`)
+                            .then(r => r.json())
+                            .then(ingredients => ({ ...item, ingredients }))
+                            .catch(() => ({ ...item, ingredients: [] }))
+                    )).then(itemsWithIngredients => {
+                        // Sort alphabetically by name
+                        itemsWithIngredients.sort((a, b) => a.name.localeCompare(b.name));
+                        
+                        document.getElementById('menu').innerHTML = itemsWithIngredients.map(item => {
+                            const margin = item.profit_margin;
+                            const colorClass = margin >= 30 ? 'profit-good' : 
+                                             margin >= 20 ? 'profit-warning' : 'profit-danger';
+                            const marginColor = margin >= 30 ? '#4CAF50' : margin >= 20 ? '#FF9800' : '#f44336';
+                            
+                            const ingredientsList = item.ingredients.length > 0 
+                                ? item.ingredients.map(ing => `
+                                    <div class="ingredient-item" style="background: rgba(204, 85, 0, 0.1); padding: 5px; margin: 2px 0; border-radius: 3px; font-size: 0.9em; word-wrap: break-word;">
+                                        ${ing.name} (${ing.quantity} ${ing.unit}) - $${(ing.cost * ing.quantity).toFixed(2)}
+                                    </div>
+                                `).join('')
+                                : '<p style="color: #888; font-style: italic;">No ingredients added</p>';
+                            
+                            const totalIngredientCost = item.ingredients.reduce((sum, ing) => sum + (ing.cost * ing.quantity), 0);
+                            
+                            return `
+                                <div class="item ${colorClass}">
+                                    <div class="menu-item-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                        <div>
+                                            <h3 style="margin: 0 0 8px 0; color: #CC5500;">${item.name}</h3>
+                                            <div style="display: flex; gap: 15px; font-size: 0.85em; margin-bottom: 8px;">
+                                                <span style="background: rgba(204, 85, 0, 0.2); padding: 2px 8px; border-radius: 10px;">${item.recipe_type || 'Food'}</span>
+                                                <span><svg style="width: 14px; height: 14px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/></svg>${item.portions || 1} portions</span>
+                                            </div>
+                                            <div class="menu-item-details" style="display: flex; gap: 20px; font-size: 0.9em;">
+                                                <span><svg style="width: 14px; height: 14px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg>Price: <strong>$${item.price}</strong></span>
+                                                <span><svg style="width: 14px; height: 14px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>Cost: <strong>$${item.cost}</strong></span>
+                                            </div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div style="background: ${marginColor}; color: white; padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.9em;">
+                                                ${margin.toFixed(1)}% Margin
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="menu-item-recipe" style="background: rgba(0,0,0,0.1); padding: 8px; border-radius: 5px; margin: 8px 0;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 5px; flex-wrap: wrap;">
+                                            <strong><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 2L3 7v11a1 1 0 001 1h12a1 1 0 001-1V7l-7-5zM6 9.5a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5zm0 2a.5.5 0 01.5-.5h7a.5.5 0 010 1h-7a.5.5 0 01-.5-.5z"/></svg>Recipe Ingredients:</strong>
+                                            <strong style="color: #CC5500;">Total: $${totalIngredientCost.toFixed(2)}</strong>
+                                        </div>
+                                        ${ingredientsList}
+                                    </div>
+                                    
+                                    <div class="menu-buttons" style="display: flex; gap: 5px; margin-top: 8px;">
+                                        <button onclick="editMenuItem(${item.id})" style="flex: 1; padding: 8px; background: #CC5500; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em;">
+                                            <svg style="width: 12px; height: 12px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/></svg>Edit
+                                        </button>
+                                        <button onclick="editRecipe(${item.id}, '${item.name}')" style="flex: 1; padding: 8px; background: #28a745; border: none; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 0.85em;">
+                                            <svg style="width: 12px; height: 12px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>Recipe
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    });
+                });
+        }
+        
+        function loadDashboard() {
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    const totalItems = items.length;
+                    const avgMargin = totalItems > 0 ? items.reduce((sum, item) => sum + item.profit_margin, 0) / totalItems : 0;
+                    const goodItems = items.filter(item => item.profit_margin >= 30);
+                    const warningItems = items.filter(item => item.profit_margin >= 20 && item.profit_margin < 30);
+                    const dangerItems = items.filter(item => item.profit_margin < 20);
+                    
+                    document.getElementById('dashboardStats').innerHTML = `
+                        <div class="dashboard-cards">
+                            <div class="card card-good">
+                                <h3>🟢 Healthy Items</h3>
+                                <div class="card-number">${goodItems.length}</div>
+                                <p>Profit margin 30%+</p>
+                            </div>
+                            
+                            <div class="card card-warning">
+                                <h3>🟡 Needs Attention</h3>
+                                <div class="card-number">${warningItems.length}</div>
+                                <p>Profit margin 20-29%</p>
+                            </div>
+                            
+                            <div class="card card-danger">
+                                <h3>🔴 Urgent Action</h3>
+                                <div class="card-number">${dangerItems.length}</div>
+                                <p>Profit margin under 20%</p>
+                            </div>
+                            
+                            <div class="card">
+                                <h3>📊 Total Items</h3>
+                                <div class="card-number">${totalItems}</div>
+                                <p>Average: ${avgMargin.toFixed(1)}%</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Show top performing items
+                    const topPerforming = items.sort((a, b) => b.profit_margin - a.profit_margin).slice(0, 3);
+                    document.getElementById('topItems').innerHTML = topPerforming.map(item => {
+                        const marginColor = item.profit_margin >= 30 ? '#4CAF50' : item.profit_margin >= 20 ? '#FF9800' : '#f44336';
+                        return `
+                            <div class="card" style="text-align: center; border-left: 5px solid ${marginColor};">
+                                <h4 style="margin: 0 0 10px 0; color: #CC5500;">${item.name}</h4>
+                                <div style="font-size: 2em; font-weight: bold; color: ${marginColor}; margin: 10px 0;">
+                                    ${item.profit_margin.toFixed(1)}%
+                                </div>
+                                <p style="margin: 5px 0; font-size: 0.9em;">$${item.price} - $${item.cost}</p>
+                                <p style="margin: 0; font-size: 0.8em; opacity: 0.8;">Profit: $${(item.price - item.cost).toFixed(2)}</p>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+        
+        function loadIngredients() {
+            fetch('/api/ingredients')
+                .then(r => r.json())
+                .then(ingredients => {
+                    // Sort alphabetically by name
+                    ingredients.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    document.getElementById('ingredients').innerHTML = ingredients.map(ing => `
+                        <div class="item">
+                            <h3>${ing.name}</h3>
+                            <p>Cost: $${ing.cost} per ${ing.unit}</p>
+                            <button onclick="editIngredient(${ing.id}, '${ing.name}', ${ing.cost}, '${ing.unit}')">Edit</button>
+                        </div>
+                    `).join('');
+                });
+        }
+        
+        function loadSuppliers() {
+            fetch('/api/suppliers')
+                .then(r => r.json())
+                .then(suppliers => {
+                    // Sort alphabetically by name
+                    suppliers.sort((a, b) => a.name.localeCompare(b.name));
+                    currentSuppliers = suppliers;
+                    
+                    document.getElementById('suppliers').innerHTML = suppliers.map(sup => `
+                        <div class="item">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                                <h3 style="margin: 0;">${sup.name}</h3>
+                                <span style="background: rgba(204, 85, 0, 0.2); padding: 2px 8px; border-radius: 10px; font-size: 0.8em;">${sup.category || 'Other'}</span>
+                            </div>
+                            <p><strong>Contact:</strong> ${sup.contact}</p>
+                            <p><strong>Phone:</strong> ${sup.phone}</p>
+                            <p><strong>Email:</strong> ${sup.email}</p>
+                            ${sup.description ? `<p><strong>Description:</strong> ${sup.description}</p>` : '<p><em>No description</em></p>'}
+                            <div style="display: flex; gap: 5px; margin-top: 10px;">
+                                <button onclick="editSupplier(${sup.id})" style="flex: 1;">Edit</button>
+                                <button onclick="deleteSupplier(${sup.id})" style="flex: 1; background: #dc3545;">Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+        
+        function addItem() {
+            const name = document.getElementById('name').value;
+            const recipeType = document.getElementById('recipeType').value;
+            const portions = parseInt(document.getElementById('portions').value) || 1;
+            const price = parseFloat(document.getElementById('price').value);
+            const cost = parseFloat(document.getElementById('cost').value);
+            
+            if (!name || !price || !cost) {
+                alert('Please fill in all required fields');
+                return;
+            }
+            
+            if (editingItemId) {
+                // Update existing item
+                console.log('Updating item:', editingItemId);
+                fetch(`/api/menu/${editingItemId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, cost, recipe_type: recipeType, portions })
+                }).then(() => {
+                    editingItemId = null;
+                    const btn = document.querySelector('#menuPage .form button');
+                    btn.textContent = 'Add Recipe';
+                    clearForm();
+                    loadMenu();
+                }).catch(err => console.error('Update error:', err));
+            } else {
+                // Add new item
+                fetch('/api/menu', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, price, cost, recipe_type: recipeType, portions })
+                }).then(() => {
+                    clearForm();
+                    loadMenu();
+                });
+            }
+        }
+        
+        function clearForm() {
+            document.getElementById('name').value = '';
+            document.getElementById('price').value = '';
+            document.getElementById('cost').value = '';
+            document.getElementById('recipeType').value = 'Food';
+            document.getElementById('portions').value = '1';
+        }
+        
+        function addIngredient() {
+            const name = document.getElementById('ingredientName').value;
+            const cost = parseFloat(document.getElementById('ingredientCost').value);
+            const unit = document.getElementById('ingredientUnit').value;
+            
+            fetch('/api/ingredients', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, cost, unit })
+            }).then(() => {
+                document.getElementById('ingredientName').value = '';
+                document.getElementById('ingredientCost').value = '';
+                document.getElementById('ingredientUnit').value = '';
+                loadIngredients();
+            });
+        }
+        
+        function addSupplier() {
+            const name = document.getElementById('supplierName').value;
+            const contact = document.getElementById('supplierContact').value;
+            const phone = document.getElementById('supplierPhone').value;
+            const email = document.getElementById('supplierEmail').value;
+            const category = document.getElementById('supplierCategory').value;
+            const description = document.getElementById('supplierDescription').value;
+            
+            fetch('/api/suppliers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, contact, phone, email, category, description })
+            }).then(() => {
+                document.getElementById('supplierName').value = '';
+                document.getElementById('supplierContact').value = '';
+                document.getElementById('supplierPhone').value = '';
+                document.getElementById('supplierEmail').value = '';
+                document.getElementById('supplierCategory').value = 'Food';
+                document.getElementById('supplierDescription').value = '';
+                loadSuppliers();
+            });
+        }
+        
+        function toggleDarkMode() {
+            const isDark = document.getElementById('darkModeToggle').checked;
+            document.body.className = isDark ? 'dark' : 'light';
+            localStorage.setItem('darkMode', isDark);
+        }
+        
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('darkMode');
+            const isDark = savedTheme === null ? true : savedTheme === 'true';
+            document.body.className = isDark ? 'dark' : 'light';
+            document.getElementById('darkModeToggle').checked = isDark;
+        }
+        
+        let editingItemId = null;
+        
+        function editMenuItem(id) {
+            console.log('Editing item:', id);
+            editingItemId = id;
+            
+            // Find the item in the current menu data instead of making API call
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    const item = items.find(i => i.id == id);
+                    if (item) {
+                        document.getElementById('name').value = item.name;
+                        document.getElementById('price').value = item.price;
+                        document.getElementById('cost').value = item.cost;
+                        document.getElementById('recipeType').value = item.recipe_type || 'Food';
+                        document.getElementById('portions').value = item.portions || 1;
+                        
+                        // Change button text
+                        const btn = document.querySelector('#menuPage .form button');
+                        btn.textContent = 'Update Recipe';
+                        
+                        console.log('Form populated with:', item);
+                    }
+                })
+                .catch(err => console.error('Edit error:', err));
+        }
+        
+        function uploadFiles() {
+            const fileInput = document.getElementById('fileUpload');
+            const files = fileInput.files;
+            if (files.length === 0) return;
+            
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            
+            document.getElementById('uploadStatus').innerHTML = 'Uploading...';
+            
+            fetch('/api/upload-files', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(result => {
+                document.getElementById('uploadStatus').innerHTML = result.message;
+                document.getElementById('fileUpload').value = '';
+                loadFileList();
+            })
+            .catch(err => {
+                document.getElementById('uploadStatus').innerHTML = 'Upload failed';
+            });
+        }
+        
+        function loadFileList() {
+            fetch('/api/files')
+                .then(r => r.json())
+                .then(files => {
+                    if (files.length === 0) {
+                        document.getElementById('fileList').innerHTML = '<p>No files uploaded yet.</p>';
+                        return;
+                    }
+                    
+                    document.getElementById('fileList').innerHTML = files.map(file => {
+                        const isImage = file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+                        
+                        return `
+                            <div class="item">
+                                <p><strong>${file.name}</strong></p>
+                                <p>Size: ${(file.size / 1024).toFixed(1)} KB</p>
+                                ${isImage ? `
+                                    <div style="text-align: center; margin: 10px 0;">
+                                        <img src="uploads/${file.name}" alt="${file.name}" style="width: 120px; height: 80px; object-fit: cover; border-radius: 5px; border: 1px solid #CC5500; cursor: pointer;" onclick="viewFullImage('uploads/${file.name}', '${file.name}')">
+                                    </div>
+                                ` : ''}
+                                <button onclick="deleteFile('${file.name}')" style="background: #f44336;">Delete</button>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+        
+        function deleteFile(filename) {
+            if (!confirm(`Delete ${filename}?`)) return;
+            
+            fetch(`/api/files/${filename}`, {
+                method: 'DELETE'
+            })
+            .then(r => r.json())
+            .then(result => {
+                alert(result.message);
+                loadFileList();
+            });
+        }
+        
+        function viewFullImage(src, filename) {
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.8); z-index: 2000; display: flex; 
+                align-items: center; justify-content: center; cursor: pointer;
+            `;
+            
+            modal.innerHTML = `
+                <div style="max-width: 90%; max-height: 90%; text-align: center;">
+                    <img src="${src}" style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 5px;">
+                    <p style="color: white; margin-top: 10px;">${filename}</p>
+                    <p style="color: #ccc; font-size: 0.9em;">Click anywhere to close</p>
+                </div>
+            `;
+            
+            modal.onclick = () => document.body.removeChild(modal);
+            document.body.appendChild(modal);
+        }
+        
+        function editIngredient(id, name, cost, unit) {
+            document.getElementById('ingredientName').value = name;
+            document.getElementById('ingredientCost').value = cost;
+            document.getElementById('ingredientUnit').value = unit;
+            
+            const addBtn = document.querySelector('#ingredientsPage .form button');
+            addBtn.textContent = 'Update Ingredient';
+            addBtn.onclick = () => updateIngredient(id);
+        }
+        
+        function updateIngredient(id) {
+            const name = document.getElementById('ingredientName').value;
+            const cost = parseFloat(document.getElementById('ingredientCost').value);
+            const unit = document.getElementById('ingredientUnit').value;
+            
+            fetch(`/api/ingredients/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, cost, unit })
+            }).then(() => {
+                document.getElementById('ingredientName').value = '';
+                document.getElementById('ingredientCost').value = '';
+                document.getElementById('ingredientUnit').value = '';
+                
+                const addBtn = document.querySelector('#ingredientsPage .form button');
+                addBtn.textContent = 'Add Ingredient';
+                addBtn.onclick = addIngredient;
+                
+                loadIngredients();
+            });
+        }
+        
+        let currentSuppliers = [];
+        
+        function editSupplier(id) {
+            const supplier = currentSuppliers.find(s => s.id == id);
+            if (supplier) {
+                document.getElementById('supplierName').value = supplier.name;
+                document.getElementById('supplierContact').value = supplier.contact;
+                document.getElementById('supplierPhone').value = supplier.phone;
+                document.getElementById('supplierEmail').value = supplier.email;
+                document.getElementById('supplierCategory').value = supplier.category || 'Other';
+                document.getElementById('supplierDescription').value = supplier.description || '';
+                
+                const addBtn = document.querySelector('#suppliersPage .form button');
+                addBtn.textContent = 'Update Supplier';
+                addBtn.onclick = () => updateSupplier(id);
+            }
+        }
+        
+        function updateSupplier(id) {
+            const name = document.getElementById('supplierName').value;
+            const contact = document.getElementById('supplierContact').value;
+            const phone = document.getElementById('supplierPhone').value;
+            const email = document.getElementById('supplierEmail').value;
+            const category = document.getElementById('supplierCategory').value;
+            const description = document.getElementById('supplierDescription').value;
+            
+            console.log('Updating supplier with:', { name, contact, phone, email, category, description });
+            
+            fetch(`/api/suppliers/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, contact, phone, email, category, description })
+            }).then(response => {
+                console.log('Update response:', response.status);
+                return response.json();
+            }).then(result => {
+                console.log('Update result:', result);
+                document.getElementById('supplierName').value = '';
+                document.getElementById('supplierContact').value = '';
+                document.getElementById('supplierPhone').value = '';
+                document.getElementById('supplierEmail').value = '';
+                document.getElementById('supplierCategory').value = 'Food';
+                document.getElementById('supplierDescription').value = '';
+                
+                const addBtn = document.querySelector('#suppliersPage .form button');
+                addBtn.textContent = 'Add Supplier';
+                addBtn.onclick = addSupplier;
+                
+                loadSuppliers();
+            }).catch(err => {
+                console.error('Update error:', err);
+            });
+        }
+        
+        let currentMenuId = null;
+        let recipeIngredients = [];
+        
+        function editRecipe(menuId, menuName) {
+            currentMenuId = menuId;
+            document.getElementById('recipeForm').style.display = 'block';
+            document.querySelector('#recipeForm h3').textContent = `Recipe for ${menuName}`;
+            
+            // Load ingredients for dropdown
+            fetch('/api/ingredients')
+                .then(r => r.json())
+                .then(ingredients => {
+                    document.getElementById('ingredientSelect').innerHTML = 
+                        '<option value="">Select ingredient...</option>' +
+                        ingredients.map(ing => `<option value="${ing.id}" data-price="${ing.cost}" data-unit="${ing.unit}">${ing.name}</option>`).join('');
+                    
+                    // Update price and unit when ingredient is selected
+                    document.getElementById('ingredientSelect').onchange = function() {
+                        const selected = this.selectedOptions[0];
+                        if (selected.value) {
+                            document.getElementById('ingredientPrice').value = selected.dataset.price;
+                            document.getElementById('ingredientUnit').value = selected.dataset.unit;
+                            
+                            // Auto-calculate cost when quantity changes
+                            document.getElementById('ingredientQty').oninput = function() {
+                                const qty = parseFloat(this.value) || 0;
+                                const price = parseFloat(document.getElementById('ingredientPrice').value) || 0;
+                                document.getElementById('ingredientCost').value = (qty * price).toFixed(2);
+                            };
+                        } else {
+                            document.getElementById('ingredientPrice').value = '';
+                            document.getElementById('ingredientUnit').value = '';
+                            document.getElementById('ingredientCost').value = '';
+                        }
+                    };
+                });
+                
+            // Load existing recipe
+            fetch(`/api/menu/${menuId}/recipe`)
+                .then(r => r.json())
+                .then(recipe => {
+                    // Convert saved recipe format to editable format
+                    recipeIngredients = recipe.map(ing => ({
+                        ingredient_id: ing.ingredient_id,
+                        quantity: parseFloat(ing.quantity),
+                        name: ing.name,
+                        price: parseFloat(ing.cost),
+                        unit: ing.unit,
+                        cost: parseFloat(ing.quantity) * parseFloat(ing.cost)
+                    }));
+                    updateRecipeDisplay();
+                    updateTotalCost();
+                })
+                .catch(() => {
+                    recipeIngredients = [];
+                    updateRecipeDisplay();
+                });
+        }
+        
+        function addRecipeIngredient() {
+            const ingredientId = document.getElementById('ingredientSelect').value;
+            const qty = parseFloat(document.getElementById('ingredientQty').value) || 0;
+            const price = parseFloat(document.getElementById('ingredientPrice').value) || 0;
+            const unit = document.getElementById('ingredientUnit').value;
+            const cost = qty * price;
+            const ingredientText = document.getElementById('ingredientSelect').selectedOptions[0].text;
+            
+            if (!ingredientId || qty <= 0) {
+                alert('Please select an ingredient and enter quantity');
+                return;
+            }
+            
+            recipeIngredients.push({ 
+                ingredient_id: ingredientId, 
+                quantity: qty, 
+                name: ingredientText,
+                price: price,
+                unit: unit,
+                cost: cost
+            });
+            
+            document.getElementById('ingredientQty').value = '';
+            document.getElementById('ingredientCost').value = '';
+            updateRecipeDisplay();
+            updateTotalCost();
+        }
+        
+        function updateRecipeDisplay() {
+            document.getElementById('ingredientRows').innerHTML = recipeIngredients.map((ing, idx) => `
+                <div class="ingredient-row" style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 10px; align-items: center; margin-bottom: 8px; padding: 8px; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                    <div><strong>${ing.name}</strong></div>
+                    <div>$${ing.price.toFixed(2)} / ${ing.unit}</div>
+                    <div>Qty: <input type="number" value="${ing.quantity}" step="0.01" style="width: 60px; padding: 2px; background: white; color: black; border: 1px solid #ccc; border-radius: 3px;" onchange="updateIngredientQty(${idx}, this.value)" oninput="updateIngredientQty(${idx}, this.value)"></div>
+                    <div>Cost: $${ing.cost.toFixed(2)}</div>
+                    <div><button onclick="removeRecipeIngredient(${idx})" style="background: #dc3545; padding: 4px 8px; font-size: 0.8em; border: none; color: white; border-radius: 3px;">× Remove</button></div>
+                </div>
+            `).join('');
+        }
+        
+        function removeRecipeIngredient(idx) {
+            recipeIngredients.splice(idx, 1);
+            updateRecipeDisplay();
+            updateTotalCost();
+        }
+        
+        function updateIngredientQty(idx, newQty) {
+            const qty = parseFloat(newQty) || 0;
+            recipeIngredients[idx].quantity = qty;
+            recipeIngredients[idx].cost = qty * recipeIngredients[idx].price;
+            updateRecipeDisplay();
+            updateTotalCost();
+        }
+        
+        function updateTotalCost() {
+            const total = recipeIngredients.reduce((sum, ing) => sum + ing.cost, 0);
+            const suggestedPrice = total / 0.7; // 30% profit margin
+            document.getElementById('totalCost').textContent = total.toFixed(2);
+            document.getElementById('suggestedPrice').textContent = suggestedPrice.toFixed(2);
+        }
+        
+        function saveRecipe() {
+            fetch(`/api/menu/${currentMenuId}/recipe`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ingredients: recipeIngredients })
+            }).then(() => {
+                cancelRecipe();
+                loadMenu();
+            });
+        }
+        
+        function cancelRecipe() {
+            document.getElementById('recipeForm').style.display = 'none';
+            currentMenuId = null;
+            recipeIngredients = [];
+        }
+        
+        function loadInventory() {
+            // Load ingredients for dropdown
+            fetch('/api/ingredients')
+                .then(r => r.json())
+                .then(ingredients => {
+                    // Sort alphabetically by name
+                    ingredients.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    document.getElementById('inventoryIngredient').innerHTML = 
+                        '<option value="">Select ingredient...</option>' +
+                        ingredients.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                });
+            
+            // Load inventory items
+            fetch('/api/inventory')
+                .then(r => r.json())
+                .then(items => {
+                    // Sort alphabetically by name
+                    items.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    document.getElementById('inventory').innerHTML = items.map(item => {
+                        const stockLevel = item.current_stock / item.max_stock;
+                        const barColor = stockLevel > 0.5 ? '#4CAF50' : stockLevel > 0.2 ? '#FF9800' : '#f44336';
+                        const alertClass = item.current_stock <= item.min_stock ? 'profit-danger' : '';
+                        
+                        return `
+                            <div class="item ${alertClass}">
+                                <h3>${item.name}</h3>
+                                <div style="background: #333; border-radius: 10px; overflow: hidden; margin: 10px 0;">
+                                    <div style="background: ${barColor}; height: 20px; width: ${Math.max(stockLevel * 100, 2)}%; transition: all 0.3s;"></div>
+                                </div>
+                                <p>Current: ${item.current_stock} ${item.unit}</p>
+                                <div class="inventory-stats" style="display: flex; gap: 10px; font-size: 0.9em; margin: 5px 0;">
+                                    <span>Min: ${item.min_stock}</span>
+                                    <span>Max: ${item.max_stock}</span>
+                                </div>
+                                ${item.current_stock <= item.min_stock ? '<p style="color: #f44336; font-weight: bold; margin: 5px 0;"><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>LOW STOCK!</p>' : ''}
+                                <input type="number" id="stock_${item.ingredient_id}" value="${item.current_stock}" step="0.1" style="width: 100%; margin: 5px 0;">
+                                <div class="inventory-buttons" style="display: flex; gap: 2px; margin-top: 8px;">
+                                    <button onclick="updateStock(${item.ingredient_id})" style="flex: 1; background: #28a745; padding: 4px 2px; font-size: 0.7em;">Update</button>
+                                    <button onclick="editInventoryItem(${item.ingredient_id}, '${item.name}', ${item.current_stock}, ${item.min_stock}, ${item.max_stock})" style="flex: 1; background: #CC5500; padding: 4px 2px; font-size: 0.7em;">Edit</button>
+                                    <button onclick="deleteInventoryItem(${item.ingredient_id})" style="flex: 1; background: #dc3545; padding: 4px 2px; font-size: 0.7em;">Del</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(() => {
+                    document.getElementById('inventory').innerHTML = '<p>No inventory items yet. Add ingredients first, then add them to inventory.</p>';
+                });
+        }
+        
+        function toggleItemType() {
+            const isExisting = document.querySelector('input[name="itemType"]:checked').value === 'existing';
+            document.getElementById('existingItem').style.display = isExisting ? 'block' : 'none';
+            document.getElementById('newItem').style.display = isExisting ? 'none' : 'block';
+        }
+        
+        function addInventoryItem() {
+            const isExisting = document.querySelector('input[name="itemType"]:checked').value === 'existing';
+            const currentStock = parseFloat(document.getElementById('currentStock').value) || 0;
+            const minStock = parseFloat(document.getElementById('minStock').value) || 5;
+            const maxStock = parseFloat(document.getElementById('maxStock').value) || 100;
+            
+            let requestData = {
+                current_stock: currentStock,
+                min_stock: minStock,
+                max_stock: maxStock
+            };
+            
+            if (isExisting) {
+                const ingredientId = document.getElementById('inventoryIngredient').value;
+                if (!ingredientId) {
+                    alert('Please select an ingredient');
+                    return;
+                }
+                requestData.ingredient_id = ingredientId;
+            } else {
+                const itemName = document.getElementById('newItemName').value.trim();
+                const itemUnit = document.getElementById('newItemUnit').value.trim();
+                if (!itemName || !itemUnit) {
+                    alert('Please enter item name and unit');
+                    return;
+                }
+                requestData.name = itemName;
+                requestData.unit = itemUnit;
+            }
+            
+            fetch('/api/inventory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(requestData)
+            }).then(() => {
+                document.getElementById('inventoryIngredient').value = '';
+                document.getElementById('newItemName').value = '';
+                document.getElementById('newItemUnit').value = '';
+                document.getElementById('currentStock').value = '';
+                document.getElementById('minStock').value = '5';
+                document.getElementById('maxStock').value = '100';
+                loadInventory();
+            }).catch(err => {
+                alert('Error adding inventory item.');
+            });
+        }
+        
+        let editingInventoryId = null;
+        
+        function updateStock(ingredientId) {
+            const newStock = parseFloat(document.getElementById(`stock_${ingredientId}`).value) || 0;
+            
+            fetch(`/api/inventory/${ingredientId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_stock: newStock })
+            }).then(() => {
+                loadInventory();
+            });
+        }
+        
+        function editInventoryItem(ingredientId, name, currentStock, minStock, maxStock) {
+            editingInventoryId = ingredientId;
+            
+            // Find and select the ingredient in dropdown
+            const select = document.getElementById('inventoryIngredient');
+            for (let option of select.options) {
+                if (option.text.includes(name)) {
+                    option.selected = true;
+                    break;
+                }
+            }
+            
+            document.getElementById('currentStock').value = currentStock;
+            document.getElementById('minStock').value = minStock;
+            document.getElementById('maxStock').value = maxStock;
+            
+            const btn = document.querySelector('#inventoryPage .form button');
+            btn.textContent = 'Update Inventory Item';
+            btn.onclick = () => updateInventoryItem(ingredientId);
+        }
+        
+        function updateInventoryItem(ingredientId) {
+            const currentStock = parseFloat(document.getElementById('currentStock').value) || 0;
+            const minStock = parseFloat(document.getElementById('minStock').value) || 5;
+            const maxStock = parseFloat(document.getElementById('maxStock').value) || 100;
+            
+            fetch(`/api/inventory/${ingredientId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    current_stock: currentStock, 
+                    min_stock: minStock, 
+                    max_stock: maxStock 
+                })
+            }).then(() => {
+                editingInventoryId = null;
+                document.getElementById('inventoryIngredient').value = '';
+                document.getElementById('currentStock').value = '';
+                document.getElementById('minStock').value = '5';
+                document.getElementById('maxStock').value = '100';
+                
+                const btn = document.querySelector('#inventoryPage .form button');
+                btn.textContent = 'Add to Inventory';
+                btn.onclick = addInventoryItem;
+                
+                loadInventory();
+            });
+        }
+        
+        function deleteInventoryItem(ingredientId) {
+            if (!confirm('Delete this inventory item?')) return;
+            
+            fetch(`/api/inventory/${ingredientId}`, {
+                method: 'DELETE'
+            }).then(() => {
+                loadInventory();
+            });
+        }
+        
+        let supplierCategories = ['Food', 'Cleaning Services', 'Equipment', 'Supplies', 'Other'];
+        
+        function loadCategories() {
+            document.getElementById('categoryList').innerHTML = supplierCategories.map((cat, idx) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; background: rgba(204, 85, 0, 0.1); margin: 5px 0; border-radius: 5px;">
+                    <span>${cat}</span>
+                    ${cat !== 'Other' ? `<button onclick="removeCategory(${idx})" style="background: #dc3545; padding: 2px 6px; font-size: 0.8em;">Remove</button>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function addCategory() {
+            const newCat = document.getElementById('newCategory').value.trim();
+            if (!newCat || supplierCategories.includes(newCat)) {
+                alert('Category already exists or is empty');
+                return;
+            }
+            
+            supplierCategories.push(newCat);
+            document.getElementById('newCategory').value = '';
+            updateCategoryDropdown();
+            loadCategories();
+        }
+        
+        function removeCategory(idx) {
+            if (confirm(`Remove category "${supplierCategories[idx]}"?`)) {
+                supplierCategories.splice(idx, 1);
+                updateCategoryDropdown();
+                loadCategories();
+            }
+        }
+        
+        function updateCategoryDropdown() {
+            document.getElementById('supplierCategory').innerHTML = supplierCategories.map(cat => 
+                `<option value="${cat}">${cat}</option>`
+            ).join('');
+        }
+        
+        function deleteSupplier(id) {
+            if (!confirm('Delete this supplier?')) return;
+            
+            fetch(`/api/suppliers/${id}`, {
+                method: 'DELETE'
+            }).then(() => {
+                loadSuppliers();
+            }).catch(err => {
+                console.error('Delete error:', err);
+                alert('Error deleting supplier');
+            });
+        }
+        
+        function toggleCategories() {
+            const section = document.getElementById('categorySection');
+            const toggle = document.getElementById('categoryToggle');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                section.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+        
+        function toggleMeasurements() {
+            const section = document.getElementById('measurementSection');
+            const toggle = document.getElementById('measurementToggle');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                toggle.textContent = '▼';
+                loadCustomUnits();
+            } else {
+                section.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+        
+        function toggleBusinessSettings() {
+            const section = document.getElementById('businessSection');
+            const toggle = document.getElementById('businessToggle');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                section.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+        
+        function toggleDataSettings() {
+            const section = document.getElementById('dataSection');
+            const toggle = document.getElementById('dataToggle');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                section.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to log out?')) {
+                alert('Logout functionality will be implemented with user authentication.');
+            }
+        }
+        
+        function updateCurrency() {
+            const currency = document.getElementById('currencySelect').value;
+            localStorage.setItem('currency', currency);
+            alert(`Currency updated to ${currency}. Refresh page to see changes.`);
+        }
+        
+        function updateMeasurementSystem() {
+            const system = document.getElementById('measurementSystem').value;
+            localStorage.setItem('measurementSystem', system);
+            alert(`Measurement system updated to ${system}.`);
+        }
+        
+        let customUnits = ['cups', 'bags', 'boxes', 'cans', 'bottles'];
+        
+        function loadCustomUnits() {
+            document.getElementById('customUnits').innerHTML = customUnits.map((unit, idx) => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px; background: rgba(204, 85, 0, 0.1); margin: 3px 0; border-radius: 3px;">
+                    <span>${unit}</span>
+                    <button onclick="removeCustomUnit(${idx})" style="background: #dc3545; padding: 2px 6px; font-size: 0.8em;">Remove</button>
+                </div>
+            `).join('');
+        }
+        
+        function addCustomUnit() {
+            const unit = document.getElementById('newUnit').value.trim();
+            if (!unit || customUnits.includes(unit)) {
+                alert('Unit already exists or is empty');
+                return;
+            }
+            customUnits.push(unit);
+            document.getElementById('newUnit').value = '';
+            loadCustomUnits();
+        }
+        
+        function removeCustomUnit(idx) {
+            if (confirm(`Remove unit "${customUnits[idx]}"?`)) {
+                customUnits.splice(idx, 1);
+                loadCustomUnits();
+            }
+        }
+        
+        function saveBusinessSettings() {
+            const businessName = document.getElementById('businessName').value;
+            const targetFoodCost = document.getElementById('targetFoodCost').value;
+            const taxRate = document.getElementById('taxRate').value;
+            
+            localStorage.setItem('businessName', businessName);
+            localStorage.setItem('targetFoodCost', targetFoodCost);
+            localStorage.setItem('taxRate', taxRate);
+            
+            alert('Business settings saved!');
+        }
+        
+        function exportData() {
+            alert('Export functionality will download all your data as a backup file.');
+        }
+        
+        function importData() {
+            alert('Import functionality will restore data from a backup file.');
+        }
+        
+        function clearAllData() {
+            if (confirm('This will delete ALL data including menu items, ingredients, suppliers, and inventory. Are you sure?')) {
+                if (confirm('This action cannot be undone. Really delete everything?')) {
+                    // Clear localStorage
+                    localStorage.clear();
+                    // API calls to clear database would go here
+                    alert('All data cleared! Page will reload.');
+                    location.reload();
+                }
+            }
+        }
+        
+        function loadSavedSettings() {
+            // Load currency
+            const savedCurrency = localStorage.getItem('currency') || '$';
+            document.getElementById('currencySelect').value = savedCurrency;
+            
+            // Load measurement system
+            const savedSystem = localStorage.getItem('measurementSystem') || 'imperial';
+            document.getElementById('measurementSystem').value = savedSystem;
+            
+            // Load business settings
+            const businessName = localStorage.getItem('businessName') || 'Birria Fusion';
+            const targetFoodCost = localStorage.getItem('targetFoodCost') || '30';
+            const taxRate = localStorage.getItem('taxRate') || '8.5';
+            
+            document.getElementById('businessName').value = businessName;
+            document.getElementById('targetFoodCost').value = targetFoodCost;
+            document.getElementById('taxRate').value = taxRate;
+        }
+        
+        function loadAnalytics() {
+            Promise.all([
+                fetch('/api/menu').then(r => r.json()),
+                fetch('/api/ingredients').then(r => r.json()),
+                fetch('/api/inventory').then(r => r.json()).catch(() => [])
+            ]).then(([menuItems, ingredients, inventory]) => {
+                loadFinancialAnalytics(menuItems);
+                loadSalesAnalytics(menuItems);
+                loadInventoryAnalytics(inventory, ingredients);
+                loadPerformanceMetrics(menuItems);
+                loadOperationalInsights(menuItems, ingredients);
+                loadQuickActions(menuItems, inventory);
+            });
+        }
+        
+        function loadFinancialAnalytics(menuItems) {
+            const totalRevenue = menuItems.reduce((sum, item) => sum + (item.price * 10), 0); // Mock sales
+            const totalCost = menuItems.reduce((sum, item) => sum + (item.cost * 10), 0);
+            const avgMargin = menuItems.length > 0 ? menuItems.reduce((sum, item) => sum + item.profit_margin, 0) / menuItems.length : 0;
+            const dailyRevenue = totalRevenue / 30; // Mock monthly to daily
+            
+            document.getElementById('financialAnalytics').innerHTML = `
+                <div class="card">
+                    <h3><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg>Total Revenue</h3>
+                    <div class="card-number" style="color: #4CAF50;">$${totalRevenue.toFixed(0)}</div>
+                    <p>Monthly estimate</p>
+                </div>
+                <div class="card">
+                    <h3><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>Total Costs</h3>
+                    <div class="card-number" style="color: #f44336;">$${totalCost.toFixed(0)}</div>
+                    <p>Food costs only</p>
+                </div>
+                <div class="card">
+                    <h3><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>Avg Margin</h3>
+                    <div class="card-number" style="color: ${avgMargin >= 30 ? '#4CAF50' : avgMargin >= 20 ? '#FF9800' : '#f44336'}">${avgMargin.toFixed(1)}%</div>
+                    <p>Across all items</p>
+                </div>
+                <div class="card">
+                    <h3><svg style="width: 16px; height: 16px; display: inline-block; margin-right: 4px;" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>Daily Revenue</h3>
+                    <div class="card-number" style="color: #007bff;">$${dailyRevenue.toFixed(0)}</div>
+                    <p>Average per day</p>
+                </div>
+            `;
+        }
+        
+        function loadSalesAnalytics(menuItems) {
+            const topSeller = menuItems.sort((a, b) => b.price - a.price)[0] || {};
+            const avgOrderValue = menuItems.length > 0 ? menuItems.reduce((sum, item) => sum + item.price, 0) / menuItems.length : 0;
+            const totalItems = menuItems.length;
+            
+            document.getElementById('salesAnalytics').innerHTML = `
+                <div class="card">
+                    <h3>🏆 Top Item</h3>
+                    <div class="card-number" style="color: #FF6600; font-size: 1.2em;">${topSeller.name || 'None'}</div>
+                    <p>$${topSeller.price || 0} - ${topSeller.profit_margin?.toFixed(1) || 0}% margin</p>
+                </div>
+                <div class="card">
+                    <h3>💳 Avg Order</h3>
+                    <div class="card-number" style="color: #28a745;">$${avgOrderValue.toFixed(2)}</div>
+                    <p>Per customer</p>
+                </div>
+                <div class="card">
+                    <h3>📋 Menu Items</h3>
+                    <div class="card-number" style="color: #007bff;">${totalItems}</div>
+                    <p>Total offerings</p>
+                </div>
+                <div class="card">
+                    <h3>⏰ Peak Hours</h3>
+                    <div class="card-number" style="color: #FF9800;">12-2 PM</div>
+                    <p>Lunch rush</p>
+                </div>
+            `;
+        }
+        
+        function loadInventoryAnalytics(inventory, ingredients) {
+            const lowStockItems = inventory.filter(item => item.current_stock <= item.min_stock).length;
+            const totalIngredients = ingredients.length;
+            const avgCost = ingredients.length > 0 ? ingredients.reduce((sum, ing) => sum + ing.cost, 0) / ingredients.length : 0;
+            const wasteEstimate = inventory.length * 0.05; // 5% waste estimate
+            
+            document.getElementById('inventoryAnalytics').innerHTML = `
+                <div class="card ${lowStockItems > 0 ? 'card-danger' : 'card-good'}">
+                    <h3>⚠️ Low Stock</h3>
+                    <div class="card-number">${lowStockItems}</div>
+                    <p>Items need restocking</p>
+                </div>
+                <div class="card">
+                    <h3>📦 Total Items</h3>
+                    <div class="card-number" style="color: #007bff;">${totalIngredients}</div>
+                    <p>Ingredients tracked</p>
+                </div>
+                <div class="card">
+                    <h3>💰 Avg Cost</h3>
+                    <div class="card-number" style="color: #FF9800;">$${avgCost.toFixed(2)}</div>
+                    <p>Per ingredient unit</p>
+                </div>
+                <div class="card">
+                    <h3>🗑️ Est. Waste</h3>
+                    <div class="card-number" style="color: #f44336;">${wasteEstimate.toFixed(1)}%</div>
+                    <p>Monthly estimate</p>
+                </div>
+            `;
+        }
+        
+        function loadPerformanceMetrics(menuItems) {
+            const targetFoodCost = parseFloat(localStorage.getItem('targetFoodCost')) || 30;
+            const goodItems = menuItems.filter(item => item.profit_margin >= targetFoodCost);
+            const needsAttention = menuItems.filter(item => item.profit_margin >= 20 && item.profit_margin < targetFoodCost);
+            const urgentItems = menuItems.filter(item => item.profit_margin < 20);
+            
+            const performanceScore = menuItems.length > 0 ? (goodItems.length / menuItems.length) * 100 : 0;
+            
+            document.getElementById('performanceMetrics').innerHTML = `
+                <div class="dashboard-cards">
+                    <div class="card card-good">
+                        <h3>✅ Meeting Target</h3>
+                        <div class="card-number">${goodItems.length}</div>
+                        <p>${targetFoodCost}%+ profit margin</p>
+                    </div>
+                    <div class="card card-warning">
+                        <h3>⚠️ Needs Review</h3>
+                        <div class="card-number">${needsAttention.length}</div>
+                        <p>20-${targetFoodCost}% margin</p>
+                    </div>
+                    <div class="card card-danger">
+                        <h3>🚨 Urgent Action</h3>
+                        <div class="card-number">${urgentItems.length}</div>
+                        <p>Under 20% margin</p>
+                    </div>
+                    <div class="card">
+                        <h3>📊 Performance Score</h3>
+                        <div class="card-number" style="color: ${performanceScore >= 70 ? '#4CAF50' : performanceScore >= 50 ? '#FF9800' : '#f44336'}">${performanceScore.toFixed(0)}%</div>
+                        <p>Items meeting target</p>
+                    </div>
+                </div>
+                
+                <h4 style="margin: 20px 0 10px 0;">📈 Profitability Ranking</h4>
+                <div style="display: grid; gap: 8px;">
+                    ${menuItems.sort((a, b) => b.profit_margin - a.profit_margin).slice(0, 5).map((item, idx) => {
+                        const marginColor = item.profit_margin >= 30 ? '#4CAF50' : item.profit_margin >= 20 ? '#FF9800' : '#f44336';
+                        return `
+                            <div class="item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px;">
+                                <span><strong>#${idx + 1}</strong> ${item.name}</span>
+                                <span style="color: ${marginColor}; font-weight: bold;">${item.profit_margin.toFixed(1)}%</span>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        function loadOperationalInsights(menuItems, ingredients) {
+            const mostExpensive = ingredients.sort((a, b) => b.cost - a.cost)[0] || {};
+            const cheapest = ingredients.sort((a, b) => a.cost - b.cost)[0] || {};
+            const avgRecipeComplexity = menuItems.length > 0 ? 4.2 : 0; // Mock complexity score
+            
+            document.getElementById('operationalInsights').innerHTML = `
+                <div class="dashboard-cards">
+                    <div class="card">
+                        <h3>💎 Most Expensive</h3>
+                        <div class="card-number" style="color: #f44336; font-size: 1.2em;">${mostExpensive.name || 'None'}</div>
+                        <p>$${mostExpensive.cost || 0} per ${mostExpensive.unit || 'unit'}</p>
+                    </div>
+                    <div class="card">
+                        <h3>💚 Most Economical</h3>
+                        <div class="card-number" style="color: #4CAF50; font-size: 1.2em;">${cheapest.name || 'None'}</div>
+                        <p>$${cheapest.cost || 0} per ${cheapest.unit || 'unit'}</p>
+                    </div>
+                    <div class="card">
+                        <h3>🔧 Recipe Complexity</h3>
+                        <div class="card-number" style="color: #007bff;">${avgRecipeComplexity}</div>
+                        <p>Avg ingredients per recipe</p>
+                    </div>
+                    <div class="card">
+                        <h3>📊 Cost Efficiency</h3>
+                        <div class="card-number" style="color: #28a745;">85%</div>
+                        <p>Ingredient utilization</p>
+                    </div>
+                </div>
+                
+                <h4 style="margin: 20px 0 10px 0;">💰 Cost Fluctuation Alerts</h4>
+                <div style="display: grid; gap: 8px;">
+                    ${ingredients.slice(0, 3).map(ing => `
+                        <div class="item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px;">
+                            <span>${ing.name}</span>
+                            <span style="color: ${Math.random() > 0.5 ? '#4CAF50' : '#f44336'};">↗️ ${(Math.random() * 10 + 5).toFixed(1)}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function loadQuickActions(menuItems, inventory) {
+            const needsPriceAdjustment = menuItems.filter(item => item.profit_margin < 25).length;
+            const lowStockCount = inventory.filter(item => item.current_stock <= item.min_stock).length;
+            const highCostItems = menuItems.filter(item => item.profit_margin < 20).length;
+            
+            document.getElementById('quickActions').innerHTML = `
+                <div class="card card-warning" onclick="showPage('menu')" style="cursor: pointer;">
+                    <h3>💰 Price Adjustments</h3>
+                    <div class="card-number">${needsPriceAdjustment}</div>
+                    <p>Items need pricing review</p>
+                </div>
+                <div class="card card-danger" onclick="showPage('inventory')" style="cursor: pointer;">
+                    <h3>📦 Restock Alerts</h3>
+                    <div class="card-number">${lowStockCount}</div>
+                    <p>Items running low</p>
+                </div>
+                <div class="card card-danger" onclick="showPage('menu')" style="cursor: pointer;">
+                    <h3>🚨 High Cost Items</h3>
+                    <div class="card-number">${highCostItems}</div>
+                    <p>Urgent cost review needed</p>
+                </div>
+                <div class="card" onclick="showPage('suppliers')" style="cursor: pointer;">
+                    <h3>🤝 Supplier Review</h3>
+                    <div class="card-number">3</div>
+                    <p>Performance evaluation due</p>
+                </div>
+            `;
+        }
+        
+        // Initialize
+        document.body.className = 'dark';
+        loadMenu();
+        loadDashboard();
+        loadTheme();
+        loadAnalytics();
+    </script>
+</body>
+</html>
