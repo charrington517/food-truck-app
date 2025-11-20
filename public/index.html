@@ -294,6 +294,7 @@
             flex-direction: column;
             gap: 0.25rem;
             min-width: 12rem;
+            z-index: 10000;
         }
         
         body.light .more-menu {
@@ -428,7 +429,12 @@
             }
             
             .hamburger-menu {
-                top: 0.5rem !important;
+                top: 0.25rem !important;
+                right: 0.25rem !important;
+            }
+            
+            .more-menu {
+                bottom: 4.5rem !important;
                 right: 0.5rem !important;
             }
             
@@ -720,7 +726,7 @@
 <body>
     <div class="container">
         <div style="position: relative;">
-            <button class="hamburger-menu" onclick="showPage('settings')" style="position: absolute; top: 1rem; right: 1rem; background: transparent; border: none; cursor: pointer; padding: 0.5rem; z-index: 1001;">
+            <button class="hamburger-menu" onclick="showPage('settings')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: transparent; border: none; cursor: pointer; padding: 0.5rem; z-index: 1001;">
                 <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"/>
                 </svg>
