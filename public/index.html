@@ -52,14 +52,14 @@
         }
         
         body.dark { 
-            background: linear-gradient(135deg, var(--neutral-900) 0%, #1A0F08 50%, #0D0704 100%); 
-            color: var(--neutral-100); 
+            background: #1a1a1a; 
+            color: #f5f5f5; 
             min-height: 100vh; 
         }
         
         body.light { 
-            background: linear-gradient(135deg, var(--neutral-100) 0%, #F1F5F9 100%); 
-            color: var(--neutral-900); 
+            background: #ffffff; 
+            color: #333333; 
             min-height: 100vh; 
         }
         .container { 
@@ -110,37 +110,35 @@
         }
         
         body.dark .item { 
-            background: linear-gradient(135deg, var(--neutral-800) 0%, var(--neutral-700) 100%); 
+            background: #2a2a2a; 
             padding: 1.5rem; 
             margin-bottom: 1rem; 
             border-radius: var(--radius-lg); 
-            border: 1px solid var(--neutral-700); 
-            box-shadow: var(--shadow-lg); 
-            backdrop-filter: blur(16px); 
+            border: 1px solid #404040; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         body.dark .item:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-xl);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             border-color: var(--primary);
         }
         
         body.light .item { 
-            background: rgba(255, 255, 255, 0.8); 
+            background: white; 
             padding: 1.5rem; 
             margin-bottom: 1rem; 
             border-radius: var(--radius-lg); 
-            border: 1px solid var(--neutral-200); 
-            box-shadow: var(--shadow-md); 
-            backdrop-filter: blur(16px); 
-            color: var(--neutral-900);
+            border: 1px solid #e9ecef; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
+            color: #333333;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
         body.light .item:hover {
             transform: translateY(-2px);
-            box-shadow: var(--shadow-xl);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border-color: var(--primary);
         }
         #inventory .item { 
@@ -172,9 +170,9 @@
         }
         
         body.dark input, body.dark select, body.dark textarea { 
-            background: var(--neutral-800); 
-            color: var(--neutral-100); 
-            border-color: var(--neutral-600);
+            background: #333333; 
+            color: #f5f5f5; 
+            border-color: #555555;
         }
         
         body.dark input:focus, body.dark select:focus, body.dark textarea:focus {
@@ -186,8 +184,8 @@
         
         body.light input, body.light select, body.light textarea { 
             background: white; 
-            color: var(--neutral-900); 
-            border-color: var(--neutral-300);
+            color: #333333; 
+            border-color: #dee2e6;
         }
         
         body.light input:focus, body.light select:focus, body.light textarea:focus {
@@ -244,16 +242,16 @@
         }
         
         body.dark .form { 
-            background: linear-gradient(135deg, var(--neutral-800) 0%, var(--neutral-700) 100%); 
-            border-color: var(--neutral-600);
-            box-shadow: var(--shadow-xl);
+            background: #2a2a2a; 
+            border-color: #404040;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
         
         body.light .form { 
-            background: rgba(255, 255, 255, 0.8); 
-            border-color: var(--neutral-200);
-            box-shadow: var(--shadow-lg);
-            color: var(--neutral-900);
+            background: #f8f9fa; 
+            border-color: #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            color: #333333;
         }
         .bottom-nav {
             position: fixed;
@@ -656,26 +654,26 @@
         }
         
         body.dark .card { 
-            background: linear-gradient(135deg, var(--neutral-800) 0%, var(--neutral-700) 100%); 
-            border-color: var(--neutral-600);
-            box-shadow: var(--shadow-lg); 
+            background: #2a2a2a; 
+            border-color: #404040;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2); 
         }
         
         body.dark .card:hover { 
-            transform: translateY(-4px); 
-            box-shadow: var(--shadow-xl);
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             border-color: var(--primary);
         }
         
         body.light .card { 
-            background: rgba(255, 255, 255, 0.8); 
-            border-color: var(--neutral-200);
-            box-shadow: var(--shadow-md); 
+            background: white; 
+            border-color: #e9ecef;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08); 
         }
         
         body.light .card:hover { 
-            transform: translateY(-4px); 
-            box-shadow: var(--shadow-xl);
+            transform: translateY(-2px); 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             border-color: var(--primary);
         }
         .card-good { 
