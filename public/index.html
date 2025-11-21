@@ -24,8 +24,18 @@
             --border: #e0e0e0;
         }
 
+        [data-theme="dark"] {
+            --white: #1a1a1a;
+            --gray-light: #2c2c2c;
+            --charcoal: #ffffff;
+            --gray: #cccccc;
+            --border: #404040;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             background: var(--white);
             color: var(--charcoal);
             line-height: 1.6;
@@ -64,16 +74,13 @@
         }
 
         .hamburger-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--orange);
+            background: rgba(255,255,255,0.2);
             border: none;
             padding: 12px;
             border-radius: 12px;
             cursor: pointer;
-            z-index: 9999;
             color: white;
+            backdrop-filter: blur(10px);
         }
 
         .hamburger-btn:hover {
@@ -92,7 +99,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
+            background: var(--white);
             border-top: 1px solid var(--border);
             padding: 15px 0;
             z-index: 1000;
@@ -111,7 +118,7 @@
             flex-direction: column;
             align-items: center;
             gap: 5px;
-            padding: 10px;
+            padding: 12px 8px;
             border-radius: 12px;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -120,6 +127,7 @@
             font-weight: 600;
             background: none;
             border: none;
+            min-width: 60px;
         }
 
         .nav-item:hover,
@@ -129,8 +137,9 @@
         }
 
         .nav-icon {
-            width: 24px;
-            height: 24px;
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
         }
 
         .page {
@@ -142,7 +151,7 @@
         }
 
         .section {
-            background: white;
+            background: var(--white);
             border-radius: 12px;
             padding: 30px;
             margin-bottom: 20px;
@@ -222,11 +231,12 @@
         }
 
         .card {
-            background: white;
+            background: var(--white);
             border: 2px solid var(--border);
             border-radius: 12px;
             padding: 20px;
             transition: all 0.2s ease;
+            color: var(--charcoal);
         }
 
         .card:hover {
@@ -268,11 +278,12 @@
         }
 
         .stat-card {
-            background: white;
+            background: var(--white);
             border: 2px solid var(--border);
             border-radius: 12px;
             padding: 20px;
             text-align: center;
+            color: var(--charcoal);
         }
 
         .stat-number {
@@ -292,7 +303,7 @@
             bottom: 100px;
             left: 50%;
             transform: translateX(-50%);
-            background: white;
+            background: var(--white);
             border: 2px solid var(--border);
             border-radius: 12px;
             padding: 10px;
@@ -324,6 +335,121 @@
             color: white;
         }
 
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--orange);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: var(--orange);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+            z-index: 999;
+            transition: all 0.2s ease;
+        }
+
+        .fab:hover {
+            background: var(--orange-dark);
+            transform: scale(1.1);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--charcoal);
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: var(--gray);
+        }
+
         @media (max-width: 768px) {
             .form-row {
                 grid-template-columns: 1fr;
@@ -340,16 +466,15 @@
     </style>
 </head>
 <body>
-    <button class="hamburger-btn" onclick="showPage('settings')">
-        <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        </svg>
-    </button>
-
     <div class="header">
         <div class="header-content">
             <img src="/uploads/1763192867406_birria-fusion-logo.png" alt="Logo" class="logo">
             <h1>Birria Fusion</h1>
+            <button class="hamburger-btn" onclick="showPage('settings')">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+            </button>
         </div>
     </div>
 
@@ -357,166 +482,76 @@
         <!-- Dashboard Page -->
         <div id="dashboard" class="page active">
             <div class="section">
-                <h2 class="section-title">📊 Business Overview</h2>
+                <h2 class="section-title">Business Overview</h2>
                 <div class="stats" id="dashboardStats"></div>
             </div>
 
             <div class="section">
-                <h2 class="section-title">🏆 Top Items by Food Cost</h2>
+                <h2 class="section-title">Top Items by Food Cost</h2>
                 <div class="grid" id="topItems"></div>
             </div>
         </div>
 
         <!-- Menu Page -->
         <div id="menu" class="page">
-            <div class="section">
-                <h2 class="section-title">➕ Add New Recipe</h2>
-                <div class="form">
-                    <div class="form-group">
-                        <input type="text" id="recipeName" placeholder="Recipe Name (e.g., Birria Tacos)">
-                    </div>
-                    <div class="form-row">
-                        <select id="recipeType">
-                            <option value="Food">Food</option>
-                            <option value="Beverage">Beverage</option>
-                            <option value="Dessert">Dessert</option>
-                            <option value="Appetizer">Appetizer</option>
-                        </select>
-                        <input type="number" id="portions" placeholder="Portions" min="1" value="1">
-                    </div>
-                    <div class="form-row">
-                        <input type="number" id="price" placeholder="Menu Price ($)" step="0.01">
-                        <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01">
-                    </div>
-                    <button class="btn" onclick="addRecipe()">Add Recipe</button>
-                </div>
-            </div>
+
 
             <div class="section">
-                <h2 class="section-title">🍽️ Menu Items</h2>
+                <h2 class="section-title">Menu Items</h2>
                 <div class="grid" id="menuItems"></div>
             </div>
         </div>
 
         <!-- Ingredients Page -->
         <div id="ingredients" class="page">
-            <div class="section">
-                <h2 class="section-title">➕ Add Ingredient</h2>
-                <div class="form">
-                    <div class="form-group">
-                        <input type="text" id="ingredientName" placeholder="Ingredient Name (e.g., Ground Beef)">
-                    </div>
-                    <div class="form-row">
-                        <input type="number" id="ingredientCost" placeholder="Cost per Unit ($)" step="0.01">
-                        <input type="text" id="ingredientUnit" placeholder="Unit (lb, oz, kg)">
-                    </div>
-                    <button class="btn" onclick="addIngredient()">Add Ingredient</button>
-                </div>
-            </div>
+
 
             <div class="section">
-                <h2 class="section-title">🥩 Ingredients</h2>
+                <h2 class="section-title">Ingredients</h2>
                 <div class="grid" id="ingredientsList"></div>
             </div>
         </div>
 
         <!-- Inventory Page -->
         <div id="inventory" class="page">
-            <div class="section">
-                <h2 class="section-title">📦 Add to Inventory</h2>
-                <div class="form">
-                    <div class="form-group">
-                        <select id="inventoryIngredient">
-                            <option value="">Select ingredient...</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <input type="number" id="currentStock" placeholder="Current Stock" step="0.1">
-                        <input type="number" id="minStock" placeholder="Min Stock" step="0.1" value="5">
-                    </div>
-                    <button class="btn" onclick="addInventoryItem()">Add to Inventory</button>
-                </div>
-            </div>
+
 
             <div class="section">
-                <h2 class="section-title">📋 Current Inventory</h2>
+                <h2 class="section-title">Current Inventory</h2>
                 <div class="grid" id="inventoryList"></div>
             </div>
         </div>
 
         <!-- Suppliers Page -->
         <div id="suppliers" class="page">
-            <div class="section">
-                <h2 class="section-title">➕ Add Supplier</h2>
-                <div class="form">
-                    <div class="form-group">
-                        <input type="text" id="supplierName" placeholder="Supplier Name">
-                    </div>
-                    <div class="form-row">
-                        <input type="text" id="supplierContact" placeholder="Contact Person">
-                        <input type="tel" id="supplierPhone" placeholder="Phone Number">
-                    </div>
-                    <div class="form-group">
-                        <input type="email" id="supplierEmail" placeholder="Email">
-                    </div>
-                    <button class="btn" onclick="addSupplier()">Add Supplier</button>
-                </div>
-            </div>
+
 
             <div class="section">
-                <h2 class="section-title">🚚 Suppliers</h2>
+                <h2 class="section-title">Suppliers</h2>
                 <div class="grid" id="suppliersList"></div>
             </div>
         </div>
 
         <!-- Tools Page -->
         <div id="tools" class="page">
+
+            
             <div class="section">
-                <h2 class="section-title">🔧 Kitchen Tools</h2>
-                <div class="form">
-                    <div class="form-group">
-                        <input type="text" id="toolName" placeholder="Tool/Equipment Name">
-                    </div>
-                    <div class="form-row">
-                        <select id="toolCategory">
-                            <option value="Cooking">Cooking Equipment</option>
-                            <option value="Prep">Prep Tools</option>
-                            <option value="Storage">Storage</option>
-                            <option value="Cleaning">Cleaning</option>
-                        </select>
-                        <select id="toolStatus">
-                            <option value="Working">Working</option>
-                            <option value="Maintenance">Needs Maintenance</option>
-                            <option value="Broken">Broken</option>
-                        </select>
-                    </div>
-                    <button class="btn" onclick="addTool()">Add Tool</button>
-                </div>
-            </div>
-            <div class="section">
-                <h2 class="section-title">🛠️ Equipment List</h2>
+                <h2 class="section-title">Equipment List</h2>
                 <div class="grid" id="toolsList"></div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Uploaded Files</h2>
+                <div class="grid" id="filesList"></div>
             </div>
         </div>
 
         <!-- Catering Page -->
         <div id="catering" class="page">
+
             <div class="section">
-                <h2 class="section-title">🍽️ Catering Orders</h2>
-                <div class="form">
-                    <div class="form-row">
-                        <input type="text" id="cateringClient" placeholder="Client Name">
-                        <input type="date" id="cateringDate">
-                    </div>
-                    <div class="form-row">
-                        <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1">
-                        <input type="number" id="cateringPrice" placeholder="Total Price ($)" step="0.01">
-                    </div>
-                    <button class="btn" onclick="addCateringOrder()">Add Catering Order</button>
-                </div>
-            </div>
-            <div class="section">
-                <h2 class="section-title">📅 Upcoming Orders</h2>
+                <h2 class="section-title">Upcoming Orders</h2>
                 <div class="grid" id="cateringList"></div>
             </div>
         </div>
@@ -524,11 +559,11 @@
         <!-- Analytics Page -->
         <div id="analytics" class="page">
             <div class="section">
-                <h2 class="section-title">📊 Food Cost Analysis</h2>
+                <h2 class="section-title">Food Cost Analysis</h2>
                 <div class="stats" id="analyticsStats"></div>
             </div>
             <div class="section">
-                <h2 class="section-title">📈 Detailed Analysis</h2>
+                <h2 class="section-title">Detailed Analysis</h2>
                 <div class="grid" id="foodCostAnalysis"></div>
             </div>
         </div>
@@ -536,14 +571,62 @@
         <!-- Settings Page -->
         <div id="settings" class="page">
             <div class="section">
-                <h2 class="section-title">⚙️ Settings</h2>
+                <h2 class="section-title">Theme Settings</h2>
+                <div class="form">
+                    <div class="form-group">
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <span style="font-size: 16px; font-weight: 500;">Dark Mode</span>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="darkMode" onchange="toggleTheme()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Business Information</h2>
                 <div class="form">
                     <div class="form-group">
                         <input type="text" id="truckName" placeholder="Food Truck Name" value="Birria Fusion">
                     </div>
-                    <button class="btn btn-danger" onclick="clearData()">Clear All Data</button>
                 </div>
             </div>
+            
+            <div class="section">
+                <h2 class="section-title">Measurement Units</h2>
+                <div class="form">
+                    <div class="form-row">
+                        <input type="text" id="newUnit" placeholder="Add new unit (e.g., cups, tbsp)">
+                        <button class="btn" onclick="addMeasurementUnit()" style="width: auto; padding: 12px 20px;">Add Unit</button>
+                    </div>
+                    <div id="unitsList" style="margin-top: 15px;"></div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Data Management</h2>
+                <div class="form">
+                    <div class="form-row">
+                        <button class="btn" onclick="exportData()" style="background: var(--success);">Export Data</button>
+                        <button class="btn btn-danger" onclick="clearData()">Clear All Data</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="fab" onclick="openAddModal()" id="fabBtn">+</button>
+
+    <!-- Add Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="modalTitle">Add Item</h3>
+                <button class="close-btn" onclick="closeAddModal()">&times;</button>
+            </div>
+            <div id="modalForm"></div>
         </div>
     </div>
 
@@ -557,7 +640,7 @@
             </button>
             <button class="nav-item" onclick="showPage('menu')">
                 <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    <path d="M3 7h14l-1-1H4l-1 1zm0 2h14v8a1 1 0 01-1 1H4a1 1 0 01-1-1V9zm2-4h10a1 1 0 011 1H4a1 1 0 011-1z"/>
                 </svg>
                 <span>Menu</span>
             </button>
@@ -589,15 +672,18 @@
         </div>
         
         <div class="extra-menu" id="extraMenu">
-            <button onclick="showPage('tools')">🔧 Tools</button>
-            <button onclick="showPage('catering')">🍽️ Catering</button>
-            <button onclick="showPage('analytics')">📊 Analytics</button>
+            <button onclick="showPage('tools')">Tools</button>
+            <button onclick="showPage('catering')">Catering</button>
+            <button onclick="showPage('analytics')">Analytics</button>
         </div>
     </nav>
 
     <script>
+        let currentPage = 'dashboard';
+
         // Page Navigation
         function showPage(pageId) {
+            currentPage = pageId;
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             
@@ -609,14 +695,192 @@
             
             document.getElementById('extraMenu').classList.remove('show');
             
+            // Show/hide FAB based on page
+            const fabBtn = document.getElementById('fabBtn');
+            if (['dashboard', 'analytics', 'settings'].includes(pageId)) {
+                fabBtn.style.display = 'none';
+            } else {
+                fabBtn.style.display = 'block';
+            }
+            
             if (pageId === 'dashboard') loadDashboard();
             if (pageId === 'menu') loadMenu();
             if (pageId === 'ingredients') loadIngredients();
             if (pageId === 'inventory') loadInventory();
             if (pageId === 'suppliers') loadSuppliers();
-            if (pageId === 'tools') loadTools();
+            if (pageId === 'tools') { loadTools(); loadFiles(); }
             if (pageId === 'catering') loadCatering();
             if (pageId === 'analytics') loadAnalytics();
+            if (pageId === 'settings') loadMeasurementUnits();
+        }
+
+        // Modal Functions
+        function openAddModal() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            let title = '';
+            let form = '';
+            
+            switch(currentPage) {
+                case 'menu':
+                    title = 'Add New Recipe';
+                    form = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" id="recipeName" placeholder="Recipe Name (e.g., Birria Tacos)">
+                            </div>
+                            <div class="form-row">
+                                <select id="recipeType">
+                                    <option value="Entree">Entree</option>
+                                    <option value="Appetizer">Appetizer</option>
+                                    <option value="Dessert">Dessert</option>
+                                    <option value="Sauce">Sauce</option>
+                                    <option value="Side">Side</option>
+                                    <option value="Beverage">Beverage</option>
+                                </select>
+                                <input type="number" id="portions" placeholder="Portions" min="1" value="1">
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="price" placeholder="Menu Price ($)" step="0.01">
+                                <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01">
+                            </div>
+                            <button class="btn" onclick="addRecipe(); closeAddModal();">Add Recipe</button>
+                        </div>
+                    `;
+                    break;
+                case 'ingredients':
+                    title = 'Add Ingredient';
+                    form = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" id="ingredientName" placeholder="Ingredient Name (e.g., Ground Beef)">
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="ingredientCost" placeholder="Cost per Unit ($)" step="0.01">
+                                <select id="ingredientUnit">
+                                    <option value="">Select unit...</option>
+                                </select>
+                            </div>
+                            <button class="btn" onclick="addIngredient(); closeAddModal();">Add Ingredient</button>
+                        </div>
+                    `;
+                    break;
+                case 'inventory':
+                    title = 'Add to Inventory';
+                    form = `
+                        <div class="form">
+                            <div class="form-group">
+                                <select id="inventoryIngredient">
+                                    <option value="">Select ingredient...</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="currentStock" placeholder="Current Stock" step="0.1">
+                                <input type="number" id="minStock" placeholder="Min Stock" step="0.1" value="5">
+                            </div>
+                            <button class="btn" onclick="addInventoryItem(); closeAddModal();">Add to Inventory</button>
+                        </div>
+                    `;
+                    break;
+                case 'suppliers':
+                    title = 'Add Supplier';
+                    form = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" id="supplierName" placeholder="Supplier Name">
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="supplierContact" placeholder="Contact Person">
+                                <select id="supplierCategory">
+                                    <option value="Food">Food</option>
+                                    <option value="Equipment">Equipment</option>
+                                    <option value="Supplies">Supplies</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <input type="tel" id="supplierPhone" placeholder="Phone Number">
+                                <input type="email" id="supplierEmail" placeholder="Email">
+                            </div>
+                            <div class="form-group">
+                                <textarea id="supplierDescription" placeholder="Description, notes, terms..." rows="3"></textarea>
+                            </div>
+                            <button class="btn" onclick="addSupplier(); closeAddModal();">Add Supplier</button>
+                        </div>
+                    `;
+                    break;
+                case 'tools':
+                    title = 'Add Tool or Upload File';
+                    form = `
+                        <div class="form">
+                            <h4 style="margin-bottom: 15px;">Add Tool</h4>
+                            <div class="form-group">
+                                <input type="text" id="toolName" placeholder="Tool/Equipment Name">
+                            </div>
+                            <div class="form-row">
+                                <select id="toolCategory">
+                                    <option value="Cooking">Cooking Equipment</option>
+                                    <option value="Prep">Prep Tools</option>
+                                    <option value="Storage">Storage</option>
+                                    <option value="Cleaning">Cleaning</option>
+                                </select>
+                                <select id="toolStatus">
+                                    <option value="Working">Working</option>
+                                    <option value="Maintenance">Needs Maintenance</option>
+                                    <option value="Broken">Broken</option>
+                                </select>
+                            </div>
+                            <button class="btn" onclick="addTool(); closeAddModal();">Add Tool</button>
+                            
+                            <hr style="margin: 20px 0;">
+                            
+                            <h4 style="margin-bottom: 15px;">Upload File</h4>
+                            <div class="form-group">
+                                <input type="file" id="fileUpload" multiple accept="image/*,.pdf,.doc,.docx">
+                            </div>
+                            <button class="btn" onclick="uploadFile(); closeAddModal();">Upload File</button>
+                        </div>
+                    `;
+                    break;
+                case 'catering':
+                    title = 'Add Catering Order';
+                    form = `
+                        <div class="form">
+                            <div class="form-row">
+                                <input type="text" id="cateringClient" placeholder="Client Name">
+                                <input type="date" id="cateringDate">
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1">
+                                <input type="number" id="cateringPrice" placeholder="Total Price ($)" step="0.01">
+                            </div>
+                            <button class="btn" onclick="addCateringOrder(); closeAddModal();">Add Catering Order</button>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            modalTitle.textContent = title;
+            modalForm.innerHTML = form;
+            
+            // Load ingredients for inventory dropdown if needed
+            if (currentPage === 'inventory') {
+                fetch('/api/ingredients')
+                    .then(r => r.json())
+                    .then(ingredients => {
+                        document.getElementById('inventoryIngredient').innerHTML = 
+                            '<option value="">Select ingredient...</option>' +
+                            ingredients.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                    });
+            }
+            
+            modal.classList.add('show');
+        }
+        
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('show');
         }
 
         // Extra Menu
@@ -706,22 +970,168 @@
             fetch('/api/menu')
                 .then(r => r.json())
                 .then(items => {
-                    document.getElementById('menuItems').innerHTML = items.map(item => {
-                        const foodCost = (item.cost / item.price) * 100;
-                        const status = foodCost >= 30 ? '🟢 Good' : foodCost >= 20 ? '🟡 Needs Attention' : '🔴 Bad - Urgent';
-                        return `
-                            <div class="card">
-                                <div class="card-title">${item.name}</div>
-                                <div class="card-meta">${item.recipe_type} • ${item.portions} portions</div>
-                                <div class="card-meta">Price: $${item.price} • Cost: $${item.cost}</div>
-                                <div class="card-meta">Food Cost: ${foodCost.toFixed(1)}% ${status}</div>
-                                <div class="card-actions">
-                                    <button class="btn btn-danger" onclick="deleteRecipe(${item.id})">Delete</button>
+                    // Group items by category
+                    const grouped = {};
+                    items.forEach(item => {
+                        const category = item.recipe_type || 'Uncategorized';
+                        if (!grouped[category]) grouped[category] = [];
+                        grouped[category].push(item);
+                    });
+                    
+                    let html = '';
+                    Object.keys(grouped).sort().forEach(category => {
+                        html += `<div style="grid-column: 1 / -1; margin: 20px 0 10px 0;"><h3 style="color: var(--orange); font-size: 18px; font-weight: 600; border-bottom: 2px solid var(--orange); padding-bottom: 8px;">${category}</h3></div>`;
+                        
+                        grouped[category].forEach(item => {
+                            const margin = ((item.price - item.cost) / item.price) * 100;
+                            const status = margin >= 30 ? '🟢 Good' : margin >= 20 ? '🟡 Needs Attention' : '🔴 Bad - Urgent';
+                            html += `
+                                <div class="card">
+                                    <div class="card-header" onclick="toggleMenuDetails(${item.id})" style="cursor: pointer;">
+                                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                            ${item.name}
+                                            <span class="expand-icon" id="icon-${item.id}">▼</span>
+                                        </div>
+                                        <div class="card-meta">${item.recipe_type || 'Uncategorized'} • ${item.portions} portions</div>
+                                        <div class="card-meta">Cost: $${item.cost.toFixed(2)}</div>
+                                        <div class="card-meta">Price: $<input type="number" class="inline-edit-input" value="${item.price.toFixed(2)}" step="0.01" min="0" onchange="updatePrice(${item.id}, this.value)" style="width: 80px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--white); color: var(--charcoal);" onclick="event.stopPropagation();"></div>
+                                        <div class="card-meta">Margin: <input type="number" class="inline-edit-input" value="${margin.toFixed(1)}" step="0.1" min="0" max="100" onchange="updateMargin(${item.id}, this.value)" style="width: 60px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--white); color: var(--charcoal);" onclick="event.stopPropagation();">% ${status}</div>
+                                    </div>
+                                    <div class="card-details" id="details-${item.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                                        <h4 style="margin-bottom: 10px;">Ingredients:</h4>
+                                        <div id="ingredients-${item.id}">Loading ingredients...</div>
+                                    </div>
+                                    <div class="card-actions" style="display: flex; gap: 10px; margin-top: 15px;">
+                                        <button class="btn" onclick="event.stopPropagation(); editRecipe(${item.id})" style="flex: 1; background: var(--orange); color: white;">Edit</button>
+                                        <button class="btn btn-danger" onclick="event.stopPropagation(); deleteRecipe(${item.id})" style="flex: 1;">Delete</button>
+                                    </div>
                                 </div>
-                            </div>
-                        `;
-                    }).join('');
+                            `;
+                        });
+                    });
+                    
+                    document.getElementById('menuItems').innerHTML = html;
                 });
+        }
+
+        function toggleMenuDetails(id) {
+            const details = document.getElementById(`details-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+                loadMenuIngredients(id);
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function loadMenuIngredients(menuId) {
+            const ingredients = JSON.parse(localStorage.getItem(`recipe-${menuId}`) || '[]');
+            
+            if (ingredients.length === 0) {
+                document.getElementById(`ingredients-${menuId}`).innerHTML = '<div style="color: var(--gray); font-style: italic;">No ingredients added yet. Use Edit to add ingredients.</div>';
+                return;
+            }
+            
+            const ingredientsHtml = ingredients.map(ing => `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: var(--gray-light); border-radius: 6px;">
+                    <span>${ing.name}</span>
+                    <span>${ing.amount} ${ing.unit} - $${(ing.calculatedCost || 0).toFixed(2)}</span>
+                </div>
+            `).join('');
+            
+            document.getElementById(`ingredients-${menuId}`).innerHTML = ingredientsHtml;
+        }
+
+        function editRecipe(id) {
+            editingRecipeId = id;
+            editIngredients = JSON.parse(localStorage.getItem(`recipe-${id}`) || '[]');
+            
+            // Get recipe data
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    const recipe = items.find(item => item.id === id);
+                    if (!recipe) return;
+                    
+                    // Open modal with edit form
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = 'Edit Recipe';
+                    const ingredients = JSON.parse(localStorage.getItem(`recipe-${id}`) || '[]');
+                    
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" id="recipeName" placeholder="Recipe Name" value="${recipe.name}">
+                            </div>
+                            <div class="form-row">
+                                <select id="recipeType">
+                                    <option value="Entree" ${recipe.recipe_type === 'Entree' ? 'selected' : ''}>Entree</option>
+                                    <option value="Appetizer" ${recipe.recipe_type === 'Appetizer' ? 'selected' : ''}>Appetizer</option>
+                                    <option value="Dessert" ${recipe.recipe_type === 'Dessert' ? 'selected' : ''}>Dessert</option>
+                                    <option value="Sauce" ${recipe.recipe_type === 'Sauce' ? 'selected' : ''}>Sauce</option>
+                                    <option value="Side" ${recipe.recipe_type === 'Side' ? 'selected' : ''}>Side</option>
+                                    <option value="Beverage" ${recipe.recipe_type === 'Beverage' ? 'selected' : ''}>Beverage</option>
+                                </select>
+                                <input type="number" id="portions" placeholder="Portions" min="1" value="${recipe.portions}">
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="price" placeholder="Menu Price ($)" step="0.01" value="${recipe.price}">
+                                <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01" value="${recipe.cost}">
+                            </div>
+                            
+                            <h4 style="margin: 20px 0 10px 0;">Ingredients</h4>
+                            <div id="editIngredientsList">
+                                ${ingredients.map((ing, index) => `
+                                    <div class="form-row" style="align-items: center; margin-bottom: 10px;">
+                                        <select onchange="updateEditIngredient(${index}, 'ingredientId', this.value); calculateIngredientCost(${index})" style="flex: 1;">
+                                            <option value="">Select ingredient...</option>
+                                            <option value="${ing.ingredientId || ''}" selected>${ing.name || 'Select ingredient...'}</option>
+                                        </select>
+                                        <input type="number" placeholder="Amount" step="0.1" value="${ing.amount}" onchange="updateEditIngredient(${index}, 'amount', this.value); calculateIngredientCost(${index})" style="width: 80px;">
+                                        <span style="width: 80px; text-align: center; font-size: 12px;">$${(ing.calculatedCost || 0).toFixed(2)}</span>
+                                        <button type="button" onclick="removeEditIngredient(${index})" style="background: var(--danger); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">&times;</button>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" class="btn" onclick="addEditIngredient()" style="background: var(--success); margin-bottom: 15px;">+ Add Ingredient</button>
+                            
+                            <button class="btn" onclick="updateRecipe(${id}); closeAddModal();">Update Recipe</button>
+                        </div>
+                    `;
+                    
+                    modal.classList.add('show');
+                });
+        }
+        
+        function updateRecipe(id) {
+            const name = document.getElementById('recipeName').value;
+            const type = document.getElementById('recipeType').value;
+            const portions = parseInt(document.getElementById('portions').value) || 1;
+            const price = parseFloat(document.getElementById('price').value);
+            const cost = parseFloat(document.getElementById('cost').value);
+
+            if (!name || !price || !cost) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            // Save ingredients
+            localStorage.setItem(`recipe-${id}`, JSON.stringify(editIngredients));
+
+            fetch(`/api/menu/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, price, cost, recipe_type: type, portions })
+            }).then(() => {
+                loadMenu();
+            });
         }
 
         function deleteRecipe(id) {
@@ -729,6 +1139,126 @@
                 fetch(`/api/menu/${id}`, { method: 'DELETE' })
                     .then(() => loadMenu());
             }
+        }
+
+        function updatePrice(id, newPrice) {
+            const price = parseFloat(newPrice);
+            if (isNaN(price) || price <= 0) return;
+            
+            // Get current item to preserve other fields
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    const item = items.find(i => i.id === id);
+                    if (!item) return;
+                    
+                    fetch(`/api/menu/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            name: item.name,
+                            price: price,
+                            cost: item.cost,
+                            recipe_type: item.recipe_type,
+                            portions: item.portions
+                        })
+                    }).then(() => {
+                        loadMenu();
+                    });
+                });
+        }
+
+        function updateMargin(id, newMargin) {
+            const margin = parseFloat(newMargin);
+            if (isNaN(margin) || margin < 0) return;
+            
+            // Get current item data to calculate new price
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(items => {
+                    const item = items.find(i => i.id === id);
+                    if (!item) return;
+                    
+                    // Calculate new price based on margin: price = cost / (1 - margin/100)
+                    const newPrice = item.cost / (1 - margin / 100);
+                    
+                    fetch(`/api/menu/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            name: item.name,
+                            price: newPrice,
+                            cost: item.cost,
+                            recipe_type: item.recipe_type,
+                            portions: item.portions
+                        })
+                    }).then(() => {
+                        loadMenu();
+                    });
+                });
+        }
+        
+        let editingRecipeId = null;
+        let editIngredients = [];
+        
+        function addEditIngredient() {
+            editIngredients.push({ ingredientId: '', name: '', amount: '1', unit: '', calculatedCost: 0 });
+            refreshEditIngredients();
+        }
+        
+        function updateEditIngredient(index, field, value) {
+            if (editIngredients[index]) {
+                if (field === 'amount') {
+                    editIngredients[index][field] = parseFloat(value) || 0;
+                } else if (field === 'ingredientId') {
+                    editIngredients[index][field] = value;
+                    // Update name and unit from selected ingredient
+                    fetch('/api/ingredients')
+                        .then(r => r.json())
+                        .then(ingredients => {
+                            const ingredient = ingredients.find(ing => ing.id == value);
+                            if (ingredient) {
+                                editIngredients[index].name = ingredient.name;
+                                editIngredients[index].unit = ingredient.unit;
+                                editIngredients[index].unitCost = ingredient.cost;
+                                refreshEditIngredients();
+                            }
+                        });
+                } else {
+                    editIngredients[index][field] = value;
+                }
+            }
+        }
+        
+        function calculateIngredientCost(index) {
+            if (editIngredients[index] && editIngredients[index].unitCost && editIngredients[index].amount) {
+                editIngredients[index].calculatedCost = editIngredients[index].unitCost * editIngredients[index].amount;
+                refreshEditIngredients();
+            }
+        }
+        
+        function removeEditIngredient(index) {
+            editIngredients.splice(index, 1);
+            refreshEditIngredients();
+        }
+        
+        function refreshEditIngredients() {
+            // Load ingredients for dropdowns
+            fetch('/api/ingredients')
+                .then(r => r.json())
+                .then(ingredients => {
+                    document.getElementById('editIngredientsList').innerHTML = editIngredients.map((ing, index) => `
+                        <div class="form-row" style="align-items: center; margin-bottom: 10px;">
+                            <select onchange="updateEditIngredient(${index}, 'ingredientId', this.value); calculateIngredientCost(${index})" style="flex: 1;">
+                                <option value="">Select ingredient...</option>
+                                ${ingredients.map(ingredient => `<option value="${ingredient.id}" ${ingredient.id == ing.ingredientId ? 'selected' : ''}>${ingredient.name} (${ingredient.unit})</option>`).join('')}
+                            </select>
+                            <input type="number" placeholder="Amount" step="0.1" value="${ing.amount}" onchange="updateEditIngredient(${index}, 'amount', this.value); calculateIngredientCost(${index})" style="width: 80px;">
+                            <span style="width: 80px; text-align: center; font-size: 12px;">$${(ing.calculatedCost || 0).toFixed(2)}</span>
+                            <button type="button" onclick="removeEditIngredient(${index})" style="background: var(--danger); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">&times;</button>
+                        </div>
+                    `).join('');
+                });
         }
 
         // Ingredient Functions
@@ -755,14 +1285,27 @@
         }
 
         function loadIngredients() {
+            // Load units into ingredient form dropdowns
+            const units = getAllMeasurementUnits();
+            const unitOptions = units.map(unit => `<option value="${unit}">${unit}</option>`).join('');
+            const unitSelects = document.querySelectorAll('#ingredientUnit');
+            unitSelects.forEach(select => {
+                const currentValue = select.value;
+                select.innerHTML = '<option value="">Select unit...</option>' + unitOptions;
+                if (currentValue) select.value = currentValue;
+            });
+            
             fetch('/api/ingredients')
                 .then(r => r.json())
                 .then(items => {
                     document.getElementById('ingredientsList').innerHTML = items.map(item => `
                         <div class="card">
                             <div class="card-title">${item.name}</div>
-                            <div class="card-meta">$${item.cost} per ${item.unit}</div>
+                            <div class="card-meta">Cost: $${item.cost} per ${item.unit}</div>
+                            <div class="card-meta">Unit: ${item.unit}</div>
+                            <div class="card-meta">ID: ${item.id}</div>
                             <div class="card-actions">
+                                <button class="btn" onclick="editIngredient(${item.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn btn-danger" onclick="deleteIngredient(${item.id})">Delete</button>
                             </div>
                         </div>
@@ -773,6 +1316,60 @@
                         '<option value="">Select ingredient...</option>' +
                         items.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
                 });
+        }
+
+        function editIngredient(id) {
+            fetch('/api/ingredients')
+                .then(r => r.json())
+                .then(items => {
+                    const ingredient = items.find(item => item.id === id);
+                    if (!ingredient) return;
+                    
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = 'Edit Ingredient';
+                    const units = getAllMeasurementUnits();
+                    const unitOptions = units.map(unit => `<option value="${unit}" ${unit === ingredient.unit ? 'selected' : ''}>${unit}</option>`).join('');
+                    
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" id="ingredientName" placeholder="Ingredient Name" value="${ingredient.name}">
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="ingredientCost" placeholder="Cost per Unit ($)" step="0.01" value="${ingredient.cost}">
+                                <select id="ingredientUnit">
+                                    <option value="">Select unit...</option>
+                                    ${unitOptions}
+                                </select>
+                            </div>
+                            <button class="btn" onclick="updateIngredient(${id}); closeAddModal();">Update Ingredient</button>
+                        </div>
+                    `;
+                    
+                    modal.classList.add('show');
+                });
+        }
+        
+        function updateIngredient(id) {
+            const name = document.getElementById('ingredientName').value;
+            const cost = parseFloat(document.getElementById('ingredientCost').value);
+            const unit = document.getElementById('ingredientUnit').value;
+
+            if (!name || !cost || !unit) {
+                alert('Please fill in all fields');
+                return;
+            }
+
+            fetch(`/api/ingredients/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, cost, unit })
+            }).then(() => {
+                loadIngredients();
+            });
         }
 
         function deleteIngredient(id) {
@@ -818,12 +1415,59 @@
                                 <div class="card-meta">Current: ${item.current_stock} ${item.unit}</div>
                                 <div class="card-meta">Min: ${item.min_stock}</div>
                                 <div class="card-actions">
+                                    <button class="btn" onclick="editInventoryItem(${item.ingredient_id})" style="background: var(--orange); color: white;">Edit</button>
                                     <button class="btn btn-danger" onclick="deleteInventoryItem(${item.ingredient_id})">Delete</button>
                                 </div>
                             </div>
                         `;
                     }).join('');
                 });
+        }
+
+        function editInventoryItem(id) {
+            fetch('/api/inventory')
+                .then(r => r.json())
+                .then(items => {
+                    const item = items.find(inv => inv.ingredient_id === id);
+                    if (!item) return;
+                    
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = 'Edit Inventory';
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" value="${item.name}" disabled style="background: var(--gray-light);">
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="currentStock" placeholder="Current Stock" step="0.1" value="${item.current_stock}">
+                                <input type="number" id="minStock" placeholder="Min Stock" step="0.1" value="${item.min_stock}">
+                            </div>
+                            <div class="form-group">
+                                <input type="number" id="maxStock" placeholder="Max Stock" step="0.1" value="${item.max_stock}">
+                            </div>
+                            <button class="btn" onclick="updateInventoryItem(${id}); closeAddModal();">Update Inventory</button>
+                        </div>
+                    `;
+                    
+                    modal.classList.add('show');
+                });
+        }
+        
+        function updateInventoryItem(id) {
+            const currentStock = parseFloat(document.getElementById('currentStock').value) || 0;
+            const minStock = parseFloat(document.getElementById('minStock').value) || 5;
+            const maxStock = parseFloat(document.getElementById('maxStock').value) || 100;
+
+            fetch(`/api/inventory/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ current_stock: currentStock, min_stock: minStock, max_stock: maxStock })
+            }).then(() => {
+                loadInventory();
+            });
         }
 
         function deleteInventoryItem(id) {
@@ -839,6 +1483,8 @@
             const contact = document.getElementById('supplierContact').value;
             const phone = document.getElementById('supplierPhone').value;
             const email = document.getElementById('supplierEmail').value;
+            const category = document.getElementById('supplierCategory').value;
+            const description = document.getElementById('supplierDescription').value;
 
             if (!name) {
                 alert('Please enter supplier name');
@@ -848,12 +1494,13 @@
             fetch('/api/suppliers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, contact, phone, email, category: 'Food', description: '' })
+                body: JSON.stringify({ name, contact, phone, email, category, description })
             }).then(() => {
                 document.getElementById('supplierName').value = '';
                 document.getElementById('supplierContact').value = '';
                 document.getElementById('supplierPhone').value = '';
                 document.getElementById('supplierEmail').value = '';
+                document.getElementById('supplierDescription').value = '';
                 loadSuppliers();
             });
         }
@@ -865,15 +1512,81 @@
                     document.getElementById('suppliersList').innerHTML = items.map(item => `
                         <div class="card">
                             <div class="card-title">${item.name}</div>
-                            <div class="card-meta">${item.contact || 'No contact'}</div>
-                            <div class="card-meta">${item.phone || 'No phone'}</div>
-                            <div class="card-meta">${item.email || 'No email'}</div>
+                            <div class="card-meta">Category: ${item.category || 'Food'}</div>
+                            <div class="card-meta">Contact: ${item.contact || 'No contact'}</div>
+                            <div class="card-meta">Phone: ${item.phone || 'No phone'}</div>
+                            <div class="card-meta">Email: ${item.email || 'No email'}</div>
+                            <div class="card-meta">Description: ${item.description || 'No description'}</div>
                             <div class="card-actions">
+                                <button class="btn" onclick="editSupplier(${item.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn btn-danger" onclick="deleteSupplier(${item.id})">Delete</button>
                             </div>
                         </div>
                     `).join('');
                 });
+        }
+
+        function editSupplier(id) {
+            fetch('/api/suppliers')
+                .then(r => r.json())
+                .then(items => {
+                    const supplier = items.find(item => item.id === id);
+                    if (!supplier) return;
+                    
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = 'Edit Supplier';
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" id="supplierName" placeholder="Supplier Name" value="${supplier.name}">
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="supplierContact" placeholder="Contact Person" value="${supplier.contact || ''}">
+                                <select id="supplierCategory">
+                                    <option value="Food" ${supplier.category === 'Food' ? 'selected' : ''}>Food</option>
+                                    <option value="Equipment" ${supplier.category === 'Equipment' ? 'selected' : ''}>Equipment</option>
+                                    <option value="Supplies" ${supplier.category === 'Supplies' ? 'selected' : ''}>Supplies</option>
+                                    <option value="Other" ${supplier.category === 'Other' ? 'selected' : ''}>Other</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <input type="tel" id="supplierPhone" placeholder="Phone Number" value="${supplier.phone || ''}">
+                                <input type="email" id="supplierEmail" placeholder="Email" value="${supplier.email || ''}">
+                            </div>
+                            <div class="form-group">
+                                <textarea id="supplierDescription" placeholder="Description, notes, terms..." rows="3">${supplier.description || ''}</textarea>
+                            </div>
+                            <button class="btn" onclick="updateSupplier(${id}); closeAddModal();">Update Supplier</button>
+                        </div>
+                    `;
+                    
+                    modal.classList.add('show');
+                });
+        }
+        
+        function updateSupplier(id) {
+            const name = document.getElementById('supplierName').value;
+            const contact = document.getElementById('supplierContact').value;
+            const phone = document.getElementById('supplierPhone').value;
+            const email = document.getElementById('supplierEmail').value;
+            const category = document.getElementById('supplierCategory').value;
+            const description = document.getElementById('supplierDescription').value;
+
+            if (!name) {
+                alert('Please enter supplier name');
+                return;
+            }
+
+            fetch(`/api/suppliers/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, contact, phone, email, category, description })
+            }).then(() => {
+                loadSuppliers();
+            });
         }
 
         function deleteSupplier(id) {
@@ -924,6 +1637,98 @@
             }
         }
         
+        // File Upload Functions
+        function uploadFile() {
+            const fileInput = document.getElementById('fileUpload');
+            const files = fileInput.files;
+            
+            if (files.length === 0) {
+                alert('Please select files to upload');
+                return;
+            }
+            
+            for (let file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+                    uploadedFiles.push({
+                        id: Date.now() + Math.random(),
+                        name: file.name,
+                        path: data.path,
+                        size: file.size,
+                        type: file.type,
+                        uploadDate: new Date().toLocaleDateString()
+                    });
+                    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
+                    loadFiles();
+                })
+                .catch(error => {
+                    console.error('Upload error:', error);
+                    alert('Upload failed');
+                });
+            }
+            
+            fileInput.value = '';
+        }
+        
+        function loadFiles() {
+            // Load existing files from server and localStorage
+            const storedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+            
+            // Add existing logo file if not already in localStorage
+            const existingFiles = [
+                {
+                    id: 1,
+                    name: 'birria-fusion-logo.png',
+                    path: '/uploads/1763192867406_birria-fusion-logo.png',
+                    size: 0,
+                    type: 'image/png',
+                    uploadDate: 'Previously uploaded'
+                }
+            ];
+            
+            // Combine existing and stored files
+            const allFiles = [...existingFiles, ...storedFiles];
+            
+            document.getElementById('filesList').innerHTML = allFiles.map(file => {
+                const isImage = file.type && file.type.startsWith('image/');
+                const thumbnail = isImage ? `<img src="${file.path}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">` : `<div style="width: 60px; height: 60px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: white; font-weight: bold;">${file.name.split('.').pop().toUpperCase()}</div>`;
+                
+                return `
+                    <div class="card" style="text-align: center;">
+                        ${thumbnail}
+                        <div class="card-title">${file.name}</div>
+                        <div class="card-meta">${file.size > 0 ? `Size: ${(file.size / 1024).toFixed(1)} KB` : 'Logo file'}</div>
+                        <div class="card-meta">Uploaded: ${file.uploadDate}</div>
+                        <div class="card-actions">
+                            <button class="btn btn-secondary" onclick="viewFile('${file.path}')">View</button>
+                            ${file.id !== 1 ? `<button class="btn btn-danger" onclick="deleteFile(${file.id})">Delete</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function viewFile(path) {
+            window.open(path, '_blank');
+        }
+        
+        function deleteFile(id) {
+            if (confirm('Delete this file?')) {
+                const files = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+                const filtered = files.filter(f => f.id !== id);
+                localStorage.setItem('uploadedFiles', JSON.stringify(filtered));
+                loadFiles();
+            }
+        }
+        
         // Catering Functions
         function addCateringOrder() {
             const client = document.getElementById('cateringClient').value;
@@ -955,12 +1760,60 @@
                     <div class="card-meta">${order.date} • ${order.guests} guests</div>
                     <div class="card-meta">$${order.price || 'TBD'}</div>
                     <div class="card-actions">
+                        <button class="btn" onclick="editCateringOrder(${order.id})" style="background: var(--orange); color: white;">Edit</button>
                         <button class="btn btn-danger" onclick="deleteCateringOrder(${order.id})">Delete</button>
                     </div>
                 </div>
             `).join('');
         }
         
+        function editCateringOrder(id) {
+            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+            
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Edit Catering Order';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-row">
+                        <input type="text" id="cateringClient" placeholder="Client Name" value="${order.client}">
+                        <input type="date" id="cateringDate" value="${order.date}">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1" value="${order.guests}">
+                        <input type="number" id="cateringPrice" placeholder="Total Price ($)" step="0.01" value="${order.price || ''}">
+                    </div>
+                    <button class="btn" onclick="updateCateringOrder(${id}); closeAddModal();">Update Catering Order</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function updateCateringOrder(id) {
+            const client = document.getElementById('cateringClient').value;
+            const date = document.getElementById('cateringDate').value;
+            const guests = document.getElementById('cateringGuests').value;
+            const price = document.getElementById('cateringPrice').value;
+            
+            if (!client || !date || !guests) {
+                alert('Please fill in required fields');
+                return;
+            }
+            
+            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+            const orderIndex = orders.findIndex(o => o.id === id);
+            if (orderIndex !== -1) {
+                orders[orderIndex] = { id, client, date, guests, price };
+                localStorage.setItem('catering', JSON.stringify(orders));
+                loadCatering();
+            }
+        }
+
         function deleteCateringOrder(id) {
             if (confirm('Delete this catering order?')) {
                 const orders = JSON.parse(localStorage.getItem('catering') || '[]');
@@ -1018,6 +1871,107 @@
                 });
         }
 
+        // Theme Functions
+        function toggleTheme() {
+            const isDark = document.getElementById('darkMode').checked;
+            document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.setAttribute('data-theme', savedTheme);
+            document.getElementById('darkMode').checked = savedTheme === 'dark';
+        }
+
+        // Measurement Units Functions
+        function addMeasurementUnit() {
+            const unit = document.getElementById('newUnit').value.trim();
+            if (!unit) {
+                alert('Please enter a unit name');
+                return;
+            }
+            
+            const units = JSON.parse(localStorage.getItem('measurementUnits') || '[]');
+            if (!units.includes(unit)) {
+                units.push(unit);
+                localStorage.setItem('measurementUnits', JSON.stringify(units));
+                document.getElementById('newUnit').value = '';
+                loadMeasurementUnits();
+            } else {
+                alert('Unit already exists');
+            }
+        }
+        
+        function loadMeasurementUnits() {
+            const defaultUnits = ['lb', 'oz', 'kg', 'g', 'cups', 'tbsp', 'tsp', 'liters', 'ml', 'pieces', 'pack'];
+            const customUnits = JSON.parse(localStorage.getItem('measurementUnits') || '[]');
+            const allUnits = [...new Set([...defaultUnits, ...customUnits])];
+            
+            document.getElementById('unitsList').innerHTML = allUnits.map(unit => `
+                <span style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">
+                    ${unit}
+                    ${!defaultUnits.includes(unit) ? `<button onclick="deleteMeasurementUnit('${unit}')" style="background: none; border: none; color: white; margin-left: 5px; cursor: pointer;">&times;</button>` : ''}
+                </span>
+            `).join('');
+        }
+        
+        function deleteMeasurementUnit(unit) {
+            if (confirm(`Delete unit "${unit}"?`)) {
+                const units = JSON.parse(localStorage.getItem('measurementUnits') || '[]');
+                const filtered = units.filter(u => u !== unit);
+                localStorage.setItem('measurementUnits', JSON.stringify(filtered));
+                loadMeasurementUnits();
+            }
+        }
+        
+        function getAllMeasurementUnits() {
+            const defaultUnits = ['lb', 'oz', 'kg', 'g', 'cups', 'tbsp', 'tsp', 'liters', 'ml', 'pieces', 'pack'];
+            const customUnits = JSON.parse(localStorage.getItem('measurementUnits') || '[]');
+            return [...new Set([...defaultUnits, ...customUnits])];
+        }
+
+        // Data Management Functions
+        function exportData() {
+            const data = {
+                menu: [],
+                ingredients: [],
+                inventory: [],
+                suppliers: [],
+                tools: JSON.parse(localStorage.getItem('tools') || '[]'),
+                catering: JSON.parse(localStorage.getItem('catering') || '[]'),
+                measurementUnits: JSON.parse(localStorage.getItem('measurementUnits') || '[]'),
+                uploadedFiles: JSON.parse(localStorage.getItem('uploadedFiles') || '[]'),
+                exportDate: new Date().toISOString()
+            };
+            
+            // Get database data
+            Promise.all([
+                fetch('/api/menu').then(r => r.json()),
+                fetch('/api/ingredients').then(r => r.json()),
+                fetch('/api/inventory').then(r => r.json()),
+                fetch('/api/suppliers').then(r => r.json())
+            ]).then(([menu, ingredients, inventory, suppliers]) => {
+                data.menu = menu;
+                data.ingredients = ingredients;
+                data.inventory = inventory;
+                data.suppliers = suppliers;
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `birria-fusion-data-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }).catch(error => {
+                console.error('Export error:', error);
+                alert('Export failed');
+            });
+        }
+
         // Settings Functions
         function clearData() {
             if (confirm('This will delete ALL data. Are you sure?')) {
@@ -1027,8 +1981,12 @@
         }
 
         // Initialize
+        loadTheme();
         loadDashboard();
         loadIngredients();
+        
+        // Hide FAB on dashboard initially
+        document.getElementById('fabBtn').style.display = 'none';
     </script>
 </body>
 </html>

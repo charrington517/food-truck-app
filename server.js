@@ -87,6 +87,16 @@ app.post('/api/menu', (req, res) => {
         });
 });
 
+app.put('/api/menu/:id', (req, res) => {
+    const { name, price, cost, recipe_type, portions } = req.body;
+    db.run('UPDATE menu SET name = ?, price = ?, cost = ?, recipe_type = ?, portions = ? WHERE id = ?',
+        [name, price, cost, recipe_type || 'Entree', portions || 1, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
 app.delete('/api/menu/:id', (req, res) => {
     db.run('DELETE FROM menu WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -108,6 +118,16 @@ app.post('/api/ingredients', (req, res) => {
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/ingredients/:id', (req, res) => {
+    const { name, cost, unit } = req.body;
+    db.run('UPDATE ingredients SET name = ?, cost = ?, unit = ? WHERE id = ?',
+        [name, cost, unit, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
         });
 });
 
@@ -154,6 +174,16 @@ app.post('/api/inventory', (req, res) => {
     }
 });
 
+app.put('/api/inventory/:id', (req, res) => {
+    const { current_stock, min_stock, max_stock } = req.body;
+    db.run('UPDATE inventory SET current_stock = ?, min_stock = ?, max_stock = ? WHERE ingredient_id = ?',
+        [current_stock, min_stock, max_stock, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
 app.delete('/api/inventory/:id', (req, res) => {
     db.run('DELETE FROM inventory WHERE ingredient_id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -175,6 +205,16 @@ app.post('/api/suppliers', (req, res) => {
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/suppliers/:id', (req, res) => {
+    const { name, contact, phone, email, category, description } = req.body;
+    db.run('UPDATE suppliers SET name = ?, contact = ?, phone = ?, email = ?, category = ?, description = ? WHERE id = ?',
+        [name, contact, phone, email, category || 'Food', description, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
         });
 });
 
