@@ -1102,6 +1102,7 @@
                                     </div>
                                 `).join('')}
                             </div>
+                            <div style="text-align: right; margin: 10px 0; font-weight: bold;">Total Cost: $<span id="totalCost">${ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0).toFixed(2)}</span></div>
                             <button type="button" class="btn" onclick="addEditIngredient()" style="background: var(--success); margin-bottom: 15px;">+ Add Ingredient</button>
                             
                             <button class="btn" onclick="updateRecipe(${id}); closeAddModal();">Update Recipe</button>
@@ -1117,7 +1118,13 @@
             const type = document.getElementById('recipeType').value;
             const portions = parseInt(document.getElementById('portions').value) || 1;
             const price = parseFloat(document.getElementById('price').value);
-            const cost = parseFloat(document.getElementById('cost').value);
+            let cost = parseFloat(document.getElementById('cost').value);
+
+            // Calculate total cost from ingredients if ingredients exist
+            const totalIngredientCost = editIngredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
+            if (totalIngredientCost > 0) {
+                cost = totalIngredientCost;
+            }
 
             if (!name || !price || !cost) {
                 alert('Please fill in all fields');
@@ -1235,12 +1242,26 @@
         function calculateIngredientCost(index) {
             if (editIngredients[index] && editIngredients[index].unitCost && editIngredients[index].amount) {
                 editIngredients[index].calculatedCost = editIngredients[index].unitCost * editIngredients[index].amount;
+                updateTotalCost();
                 refreshEditIngredients();
+            }
+        }
+        
+        function updateTotalCost() {
+            const totalCost = editIngredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
+            const totalCostElement = document.getElementById('totalCost');
+            const costInput = document.getElementById('cost');
+            if (totalCostElement) {
+                totalCostElement.textContent = totalCost.toFixed(2);
+            }
+            if (costInput && totalCost > 0) {
+                costInput.value = totalCost.toFixed(2);
             }
         }
         
         function removeEditIngredient(index) {
             editIngredients.splice(index, 1);
+            updateTotalCost();
             refreshEditIngredients();
         }
         
