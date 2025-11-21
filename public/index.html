@@ -658,29 +658,35 @@
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">🧮 Cost Calculator</h3>
                 </div>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 20px;">
-                    <div style="background: var(--gray-light); padding: 15px; border-radius: 8px;">
-                        <h4 style="margin-bottom: 10px;">Recipe Cost Calculator</h4>
-                        <select id="recipeSelect" onchange="loadRecipeForCalculation()" style="width: 100%; margin-bottom: 10px;">
-                            <option value="">Select a recipe...</option>
-                        </select>
-                        <div id="recipeCalculation"></div>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px;">
+                    <div style="background: var(--gray-light); border-radius: 8px;">
+                        <h4 onclick="toggleCostSection('recipe')" style="margin: 0; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Recipe Cost Calculator <span id="recipe-icon">▼</span></h4>
+                        <div id="recipe-content" style="display: none; padding: 0 15px 15px 15px;">
+                            <select id="recipeSelect" onchange="loadRecipeForCalculation()" style="width: 100%; margin-bottom: 10px;">
+                                <option value="">Select a recipe...</option>
+                            </select>
+                            <div id="recipeCalculation"></div>
+                        </div>
                     </div>
-                    <div style="background: var(--gray-light); padding: 15px; border-radius: 8px;">
-                        <h4 style="margin-bottom: 10px;">Portion Cost Calculator</h4>
-                        <input type="number" id="baseCost" placeholder="Base Recipe Cost ($)" step="0.01" style="width: 100%; margin-bottom: 8px;">
-                        <input type="number" id="basePortions" placeholder="Base Portions" min="1" style="width: 100%; margin-bottom: 8px;">
-                        <input type="number" id="newPortions" placeholder="New Portion Size" min="1" style="width: 100%; margin-bottom: 8px;">
-                        <button class="btn" onclick="calculatePortionCost()" style="width: 100%; padding: 8px;">Calculate</button>
-                        <div id="portionResult" style="margin-top: 10px; font-weight: bold;"></div>
+                    <div style="background: var(--gray-light); border-radius: 8px;">
+                        <h4 onclick="toggleCostSection('portion')" style="margin: 0; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Portion Cost Calculator <span id="portion-icon">▼</span></h4>
+                        <div id="portion-content" style="display: none; padding: 0 15px 15px 15px;">
+                            <input type="number" id="baseCost" placeholder="Base Recipe Cost ($)" step="0.01" style="width: 100%; margin-bottom: 8px;">
+                            <input type="number" id="basePortions" placeholder="Base Portions" min="1" style="width: 100%; margin-bottom: 8px;">
+                            <input type="number" id="newPortions" placeholder="New Portion Size" min="1" style="width: 100%; margin-bottom: 8px;">
+                            <button class="btn" onclick="calculatePortionCost()" style="width: 100%; padding: 8px;">Calculate</button>
+                            <div id="portionResult" style="margin-top: 10px; font-weight: bold;"></div>
+                        </div>
                     </div>
-                    <div style="background: var(--gray-light); padding: 15px; border-radius: 8px;">
-                        <h4 style="margin-bottom: 10px;">Event Break-Even Analysis</h4>
-                        <input type="number" id="eventCosts" placeholder="Total Event Costs ($)" step="0.01" style="width: 100%; margin-bottom: 8px;">
-                        <input type="number" id="avgItemPrice" placeholder="Average Item Price ($)" step="0.01" style="width: 100%; margin-bottom: 8px;">
-                        <input type="number" id="avgItemCost" placeholder="Average Item Cost ($)" step="0.01" style="width: 100%; margin-bottom: 8px;">
-                        <button class="btn" onclick="calculateBreakEven()" style="width: 100%; padding: 8px;">Calculate</button>
-                        <div id="breakEvenResult" style="margin-top: 10px; font-weight: bold;"></div>
+                    <div style="background: var(--gray-light); border-radius: 8px;">
+                        <h4 onclick="toggleCostSection('breakeven')" style="margin: 0; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Event Break-Even Analysis <span id="breakeven-icon">▼</span></h4>
+                        <div id="breakeven-content" style="display: none; padding: 0 15px 15px 15px;">
+                            <input type="number" id="eventCosts" placeholder="Total Event Costs ($)" step="0.01" style="width: 100%; margin-bottom: 8px;">
+                            <input type="number" id="avgItemPrice" placeholder="Average Item Price ($)" step="0.01" style="width: 100%; margin-bottom: 8px;">
+                            <input type="number" id="avgItemCost" placeholder="Average Item Cost ($)" step="0.01" style="width: 100%; margin-bottom: 8px;">
+                            <button class="btn" onclick="calculateBreakEven()" style="width: 100%; padding: 8px;">Calculate</button>
+                            <div id="breakEvenResult" style="margin-top: 10px; font-weight: bold;"></div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -3824,6 +3830,19 @@
         }
 
         // Cost Calculator Functions
+        function toggleCostSection(section) {
+            const content = document.getElementById(`${section}-content`);
+            const icon = document.getElementById(`${section}-icon`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
         function loadRecipeForCalculation() {
             const recipeId = document.getElementById('recipeSelect').value;
             if (!recipeId) {
