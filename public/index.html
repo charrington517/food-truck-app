@@ -595,6 +595,17 @@
             </div>
             
             <div class="section">
+                <h2 class="section-title">Menu Categories</h2>
+                <div class="form">
+                    <div class="form-row">
+                        <input type="text" id="newCategory" placeholder="Add new category (e.g., Appetizers, Mains)">
+                        <button class="btn" onclick="addMenuCategory()" style="width: auto; padding: 12px 20px;">Add Category</button>
+                    </div>
+                    <div id="categoriesList" style="margin-top: 15px;"></div>
+                </div>
+            </div>
+            
+            <div class="section">
                 <h2 class="section-title">Measurement Units</h2>
                 <div class="form">
                     <div class="form-row">
@@ -627,6 +638,26 @@
                 <button class="close-btn" onclick="closeAddModal()">&times;</button>
             </div>
             <div id="modalForm"></div>
+        </div>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" id="editModalTitle">Edit Item</h3>
+                <button class="close-btn" onclick="closeEditModal()">&times;</button>
+            </div>
+            <div class="form">
+                <div class="form-group">
+                    <input type="text" id="editInput" placeholder="Enter name">
+                </div>
+                <div class="form-row">
+                    <button class="btn" onclick="saveEdit()" style="background: var(--orange);">Save</button>
+                    <button class="btn btn-danger" onclick="deleteItem()" style="background: var(--danger);">Delete</button>
+                    <button class="btn btn-secondary" onclick="closeEditModal()" style="background: #666666 !important; color: white !important;">Cancel</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -711,7 +742,7 @@
             if (pageId === 'tools') { loadTools(); loadFiles(); }
             if (pageId === 'catering') loadCatering();
             if (pageId === 'analytics') loadAnalytics();
-            if (pageId === 'settings') loadMeasurementUnits();
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); }
         }
 
         // Modal Functions
@@ -733,12 +764,7 @@
                             </div>
                             <div class="form-row">
                                 <select id="recipeType">
-                                    <option value="Entree">Entree</option>
-                                    <option value="Appetizer">Appetizer</option>
-                                    <option value="Dessert">Dessert</option>
-                                    <option value="Sauce">Sauce</option>
-                                    <option value="Side">Side</option>
-                                    <option value="Beverage">Beverage</option>
+                                    ${getAllMenuCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
                                 </select>
                                 <input type="number" id="portions" placeholder="Portions" min="1" value="1">
                             </div>
@@ -1083,12 +1109,7 @@
                             </div>
                             <div class="form-row">
                                 <select id="recipeType">
-                                    <option value="Entree" ${recipe.recipe_type === 'Entree' ? 'selected' : ''}>Entree</option>
-                                    <option value="Appetizer" ${recipe.recipe_type === 'Appetizer' ? 'selected' : ''}>Appetizer</option>
-                                    <option value="Dessert" ${recipe.recipe_type === 'Dessert' ? 'selected' : ''}>Dessert</option>
-                                    <option value="Sauce" ${recipe.recipe_type === 'Sauce' ? 'selected' : ''}>Sauce</option>
-                                    <option value="Side" ${recipe.recipe_type === 'Side' ? 'selected' : ''}>Side</option>
-                                    <option value="Beverage" ${recipe.recipe_type === 'Beverage' ? 'selected' : ''}>Beverage</option>
+                                    ${getAllMenuCategories().map(cat => `<option value="${cat}" ${recipe.recipe_type === cat ? 'selected' : ''}>${cat}</option>`).join('')}
                                 </select>
                                 <input type="number" id="portions" placeholder="Portions" min="1" value="${recipe.portions}">
                             </div>
@@ -1923,6 +1944,59 @@
             document.getElementById('darkMode').checked = savedTheme === 'dark';
         }
 
+        // Menu Categories Functions
+        function addMenuCategory() {
+            const category = document.getElementById('newCategory').value.trim();
+            if (!category) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            const categories = JSON.parse(localStorage.getItem('menuCategories') || '[]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('menuCategories', JSON.stringify(categories));
+                document.getElementById('newCategory').value = '';
+                loadMenuCategories();
+            } else {
+                alert('Category already exists');
+            }
+        }
+        
+        function loadMenuCategories() {
+            const categories = JSON.parse(localStorage.getItem('menuCategories') || '["Entree","Appetizer","Dessert","Sauce","Side","Beverage"]');
+            
+            document.getElementById('categoriesList').innerHTML = categories.map(category => `
+                <span onclick="editMenuCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
+        }
+        
+        let editType = '';
+        let editOriginalValue = '';
+        
+        function editMenuCategory(category) {
+            editType = 'category';
+            editOriginalValue = category;
+            document.getElementById('editModalTitle').textContent = 'Edit Category';
+            document.getElementById('editInput').value = category;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function deleteMenuCategory(category) {
+            if (confirm(`Delete category "${category}"?`)) {
+                const categories = JSON.parse(localStorage.getItem('menuCategories') || '["Entree","Appetizer","Dessert","Sauce","Side","Beverage"]');
+                const filtered = categories.filter(c => c !== category);
+                localStorage.setItem('menuCategories', JSON.stringify(filtered));
+                loadMenuCategories();
+            }
+        }
+        
+        function getAllMenuCategories() {
+            return JSON.parse(localStorage.getItem('menuCategories') || '["Entree","Appetizer","Dessert","Sauce","Side","Beverage"]');
+        }
+
         // Measurement Units Functions
         function addMeasurementUnit() {
             const unit = document.getElementById('newUnit').value.trim();
@@ -1931,7 +2005,7 @@
                 return;
             }
             
-            const units = JSON.parse(localStorage.getItem('measurementUnits') || '[]');
+            const units = JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
             if (!units.includes(unit)) {
                 units.push(unit);
                 localStorage.setItem('measurementUnits', JSON.stringify(units));
@@ -1943,21 +2017,71 @@
         }
         
         function loadMeasurementUnits() {
-            const defaultUnits = ['lb', 'oz', 'kg', 'g', 'cups', 'tbsp', 'tsp', 'liters', 'ml', 'pieces', 'pack'];
-            const customUnits = JSON.parse(localStorage.getItem('measurementUnits') || '[]');
-            const allUnits = [...new Set([...defaultUnits, ...customUnits])];
+            const units = JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
             
-            document.getElementById('unitsList').innerHTML = allUnits.map(unit => `
-                <span style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">
+            document.getElementById('unitsList').innerHTML = units.map(unit => `
+                <span onclick="editMeasurementUnit('${unit}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
                     ${unit}
-                    ${!defaultUnits.includes(unit) ? `<button onclick="deleteMeasurementUnit('${unit}')" style="background: none; border: none; color: white; margin-left: 5px; cursor: pointer;">&times;</button>` : ''}
                 </span>
             `).join('');
         }
         
+        function editMeasurementUnit(unit) {
+            editType = 'unit';
+            editOriginalValue = unit;
+            document.getElementById('editModalTitle').textContent = 'Edit Unit';
+            document.getElementById('editInput').value = unit;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('show');
+        }
+        
+        function saveEdit() {
+            const newValue = document.getElementById('editInput').value.trim();
+            if (!newValue) return;
+            
+            if (editType === 'category') {
+                const categories = JSON.parse(localStorage.getItem('menuCategories') || '["Entree","Appetizer","Dessert","Sauce","Side","Beverage"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('menuCategories', JSON.stringify(categories));
+                    loadMenuCategories();
+                }
+            } else if (editType === 'unit') {
+                const units = JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
+                const index = units.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    units[index] = newValue;
+                    localStorage.setItem('measurementUnits', JSON.stringify(units));
+                    loadMeasurementUnits();
+                }
+            }
+            closeEditModal();
+        }
+        
+        function deleteItem() {
+            if (!confirm(`Delete "${editOriginalValue}"?`)) return;
+            
+            if (editType === 'category') {
+                const categories = JSON.parse(localStorage.getItem('menuCategories') || '["Entree","Appetizer","Dessert","Sauce","Side","Beverage"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('menuCategories', JSON.stringify(filtered));
+                loadMenuCategories();
+            } else if (editType === 'unit') {
+                const units = JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
+                const filtered = units.filter(u => u !== editOriginalValue);
+                localStorage.setItem('measurementUnits', JSON.stringify(filtered));
+                loadMeasurementUnits();
+            }
+            closeEditModal();
+        }
+        
         function deleteMeasurementUnit(unit) {
             if (confirm(`Delete unit "${unit}"?`)) {
-                const units = JSON.parse(localStorage.getItem('measurementUnits') || '[]');
+                const units = JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
                 const filtered = units.filter(u => u !== unit);
                 localStorage.setItem('measurementUnits', JSON.stringify(filtered));
                 loadMeasurementUnits();
@@ -1965,9 +2089,7 @@
         }
         
         function getAllMeasurementUnits() {
-            const defaultUnits = ['lb', 'oz', 'kg', 'g', 'cups', 'tbsp', 'tsp', 'liters', 'ml', 'pieces', 'pack'];
-            const customUnits = JSON.parse(localStorage.getItem('measurementUnits') || '[]');
-            return [...new Set([...defaultUnits, ...customUnits])];
+            return JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
         }
 
         // Data Management Functions
