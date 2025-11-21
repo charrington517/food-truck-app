@@ -1085,7 +1085,7 @@
                             </div>
                             <div class="form-row">
                                 <input type="number" id="price" placeholder="Menu Price ($)" step="0.01" value="${recipe.price}">
-                                <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01" value="${recipe.cost}">
+                                <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01" value="${ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0).toFixed(2)}" readonly style="background: var(--gray-light);">
                             </div>
                             
                             <h4 style="margin: 20px 0 10px 0;">Ingredients</h4>
@@ -1119,15 +1119,17 @@
             const portions = parseInt(document.getElementById('portions').value) || 1;
             const price = parseFloat(document.getElementById('price').value);
             
-            // Always use calculated ingredient cost
-            const cost = editIngredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
+            let sum = 0;
+            editIngredients.forEach(ing => {
+                sum += Math.round((ing.calculatedCost || 0) * 100);
+            });
+            const cost = sum / 100;
 
             if (!name || !price) {
                 alert('Please fill in name and price');
                 return;
             }
             
-            // Save ingredients
             localStorage.setItem(`recipe-${id}`, JSON.stringify(editIngredients));
 
             fetch(`/api/menu/${id}`, {
@@ -1135,7 +1137,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, price, cost, recipe_type: type, portions })
             }).then(() => {
-                loadMenu();
+                setTimeout(() => loadMenu(), 200);
             });
         }
 
@@ -1237,20 +1239,24 @@
         
         function calculateIngredientCost(index) {
             if (editIngredients[index] && editIngredients[index].unitCost && editIngredients[index].amount) {
-                editIngredients[index].calculatedCost = editIngredients[index].unitCost * editIngredients[index].amount;
+                editIngredients[index].calculatedCost = parseFloat((editIngredients[index].unitCost * editIngredients[index].amount).toFixed(2));
                 updateTotalCost();
                 refreshEditIngredients();
             }
         }
         
         function updateTotalCost() {
-            const totalCost = editIngredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
+            let sum = 0;
+            editIngredients.forEach(ing => {
+                sum += Math.round((ing.calculatedCost || 0) * 100);
+            });
+            const totalCost = sum / 100;
             const totalCostElement = document.getElementById('totalCost');
             const costInput = document.getElementById('cost');
             if (totalCostElement) {
                 totalCostElement.textContent = totalCost.toFixed(2);
             }
-            if (costInput && totalCost > 0) {
+            if (costInput) {
                 costInput.value = totalCost.toFixed(2);
             }
         }
