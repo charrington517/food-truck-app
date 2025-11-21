@@ -695,8 +695,8 @@
             </div>
         </div>
 
-        <!-- Tools Page -->
-        <div id="tools" class="page">
+        <!-- Employee Page -->
+        <div id="employee" class="page">
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">👥 Employee Time Clock</h3>
@@ -722,6 +722,10 @@
                     <div id="employeeStatusList"></div>
                 </div>
             </div>
+        </div>
+
+        <!-- Tools Page -->
+        <div id="tools" class="page">
             
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -1116,6 +1120,7 @@
         </div>
         
         <div class="extra-menu" id="extraMenu">
+            <button onclick="showPage('employee')">Employee</button>
             <button onclick="showPage('tools')">Tools</button>
             <button onclick="showPage('catering')">Catering</button>
             <button onclick="showPage('events')">Events</button>
@@ -1222,7 +1227,8 @@
             if (pageId === 'ingredients') loadIngredients();
             if (pageId === 'inventory') loadInventory();
             if (pageId === 'suppliers') loadSuppliers();
-            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); loadEmployees(); }
+            if (pageId === 'employee') { loadEmployees(); }
+            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); }
             if (pageId === 'catering') { loadCatering(); loadTools(); }
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
