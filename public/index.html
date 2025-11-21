@@ -915,6 +915,9 @@
                                 <input type="email" id="supplierEmail" placeholder="Email">
                             </div>
                             <div class="form-group">
+                                <input type="text" id="supplierAddress" placeholder="Address">
+                            </div>
+                            <div class="form-group">
                                 <textarea id="supplierDescription" placeholder="Description, notes, terms..." rows="3"></textarea>
                             </div>
                             <button class="btn" onclick="addSupplier(); closeAddModal();">Add Supplier</button>
@@ -1558,8 +1561,7 @@
                             <div class="card">
                                 <div class="card-title">${item.name}</div>
                                 <div class="card-meta">${status}</div>
-                                <div class="card-meta">Current: ${item.current_stock} ${item.unit}</div>
-                                <div class="card-meta">Min: ${item.min_stock}</div>
+                                <div class="card-meta">Stock: ${item.current_stock} / ${item.min_stock} min ${item.unit}</div>
                                 <div class="card-actions">
                                     <button class="btn" onclick="editInventoryItem(${item.ingredient_id})" style="background: var(--orange); color: white;">Edit</button>
                                     <button class="btn btn-danger" onclick="deleteInventoryItem(${item.ingredient_id})">Delete</button>
@@ -1629,6 +1631,7 @@
             const contact = document.getElementById('supplierContact').value;
             const phone = document.getElementById('supplierPhone').value;
             const email = document.getElementById('supplierEmail').value;
+            const address = document.getElementById('supplierAddress').value;
             const category = document.getElementById('supplierCategory').value;
             const description = document.getElementById('supplierDescription').value;
 
@@ -1640,12 +1643,13 @@
             fetch('/api/suppliers', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, contact, phone, email, category, description })
+                body: JSON.stringify({ name, contact, phone, email, address, category, description })
             }).then(() => {
                 document.getElementById('supplierName').value = '';
                 document.getElementById('supplierContact').value = '';
                 document.getElementById('supplierPhone').value = '';
                 document.getElementById('supplierEmail').value = '';
+                document.getElementById('supplierAddress').value = '';
                 document.getElementById('supplierDescription').value = '';
                 loadSuppliers();
             });
@@ -1657,12 +1661,20 @@
                 .then(items => {
                     document.getElementById('suppliersList').innerHTML = items.map(item => `
                         <div class="card">
-                            <div class="card-title">${item.name}</div>
-                            <div class="card-meta">Category: ${item.category || 'Food'}</div>
-                            <div class="card-meta">Contact: ${item.contact || 'No contact'}</div>
-                            <div class="card-meta">Phone: ${item.phone || 'No phone'}</div>
-                            <div class="card-meta">Email: ${item.email || 'No email'}</div>
-                            <div class="card-meta">Description: ${item.description || 'No description'}</div>
+                            <div class="card-header" onclick="toggleSupplierDetails(${item.id})" style="cursor: pointer;">
+                                <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                    ${item.name}
+                                    <span class="expand-icon" id="supplier-icon-${item.id}">▼</span>
+                                </div>
+                                <div class="card-meta">${item.category || 'Food'}</div>
+                            </div>
+                            <div class="card-details" id="supplier-details-${item.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                                <div class="card-meta">Contact: ${item.contact || 'No contact'}</div>
+                                <div class="card-meta">Phone: ${item.phone || 'No phone'}</div>
+                                <div class="card-meta">Email: ${item.email || 'No email'}</div>
+                                ${item.address ? `<div class="card-meta">Address: ${item.address}</div>` : ''}
+                                ${item.description ? `<div class="card-meta">Description: ${item.description}</div>` : ''}
+                            </div>
                             <div class="card-actions">
                                 <button class="btn" onclick="editSupplier(${item.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn btn-danger" onclick="deleteSupplier(${item.id})">Delete</button>
@@ -1700,6 +1712,9 @@
                                 <input type="email" id="supplierEmail" placeholder="Email" value="${supplier.email || ''}">
                             </div>
                             <div class="form-group">
+                                <input type="text" id="supplierAddress" placeholder="Address" value="${supplier.address || ''}">
+                            </div>
+                            <div class="form-group">
                                 <textarea id="supplierDescription" placeholder="Description, notes, terms..." rows="3">${supplier.description || ''}</textarea>
                             </div>
                             <button class="btn" onclick="updateSupplier(${id}); closeAddModal();">Update Supplier</button>
@@ -1715,6 +1730,7 @@
             const contact = document.getElementById('supplierContact').value;
             const phone = document.getElementById('supplierPhone').value;
             const email = document.getElementById('supplierEmail').value;
+            const address = document.getElementById('supplierAddress').value;
             const category = document.getElementById('supplierCategory').value;
             const description = document.getElementById('supplierDescription').value;
 
@@ -1726,7 +1742,7 @@
             fetch(`/api/suppliers/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, contact, phone, email, category, description })
+                body: JSON.stringify({ name, contact, phone, email, address, category, description })
             }).then(() => {
                 loadSuppliers();
             });
@@ -1736,6 +1752,19 @@
             if (confirm('Delete this supplier?')) {
                 fetch(`/api/suppliers/${id}`, { method: 'DELETE' })
                     .then(() => loadSuppliers());
+            }
+        }
+        
+        function toggleSupplierDetails(id) {
+            const details = document.getElementById(`supplier-details-${id}`);
+            const icon = document.getElementById(`supplier-icon-${id}`);
+            
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
             }
         }
 

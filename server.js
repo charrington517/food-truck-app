@@ -70,9 +70,15 @@ db.serialize(() => {
         contact TEXT,
         phone TEXT,
         email TEXT,
+        address TEXT,
         category TEXT DEFAULT 'Food',
         description TEXT
     )`);
+    
+    // Add address column if it doesn't exist
+    db.run(`ALTER TABLE suppliers ADD COLUMN address TEXT`, (err) => {
+        // Ignore error if column already exists
+    });
 });
 
 // API Routes
@@ -205,9 +211,9 @@ app.get('/api/suppliers', (req, res) => {
 });
 
 app.post('/api/suppliers', (req, res) => {
-    const { name, contact, phone, email, category, description } = req.body;
-    db.run('INSERT INTO suppliers (name, contact, phone, email, category, description) VALUES (?, ?, ?, ?, ?, ?)',
-        [name, contact, phone, email, category || 'Food', description],
+    const { name, contact, phone, email, address, category, description } = req.body;
+    db.run('INSERT INTO suppliers (name, contact, phone, email, address, category, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [name, contact, phone, email, address, category || 'Food', description],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
@@ -215,9 +221,9 @@ app.post('/api/suppliers', (req, res) => {
 });
 
 app.put('/api/suppliers/:id', (req, res) => {
-    const { name, contact, phone, email, category, description } = req.body;
-    db.run('UPDATE suppliers SET name = ?, contact = ?, phone = ?, email = ?, category = ?, description = ? WHERE id = ?',
-        [name, contact, phone, email, category || 'Food', description, req.params.id],
+    const { name, contact, phone, email, address, category, description } = req.body;
+    db.run('UPDATE suppliers SET name = ?, contact = ?, phone = ?, email = ?, address = ?, category = ?, description = ? WHERE id = ?',
+        [name, contact, phone, email, address, category || 'Food', description, req.params.id],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
