@@ -243,6 +243,76 @@
             transition: all 0.2s ease;
             color: var(--charcoal);
         }
+        
+        .files-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+        
+        .file-card {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .file-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-color: var(--orange);
+        }
+        
+        .file-thumbnail {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 8px;
+            border-radius: 6px;
+            object-fit: cover;
+        }
+        
+        .file-icon {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 8px;
+            background: var(--orange);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8em;
+        }
+        
+        .file-name {
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-bottom: 4px;
+            word-break: break-word;
+            line-height: 1.2;
+        }
+        
+        .file-meta {
+            font-size: 0.7em;
+            color: var(--gray);
+            margin-bottom: 8px;
+        }
+        
+        .file-actions {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+        }
+        
+        .file-actions .btn {
+            padding: 4px 8px;
+            font-size: 0.7em;
+            width: auto;
+        }
 
         .card:hover {
             transform: translateY(-5px);
@@ -411,7 +481,7 @@
             right: 20px;
             width: 56px;
             height: 56px;
-            background: var(--orange);
+            background: #ff6b35 !important;
             border: none;
             border-radius: 50%;
             color: white;
@@ -423,8 +493,12 @@
         }
 
         .fab:hover {
-            background: var(--orange-dark);
+            background: #e55a2b !important;
             transform: scale(1.1);
+        }
+        
+        #fabBtn {
+            background: #ff6b35 !important;
         }
 
         .modal {
@@ -567,8 +641,14 @@
             </div>
             
             <div class="section">
-                <h2 class="section-title">Uploaded Files</h2>
-                <div class="grid" id="filesList"></div>
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">📁 Files</h3>
+                    <button class="btn" onclick="document.getElementById('fileUpload').click()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+                <input type="file" id="fileUpload" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx" onchange="uploadFileFromSection()">
+                <div class="files-grid" id="filesList"></div>
             </div>
         </div>
 
@@ -698,7 +778,7 @@
         </div>
     </div>
 
-    <button class="fab" onclick="openAddModal()" id="fabBtn">+</button>
+    <button class="fab" onclick="openAddModal()" id="fabBtn" title="Add new item" style="background: #ff6b35 !important; color: white !important;">+</button>
 
     <!-- Add Modal -->
     <div class="modal" id="addModal">
@@ -802,6 +882,7 @@
                 fabBtn.style.display = 'none';
             } else {
                 fabBtn.style.display = 'block';
+                fabBtn.style.background = '#ff6b35';
             }
             
             if (pageId === 'dashboard') loadDashboard();
@@ -1850,38 +1931,83 @@
             fileInput.value = '';
         }
         
+        function uploadFileFromSection() {
+            const fileInput = document.getElementById('fileUpload');
+            const files = fileInput.files;
+            
+            if (files.length === 0) return;
+            
+            for (let file of files) {
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+                    uploadedFiles.push({
+                        id: Date.now() + Math.random(),
+                        name: file.name,
+                        path: data.path,
+                        size: file.size,
+                        type: file.type,
+                        uploadDate: new Date().toLocaleDateString()
+                    });
+                    localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
+                    loadFiles();
+                })
+                .catch(error => {
+                    console.error('Upload error:', error);
+                    alert('Upload failed');
+                });
+            }
+            
+            fileInput.value = '';
+        }
+        
         function loadFiles() {
-            // Load existing files from server and localStorage
+            // Get files from localStorage
             const storedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
             
-            // Add existing logo file if not already in localStorage
-            const existingFiles = [
-                {
-                    id: 1,
-                    name: 'birria-fusion-logo.png',
-                    path: '/uploads/1763192867406_birria-fusion-logo.png',
-                    size: 0,
-                    type: 'image/png',
-                    uploadDate: 'Previously uploaded'
-                }
-            ];
-            
-            // Combine existing and stored files
-            const allFiles = [...existingFiles, ...storedFiles];
-            
-            document.getElementById('filesList').innerHTML = allFiles.map(file => {
+            // Get actual files from server
+            fetch('/api/files')
+                .then(r => r.json())
+                .catch(() => {
+                    // If API doesn't exist, show localStorage files only
+                    const existingFiles = [
+                        {
+                            id: 1,
+                            name: 'birria-fusion-logo.png',
+                            path: '/uploads/1763192867406_birria-fusion-logo.png',
+                            size: 0,
+                            type: 'image/png',
+                            uploadDate: 'Previously uploaded'
+                        }
+                    ];
+                    
+                    const allFiles = [...existingFiles, ...storedFiles];
+                    displayFiles(allFiles);
+                });
+        }
+        
+        function displayFiles(files) {
+            document.getElementById('filesList').innerHTML = files.map(file => {
                 const isImage = file.type && file.type.startsWith('image/');
-                const thumbnail = isImage ? `<img src="${file.path}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px; margin-bottom: 10px;">` : `<div style="width: 60px; height: 60px; background: var(--orange); border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; color: white; font-weight: bold;">${file.name.split('.').pop().toUpperCase()}</div>`;
+                const thumbnail = isImage ? 
+                    `<img src="${file.path}" class="file-thumbnail">` : 
+                    `<div class="file-icon">${file.name.split('.').pop().toUpperCase()}</div>`;
                 
                 return `
-                    <div class="card" style="text-align: center;">
+                    <div class="file-card">
                         ${thumbnail}
-                        <div class="card-title">${file.name}</div>
-                        <div class="card-meta">${file.size > 0 ? `Size: ${(file.size / 1024).toFixed(1)} KB` : 'Logo file'}</div>
-                        <div class="card-meta">Uploaded: ${file.uploadDate}</div>
-                        <div class="card-actions">
-                            <button class="btn btn-secondary" onclick="viewFile('${file.path}')">View</button>
-                            ${file.id !== 1 ? `<button class="btn btn-danger" onclick="deleteFile(${file.id})">Delete</button>` : ''}
+                        <div class="file-name">${file.name}</div>
+                        <div class="file-meta">${file.size > 0 ? `${(file.size / 1024).toFixed(1)} KB` : 'Logo'}</div>
+                        <div class="file-actions">
+                            <button class="btn" onclick="viewFile('${file.path}')" style="background: #ff6b35; color: white;">View</button>
+                            ${file.id !== 1 ? `<button class="btn btn-danger" onclick="deleteFile(${file.id})">Del</button>` : ''}
                         </div>
                     </div>
                 `;
