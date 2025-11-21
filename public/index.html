@@ -993,9 +993,9 @@
                                             <span class="expand-icon" id="icon-${item.id}">▼</span>
                                         </div>
                                         <div class="card-meta">${item.recipe_type || 'Uncategorized'} • ${item.portions} portions</div>
-                                        <div class="card-meta" style="display: flex; gap: 15px;">
+                                        <div class="card-meta" style="display: flex; gap: 15px; align-items: center;">
                                             <span>Cost: $${item.cost.toFixed(2)}</span>
-                                            <span>Price: $<input type="number" class="inline-edit-input" value="${item.price.toFixed(2)}" step="0.01" min="0" onchange="updatePrice(${item.id}, this.value)" style="width: 70px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--white); color: var(--charcoal);" onclick="event.stopPropagation();"></span>
+                                            <span style="display: flex; align-items: center;">Price: $<input type="number" class="inline-edit-input" value="${item.price.toFixed(2)}" step="0.01" min="0" onchange="updatePrice(${item.id}, this.value)" style="width: 70px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--white); color: var(--charcoal); margin-left: 2px;" onclick="event.stopPropagation();"></span>
                                         </div>
                                         <div class="card-meta">Margin: <input type="number" class="inline-edit-input" value="${margin.toFixed(1)}" step="0.1" min="0" max="100" onchange="updateMargin(${item.id}, this.value)" style="width: 50px; padding: 4px; border: 1px solid var(--border); border-radius: 4px; background: var(--white); color: var(--charcoal);" onclick="event.stopPropagation();">% ${status}</div>
                                     </div>
