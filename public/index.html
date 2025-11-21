@@ -159,6 +159,11 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
 
+        #settings .section {
+            padding: 10px;
+            margin-bottom: 5px;
+        }
+
         .section-title {
             font-size: 24px;
             font-weight: 700;
@@ -301,8 +306,7 @@
         .extra-menu {
             position: fixed;
             bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
+            right: 20px;
             background: var(--white);
             border: 2px solid var(--border);
             border-radius: 12px;
@@ -378,6 +382,27 @@
 
         input:checked + .slider:before {
             transform: translateX(26px);
+        }
+
+        .settings-content {
+            display: none;
+            margin-top: 5px;
+        }
+
+        .settings-content .form {
+            margin: 0;
+        }
+
+        .settings-content .form-group {
+            margin-bottom: 5px;
+        }
+
+        .settings-content .form-row {
+            margin-bottom: 5px;
+        }
+
+        .settings-content.show {
+            display: block;
         }
 
         .fab {
@@ -571,57 +596,102 @@
         <!-- Settings Page -->
         <div id="settings" class="page">
             <div class="section">
-                <h2 class="section-title">Theme Settings</h2>
-                <div class="form">
-                    <div class="form-group">
-                        <div style="display: flex; align-items: center; justify-content: space-between;">
-                            <span style="font-size: 16px; font-weight: 500;">Dark Mode</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="darkMode" onchange="toggleTheme()">
-                                <span class="slider"></span>
-                            </label>
+                <h2 class="section-title" onclick="toggleSettingsSection('theme')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Theme Settings
+                    <span id="theme-icon">▼</span>
+                </h2>
+                <div id="theme-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-group">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span style="font-size: 16px; font-weight: 500;">Dark Mode</span>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="darkMode" onchange="toggleTheme()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             
             <div class="section">
-                <h2 class="section-title">Business Information</h2>
-                <div class="form">
-                    <div class="form-group">
-                        <input type="text" id="truckName" placeholder="Food Truck Name" value="Birria Fusion">
+                <h2 class="section-title" onclick="toggleSettingsSection('business')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Business Information
+                    <span id="business-icon">▼</span>
+                </h2>
+                <div id="business-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-group">
+                            <input type="text" id="truckName" placeholder="Food Truck Name" value="Birria Fusion">
+                        </div>
+                        <div class="form-group">
+                            <label for="defaultMargin" style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Default Margin Percentage</label>
+                            <input type="number" id="defaultMargin" placeholder="Default Margin %" min="0" max="100" step="0.1" onchange="saveDefaultMargin()">
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="section">
-                <h2 class="section-title">Menu Categories</h2>
-                <div class="form">
-                    <div class="form-row">
-                        <input type="text" id="newCategory" placeholder="Add new category (e.g., Appetizers, Mains)">
-                        <button class="btn" onclick="addMenuCategory()" style="width: auto; padding: 12px 20px;">Add Category</button>
+                <h2 class="section-title" onclick="toggleSettingsSection('menuCategories')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Menu Categories
+                    <span id="menuCategories-icon">▼</span>
+                </h2>
+                <div id="menuCategories-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-row">
+                            <input type="text" id="newCategory" placeholder="Add new category (e.g., Appetizers, Mains)">
+                            <button class="btn" onclick="addMenuCategory()" style="width: auto; padding: 12px 20px;">Add Category</button>
+                        </div>
+                        <div id="categoriesList" style="margin-top: 15px;"></div>
                     </div>
-                    <div id="categoriesList" style="margin-top: 15px;"></div>
                 </div>
             </div>
             
             <div class="section">
-                <h2 class="section-title">Measurement Units</h2>
-                <div class="form">
-                    <div class="form-row">
-                        <input type="text" id="newUnit" placeholder="Add new unit (e.g., cups, tbsp)">
-                        <button class="btn" onclick="addMeasurementUnit()" style="width: auto; padding: 12px 20px;">Add Unit</button>
+                <h2 class="section-title" onclick="toggleSettingsSection('supplierCategories')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Supplier Categories
+                    <span id="supplierCategories-icon">▼</span>
+                </h2>
+                <div id="supplierCategories-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-row">
+                            <input type="text" id="newSupplierCategory" placeholder="Add new supplier category (e.g., Produce, Equipment)">
+                            <button class="btn" onclick="addSupplierCategory()" style="width: auto; padding: 12px 20px;">Add Category</button>
+                        </div>
+                        <div id="supplierCategoriesList" style="margin-top: 15px;"></div>
                     </div>
-                    <div id="unitsList" style="margin-top: 15px;"></div>
                 </div>
             </div>
             
             <div class="section">
-                <h2 class="section-title">Data Management</h2>
-                <div class="form">
-                    <div class="form-row">
-                        <button class="btn" onclick="exportData()" style="background: var(--success);">Export Data</button>
-                        <button class="btn btn-danger" onclick="clearData()">Clear All Data</button>
+                <h2 class="section-title" onclick="toggleSettingsSection('units')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Measurement Units
+                    <span id="units-icon">▼</span>
+                </h2>
+                <div id="units-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-row">
+                            <input type="text" id="newUnit" placeholder="Add new unit (e.g., cups, tbsp)">
+                            <button class="btn" onclick="addMeasurementUnit()" style="width: auto; padding: 12px 20px;">Add Unit</button>
+                        </div>
+                        <div id="unitsList" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title" onclick="toggleSettingsSection('data')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Data Management
+                    <span id="data-icon">▼</span>
+                </h2>
+                <div id="data-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-row">
+                            <button class="btn" onclick="exportData()" style="background: var(--success);">Export Data</button>
+                            <button class="btn btn-danger" onclick="clearData()">Clear All Data</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -742,7 +812,7 @@
             if (pageId === 'tools') { loadTools(); loadFiles(); }
             if (pageId === 'catering') loadCatering();
             if (pageId === 'analytics') loadAnalytics();
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadDefaultMargin(); }
         }
 
         // Modal Functions
@@ -837,10 +907,7 @@
                             <div class="form-row">
                                 <input type="text" id="supplierContact" placeholder="Contact Person">
                                 <select id="supplierCategory">
-                                    <option value="Food">Food</option>
-                                    <option value="Equipment">Equipment</option>
-                                    <option value="Supplies">Supplies</option>
-                                    <option value="Other">Other</option>
+                                    ${getAllSupplierCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="form-row">
@@ -951,7 +1018,8 @@
                 .then(items => {
                     const totalItems = items.length;
                     const avgFoodCost = totalItems > 0 ? items.reduce((sum, item) => sum + ((item.cost / item.price) * 100), 0) / totalItems : 0;
-                    const goodItems = items.filter(item => (item.cost / item.price) * 100 >= 30).length;
+                    const defaultMargin = parseFloat(localStorage.getItem('defaultMargin') || '30');
+                    const goodItems = items.filter(item => ((item.price - item.cost) / item.price) * 100 >= defaultMargin).length;
                     const totalRevenue = items.reduce((sum, item) => sum + (item.price * 10), 0);
 
                     document.getElementById('dashboardStats').innerHTML = `
@@ -976,7 +1044,9 @@
                     const topItems = items.sort((a, b) => (b.cost / b.price) - (a.cost / a.price)).slice(0, 6);
                     document.getElementById('topItems').innerHTML = topItems.map(item => {
                         const foodCost = (item.cost / item.price) * 100;
-                        const status = foodCost >= 30 ? '🟢 Good' : foodCost >= 20 ? '🟡 Needs Attention' : '🔴 Bad - Urgent';
+                        const defaultMargin = parseFloat(localStorage.getItem('defaultMargin') || '30');
+                        const margin = ((item.price - item.cost) / item.price) * 100;
+                        const status = margin >= defaultMargin ? '🟢 Good' : margin >= (defaultMargin * 0.67) ? '🟡 Needs Attention' : '🔴 Bad - Urgent';
                         return `
                             <div class="card">
                                 <div class="card-title">${item.name}</div>
@@ -1622,10 +1692,7 @@
                             <div class="form-row">
                                 <input type="text" id="supplierContact" placeholder="Contact Person" value="${supplier.contact || ''}">
                                 <select id="supplierCategory">
-                                    <option value="Food" ${supplier.category === 'Food' ? 'selected' : ''}>Food</option>
-                                    <option value="Equipment" ${supplier.category === 'Equipment' ? 'selected' : ''}>Equipment</option>
-                                    <option value="Supplies" ${supplier.category === 'Supplies' ? 'selected' : ''}>Supplies</option>
-                                    <option value="Other" ${supplier.category === 'Other' ? 'selected' : ''}>Other</option>
+                                    ${getAllSupplierCategories().map(cat => `<option value="${cat}" ${supplier.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="form-row">
@@ -1905,12 +1972,13 @@
                 .then(r => r.json())
                 .then(items => {
                     const totalItems = items.length;
-                    const goodItems = items.filter(item => (item.cost / item.price) * 100 >= 30).length;
+                    const defaultMargin = parseFloat(localStorage.getItem('defaultMargin') || '30');
+                    const goodItems = items.filter(item => ((item.price - item.cost) / item.price) * 100 >= defaultMargin).length;
                     const needsAttention = items.filter(item => {
-                        const fc = (item.cost / item.price) * 100;
-                        return fc >= 20 && fc < 30;
+                        const margin = ((item.price - item.cost) / item.price) * 100;
+                        return margin >= (defaultMargin * 0.67) && margin < defaultMargin;
                     }).length;
-                    const badItems = items.filter(item => (item.cost / item.price) * 100 < 20).length;
+                    const badItems = items.filter(item => ((item.price - item.cost) / item.price) * 100 < (defaultMargin * 0.67)).length;
                     
                     document.getElementById('analyticsStats').innerHTML = `
                         <div class="stat-card">
@@ -1933,8 +2001,10 @@
                     
                     document.getElementById('foodCostAnalysis').innerHTML = items.map(item => {
                         const foodCost = (item.cost / item.price) * 100;
-                        const status = foodCost >= 30 ? 'Good' : foodCost >= 20 ? 'Needs Attention' : 'Bad - Urgent';
-                        const color = foodCost >= 30 ? 'var(--success)' : foodCost >= 20 ? 'var(--warning)' : 'var(--danger)';
+                        const defaultMargin = parseFloat(localStorage.getItem('defaultMargin') || '30');
+                        const margin = ((item.price - item.cost) / item.price) * 100;
+                        const status = margin >= defaultMargin ? 'Good' : margin >= (defaultMargin * 0.67) ? 'Needs Attention' : 'Bad - Urgent';
+                        const color = margin >= defaultMargin ? 'var(--success)' : margin >= (defaultMargin * 0.67) ? 'var(--warning)' : 'var(--danger)';
                         return `
                             <div class="card">
                                 <div class="card-title">${item.name}</div>
@@ -2013,6 +2083,47 @@
             return JSON.parse(localStorage.getItem('menuCategories') || '["Entree","Appetizer","Dessert","Sauce","Side","Beverage"]');
         }
 
+        // Supplier Categories Functions
+        function addSupplierCategory() {
+            const category = document.getElementById('newSupplierCategory').value.trim();
+            if (!category) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            const categories = JSON.parse(localStorage.getItem('supplierCategories') || '[]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('supplierCategories', JSON.stringify(categories));
+                document.getElementById('newSupplierCategory').value = '';
+                loadSupplierCategories();
+            } else {
+                alert('Category already exists');
+            }
+        }
+        
+        function loadSupplierCategories() {
+            const categories = JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
+            
+            document.getElementById('supplierCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editSupplierCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
+        }
+        
+        function editSupplierCategory(category) {
+            editType = 'supplierCategory';
+            editOriginalValue = category;
+            document.getElementById('editModalTitle').textContent = 'Edit Supplier Category';
+            document.getElementById('editInput').value = category;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function getAllSupplierCategories() {
+            return JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
+        }
+
         // Measurement Units Functions
         function addMeasurementUnit() {
             const unit = document.getElementById('newUnit').value.trim();
@@ -2074,6 +2185,14 @@
                     localStorage.setItem('measurementUnits', JSON.stringify(units));
                     loadMeasurementUnits();
                 }
+            } else if (editType === 'supplierCategory') {
+                const categories = JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('supplierCategories', JSON.stringify(categories));
+                    loadSupplierCategories();
+                }
             }
             closeEditModal();
         }
@@ -2091,6 +2210,11 @@
                 const filtered = units.filter(u => u !== editOriginalValue);
                 localStorage.setItem('measurementUnits', JSON.stringify(filtered));
                 loadMeasurementUnits();
+            } else if (editType === 'supplierCategory') {
+                const categories = JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('supplierCategories', JSON.stringify(filtered));
+                loadSupplierCategories();
             }
             closeEditModal();
         }
@@ -2150,6 +2274,31 @@
         }
 
         // Settings Functions
+        function toggleSettingsSection(section) {
+            const content = document.getElementById(`${section}-content`);
+            const icon = document.getElementById(`${section}-icon`);
+            
+            if (content.classList.contains('show')) {
+                content.classList.remove('show');
+                icon.textContent = '▼';
+            } else {
+                content.classList.add('show');
+                icon.textContent = '▲';
+            }
+        }
+        
+        function saveDefaultMargin() {
+            const margin = document.getElementById('defaultMargin').value;
+            if (margin) {
+                localStorage.setItem('defaultMargin', margin);
+            }
+        }
+        
+        function loadDefaultMargin() {
+            const margin = localStorage.getItem('defaultMargin') || '30';
+            document.getElementById('defaultMargin').value = margin;
+        }
+        
         function clearData() {
             if (confirm('This will delete ALL data. Are you sure?')) {
                 localStorage.clear();
