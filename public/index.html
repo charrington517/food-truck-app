@@ -1118,16 +1118,12 @@
             const type = document.getElementById('recipeType').value;
             const portions = parseInt(document.getElementById('portions').value) || 1;
             const price = parseFloat(document.getElementById('price').value);
-            let cost = parseFloat(document.getElementById('cost').value);
+            
+            // Always use calculated ingredient cost
+            const cost = editIngredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
 
-            // Calculate total cost from ingredients if ingredients exist
-            const totalIngredientCost = editIngredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
-            if (totalIngredientCost > 0) {
-                cost = totalIngredientCost;
-            }
-
-            if (!name || !price || !cost) {
-                alert('Please fill in all fields');
+            if (!name || !price) {
+                alert('Please fill in name and price');
                 return;
             }
             
