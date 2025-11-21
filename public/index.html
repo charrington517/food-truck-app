@@ -1133,10 +1133,12 @@
                 currentUser = JSON.parse(user);
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
+                document.querySelector('.nav').style.display = 'block';
                 loadDashboard();
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
+                document.querySelector('.nav').style.display = 'none';
             }
         }
 
@@ -1158,6 +1160,7 @@
                 localStorage.setItem('currentUser', JSON.stringify(user));
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
+                document.querySelector('.nav').style.display = 'block';
                 loadDashboard();
                 errorDiv.textContent = '';
             } else {
@@ -1171,6 +1174,7 @@
                 localStorage.removeItem('currentUser');
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
+                document.querySelector('.nav').style.display = 'none';
                 document.getElementById('loginUsername').value = '';
                 document.getElementById('loginPassword').value = '';
             }
