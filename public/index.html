@@ -752,6 +752,8 @@
                     break;
                 case 'ingredients':
                     title = 'Add Ingredient';
+                    const units = getAllMeasurementUnits();
+                    const unitOptions = units.map(unit => `<option value="${unit}">${unit}</option>`).join('');
                     form = `
                         <div class="form">
                             <div class="form-group">
@@ -761,7 +763,11 @@
                                 <input type="number" id="ingredientCost" placeholder="Cost per Unit ($)" step="0.01">
                                 <select id="ingredientUnit">
                                     <option value="">Select unit...</option>
+                                    ${unitOptions}
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <input type="number" id="ingredientServings" placeholder="Servings" min="1">
                             </div>
                             <button class="btn" onclick="addIngredient(); closeAddModal();">Add Ingredient</button>
                         </div>
@@ -870,9 +876,12 @@
                 fetch('/api/ingredients')
                     .then(r => r.json())
                     .then(ingredients => {
-                        document.getElementById('inventoryIngredient').innerHTML = 
-                            '<option value="">Select ingredient...</option>' +
-                            ingredients.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                        const inventorySelect = document.getElementById('inventoryIngredient');
+                        if (inventorySelect) {
+                            inventorySelect.innerHTML = 
+                                '<option value="">Select ingredient...</option>' +
+                                ingredients.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                        }
                     });
             }
             
@@ -1041,7 +1050,7 @@
             const ingredientsHtml = ingredients.map(ing => `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: var(--gray-light); border-radius: 6px;">
                     <span>${ing.name}</span>
-                    <span>${ing.amount} ${ing.unit} - $${(ing.calculatedCost || 0).toFixed(2)}</span>
+                    <span>${ing.amount} servings - $${(ing.calculatedCost || 0).toFixed(2)}</span>
                 </div>
             `).join('');
             
@@ -1096,7 +1105,7 @@
                                             <option value="">Select ingredient...</option>
                                             <option value="${ing.ingredientId || ''}" selected>${ing.name || 'Select ingredient...'}</option>
                                         </select>
-                                        <input type="number" placeholder="Amount" step="0.1" value="${ing.amount}" onchange="updateEditIngredient(${index}, 'amount', this.value); calculateIngredientCost(${index})" style="width: 80px;">
+                                        <input type="number" placeholder="Servings" step="0.1" value="${ing.amount}" onchange="updateEditIngredient(${index}, 'amount', this.value); calculateIngredientCost(${index})" style="width: 80px;">
                                         <span style="width: 80px; text-align: center; font-size: 12px;">$${(ing.calculatedCost || 0).toFixed(2)}</span>
                                         <button type="button" onclick="removeEditIngredient(${index})" style="background: var(--danger); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">&times;</button>
                                     </div>
@@ -1219,7 +1228,7 @@
                     editIngredients[index][field] = parseFloat(value) || 0;
                 } else if (field === 'ingredientId') {
                     editIngredients[index][field] = value;
-                    // Update name and unit from selected ingredient
+                    // Update name, unit, and servings from selected ingredient
                     fetch('/api/ingredients')
                         .then(r => r.json())
                         .then(ingredients => {
@@ -1228,6 +1237,7 @@
                                 editIngredients[index].name = ingredient.name;
                                 editIngredients[index].unit = ingredient.unit;
                                 editIngredients[index].unitCost = ingredient.cost;
+                                editIngredients[index].servings = ingredient.servings || 1;
                                 refreshEditIngredients();
                             }
                         });
@@ -1238,8 +1248,10 @@
         }
         
         function calculateIngredientCost(index) {
-            if (editIngredients[index] && editIngredients[index].unitCost && editIngredients[index].amount) {
-                editIngredients[index].calculatedCost = parseFloat((editIngredients[index].unitCost * editIngredients[index].amount).toFixed(2));
+            if (editIngredients[index] && editIngredients[index].unitCost && editIngredients[index].amount && editIngredients[index].servings) {
+                // Calculate cost per serving, then multiply by amount of servings needed
+                const costPerServing = editIngredients[index].unitCost / editIngredients[index].servings;
+                editIngredients[index].calculatedCost = parseFloat((costPerServing * editIngredients[index].amount).toFixed(2));
                 updateTotalCost();
                 refreshEditIngredients();
             }
@@ -1272,17 +1284,20 @@
             fetch('/api/ingredients')
                 .then(r => r.json())
                 .then(ingredients => {
-                    document.getElementById('editIngredientsList').innerHTML = editIngredients.map((ing, index) => `
-                        <div class="form-row" style="align-items: center; margin-bottom: 10px;">
-                            <select onchange="updateEditIngredient(${index}, 'ingredientId', this.value); calculateIngredientCost(${index})" style="flex: 1;">
-                                <option value="">Select ingredient...</option>
-                                ${ingredients.map(ingredient => `<option value="${ingredient.id}" ${ingredient.id == ing.ingredientId ? 'selected' : ''}>${ingredient.name} (${ingredient.unit})</option>`).join('')}
-                            </select>
-                            <input type="number" placeholder="Amount" step="0.1" value="${ing.amount}" onchange="updateEditIngredient(${index}, 'amount', this.value); calculateIngredientCost(${index})" style="width: 80px;">
-                            <span style="width: 80px; text-align: center; font-size: 12px;">$${(ing.calculatedCost || 0).toFixed(2)}</span>
-                            <button type="button" onclick="removeEditIngredient(${index})" style="background: var(--danger); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">&times;</button>
-                        </div>
-                    `).join('');
+                    const editList = document.getElementById('editIngredientsList');
+                    if (editList) {
+                        editList.innerHTML = editIngredients.map((ing, index) => `
+                            <div class="form-row" style="align-items: center; margin-bottom: 10px;">
+                                <select onchange="updateEditIngredient(${index}, 'ingredientId', this.value); calculateIngredientCost(${index})" style="flex: 1;">
+                                    <option value="">Select ingredient...</option>
+                                    ${ingredients.map(ingredient => `<option value="${ingredient.id}" ${ingredient.id == ing.ingredientId ? 'selected' : ''}>${ingredient.name} (${ingredient.servings || 1} servings per ${ingredient.unit})</option>`).join('')}
+                                </select>
+                                <input type="number" placeholder="Servings" step="0.1" value="${ing.amount}" onchange="updateEditIngredient(${index}, 'amount', this.value); calculateIngredientCost(${index})" style="width: 80px;">
+                                <span style="width: 80px; text-align: center; font-size: 12px;">$${(ing.calculatedCost || 0).toFixed(2)}</span>
+                                <button type="button" onclick="removeEditIngredient(${index})" style="background: var(--danger); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer;">&times;</button>
+                            </div>
+                        `).join('');
+                    }
                 });
         }
 
@@ -1291,6 +1306,7 @@
             const name = document.getElementById('ingredientName').value;
             const cost = parseFloat(document.getElementById('ingredientCost').value);
             const unit = document.getElementById('ingredientUnit').value;
+            const servings = parseInt(document.getElementById('ingredientServings').value) || 1;
 
             if (!name || !cost || !unit) {
                 alert('Please fill in all fields');
@@ -1300,26 +1316,17 @@
             fetch('/api/ingredients', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, cost, unit })
+                body: JSON.stringify({ name, cost, unit, servings })
             }).then(() => {
                 document.getElementById('ingredientName').value = '';
                 document.getElementById('ingredientCost').value = '';
                 document.getElementById('ingredientUnit').value = '';
+                document.getElementById('ingredientServings').value = '';
                 loadIngredients();
             });
         }
 
         function loadIngredients() {
-            // Load units into ingredient form dropdowns
-            const units = getAllMeasurementUnits();
-            const unitOptions = units.map(unit => `<option value="${unit}">${unit}</option>`).join('');
-            const unitSelects = document.querySelectorAll('#ingredientUnit');
-            unitSelects.forEach(select => {
-                const currentValue = select.value;
-                select.innerHTML = '<option value="">Select unit...</option>' + unitOptions;
-                if (currentValue) select.value = currentValue;
-            });
-            
             fetch('/api/ingredients')
                 .then(r => r.json())
                 .then(items => {
@@ -1327,8 +1334,8 @@
                         <div class="card">
                             <div class="card-title">${item.name}</div>
                             <div class="card-meta">Cost: $${item.cost} per ${item.unit}</div>
-                            <div class="card-meta">Unit: ${item.unit}</div>
-                            <div class="card-meta">ID: ${item.id}</div>
+                            <div class="card-meta">Servings: ${item.servings || 1} per ${item.unit}</div>
+                            <div class="card-meta">Cost per serving: $${((item.cost || 0) / (item.servings || 1)).toFixed(2)}</div>
                             <div class="card-actions">
                                 <button class="btn" onclick="editIngredient(${item.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn btn-danger" onclick="deleteIngredient(${item.id})">Delete</button>
@@ -1336,10 +1343,13 @@
                         </div>
                     `).join('');
                     
-                    // Update inventory dropdown
-                    document.getElementById('inventoryIngredient').innerHTML = 
-                        '<option value="">Select ingredient...</option>' +
-                        items.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                    // Update inventory dropdown if it exists
+                    const inventorySelect = document.getElementById('inventoryIngredient');
+                    if (inventorySelect) {
+                        inventorySelect.innerHTML = 
+                            '<option value="">Select ingredient...</option>' +
+                            items.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                    }
                 });
         }
 
@@ -1370,6 +1380,9 @@
                                     ${unitOptions}
                                 </select>
                             </div>
+                            <div class="form-group">
+                                <input type="number" id="ingredientServings" placeholder="Servings" min="1" value="${ingredient.servings || 1}">
+                            </div>
                             <button class="btn" onclick="updateIngredient(${id}); closeAddModal();">Update Ingredient</button>
                         </div>
                     `;
@@ -1382,6 +1395,7 @@
             const name = document.getElementById('ingredientName').value;
             const cost = parseFloat(document.getElementById('ingredientCost').value);
             const unit = document.getElementById('ingredientUnit').value;
+            const servings = parseInt(document.getElementById('ingredientServings').value) || 1;
 
             if (!name || !cost || !unit) {
                 alert('Please fill in all fields');
@@ -1391,7 +1405,7 @@
             fetch(`/api/ingredients/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, cost, unit })
+                body: JSON.stringify({ name, cost, unit, servings })
             }).then(() => {
                 loadIngredients();
             });

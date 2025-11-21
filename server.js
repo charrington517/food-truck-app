@@ -47,8 +47,14 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         cost REAL NOT NULL,
-        unit TEXT NOT NULL
+        unit TEXT NOT NULL,
+        servings INTEGER DEFAULT 1
     )`);
+
+    // Add servings column if it doesn't exist
+    db.run(`ALTER TABLE ingredients ADD COLUMN servings INTEGER DEFAULT 1`, (err) => {
+        // Ignore error if column already exists
+    });
 
     db.run(`CREATE TABLE IF NOT EXISTS inventory (
         ingredient_id INTEGER PRIMARY KEY,
@@ -112,9 +118,9 @@ app.get('/api/ingredients', (req, res) => {
 });
 
 app.post('/api/ingredients', (req, res) => {
-    const { name, cost, unit } = req.body;
-    db.run('INSERT INTO ingredients (name, cost, unit) VALUES (?, ?, ?)',
-        [name, cost, unit],
+    const { name, cost, unit, servings } = req.body;
+    db.run('INSERT INTO ingredients (name, cost, unit, servings) VALUES (?, ?, ?, ?)',
+        [name, cost, unit, servings || 1],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
@@ -122,9 +128,9 @@ app.post('/api/ingredients', (req, res) => {
 });
 
 app.put('/api/ingredients/:id', (req, res) => {
-    const { name, cost, unit } = req.body;
-    db.run('UPDATE ingredients SET name = ?, cost = ?, unit = ? WHERE id = ?',
-        [name, cost, unit, req.params.id],
+    const { name, cost, unit, servings } = req.body;
+    db.run('UPDATE ingredients SET name = ?, cost = ?, unit = ?, servings = ? WHERE id = ?',
+        [name, cost, unit, servings || 1, req.params.id],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
