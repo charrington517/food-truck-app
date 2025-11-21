@@ -640,15 +640,6 @@
         <div id="tools" class="page">
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; font-size: 1.2em;">💰 Expense Tracking</h3>
-                    <button class="btn" onclick="addExpense()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Expense</button>
-                </div>
-                <div class="stats" id="expenseStats"></div>
-                <div class="grid" id="expenseList"></div>
-            </div>
-            
-            <div class="section">
-                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">📜 License Renewals</h3>
                     <button class="btn" onclick="addLicense()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add License</button>
                 </div>
@@ -694,9 +685,29 @@
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">📁 Files</h3>
-                    <button class="btn" onclick="document.getElementById('fileUpload').click()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">
-                        <i class="fas fa-upload"></i> Upload
-                    </button>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <select id="uploadFileCategory" style="padding: 8px; font-size: 0.9em;">
+                            <option value="General">General</option>
+                            <option value="Event Contracts">Event Contracts</option>
+                            <option value="Catering Contracts">Catering Contracts</option>
+                            <option value="Permits">Permits</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Images">Images</option>
+                            <option value="Receipts">Receipts</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <button class="btn" onclick="document.getElementById('fileUpload').click()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">
+                            <i class="fas fa-upload"></i> Upload
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn" onclick="filterFiles('All')" id="filter-All" style="padding: 4px 8px; font-size: 0.8em; width: auto; margin-right: 5px; background: var(--orange);">All</button>
+                    <button class="btn" onclick="filterFiles('General')" id="filter-General" style="padding: 4px 8px; font-size: 0.8em; width: auto; margin-right: 5px; background: var(--gray);">General</button>
+                    <button class="btn" onclick="filterFiles('Event Contracts')" id="filter-Event Contracts" style="padding: 4px 8px; font-size: 0.8em; width: auto; margin-right: 5px; background: var(--gray);">Events</button>
+                    <button class="btn" onclick="filterFiles('Catering Contracts')" id="filter-Catering Contracts" style="padding: 4px 8px; font-size: 0.8em; width: auto; margin-right: 5px; background: var(--gray);">Catering</button>
+                    <button class="btn" onclick="filterFiles('Permits')" id="filter-Permits" style="padding: 4px 8px; font-size: 0.8em; width: auto; margin-right: 5px; background: var(--gray);">Permits</button>
                 </div>
                 <input type="file" id="fileUpload" style="display: none;" multiple accept="image/*,.pdf,.doc,.docx" onchange="uploadFileFromSection()">
                 <div class="files-grid" id="filesList"></div>
@@ -742,6 +753,15 @@
 
         <!-- Analytics Page -->
         <div id="analytics" class="page">
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">💰 Expense Tracking</h2>
+                    <button class="btn" onclick="addExpense()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Expense</button>
+                </div>
+                <div class="stats" id="expenseStats"></div>
+                <div class="grid" id="expenseList"></div>
+            </div>
+            
             <div class="section">
                 <h2 class="section-title">Food Cost Analysis</h2>
                 <div class="stats" id="analyticsStats"></div>
@@ -852,6 +872,22 @@
                             <button class="btn" onclick="addEventStatus()" style="width: auto; padding: 12px 20px;">Add Status</button>
                         </div>
                         <div id="eventStatusesList" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title" onclick="toggleSettingsSection('fileCategories')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    File Categories
+                    <span id="fileCategories-icon">▼</span>
+                </h2>
+                <div id="fileCategories-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-row">
+                            <input type="text" id="newFileCategory" placeholder="Add new category (e.g., Invoices, Photos)">
+                            <button class="btn" onclick="addFileCategory()" style="width: auto; padding: 12px 20px;">Add Category</button>
+                        </div>
+                        <div id="fileCategoriesList" style="margin-top: 15px;"></div>
                     </div>
                 </div>
             </div>
@@ -975,7 +1011,7 @@
             
             // Show/hide FAB based on page
             const fabBtn = document.getElementById('fabBtn');
-            if (['dashboard', 'analytics', 'settings'].includes(pageId)) {
+            if (['dashboard', 'analytics', 'settings', 'marketing', 'events'].includes(pageId)) {
                 fabBtn.style.display = 'none';
             } else {
                 fabBtn.style.display = 'block';
@@ -987,12 +1023,12 @@
             if (pageId === 'ingredients') loadIngredients();
             if (pageId === 'inventory') loadInventory();
             if (pageId === 'suppliers') loadSuppliers();
-            if (pageId === 'tools') { loadExpenses(); loadFiles(); loadLicenses(); loadMaintenanceTasks(); }
+            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); }
             if (pageId === 'catering') { loadCatering(); loadTools(); }
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
-            if (pageId === 'analytics') loadAnalytics();
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadDefaultMargin(); }
+            if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadDefaultMargin(); }
         }
 
         // Modal Functions
@@ -1134,6 +1170,50 @@
                                 <input type="file" id="fileUpload" multiple accept="image/*,.pdf,.doc,.docx">
                             </div>
                             <button class="btn" onclick="uploadFile(); closeAddModal();">Upload File</button>
+                        </div>
+                    `;
+                    break;
+                case 'events':
+                    title = 'Add Event';
+                    form = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" id="eventName" placeholder="Event Name (e.g., Downtown Food Festival)">
+                            </div>
+                            <div class="form-row">
+                                <select id="eventType">
+                                    <option value="Festival">Festival</option>
+                                    <option value="Farmers Market">Farmers Market</option>
+                                    <option value="Street Fair">Street Fair</option>
+                                    <option value="Concert">Concert</option>
+                                    <option value="Sports Event">Sports Event</option>
+                                    <option value="Corporate Event">Corporate Event</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <input type="text" id="eventLocation" placeholder="Location">
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="eventDate" placeholder="Start Date" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                                <input type="text" id="eventEndDate" placeholder="End Date (optional)" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="eventTime" placeholder="Time (e.g., 10am-6pm)">
+                            </div>
+                            <div class="form-row">
+                                <input type="number" id="applicationFee" placeholder="Application Fee ($)" step="0.01" min="0">
+                                <select id="eventStatus">
+                                    <option value="Interested">Interested</option>
+                                    <option value="Applied">Applied</option>
+                                    <option value="Accepted">Accepted</option>
+                                    <option value="Accepted & Paid">Accepted & Paid</option>
+                                    <option value="Rejected">Rejected</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <textarea id="eventNotes" placeholder="Notes (organizer contact, requirements, competition...)" rows="2"></textarea>
+                            </div>
+                            <button class="btn" onclick="saveEvent(); closeAddModal();">Add Event</button>
                         </div>
                     `;
                     break;
@@ -2085,9 +2165,12 @@
             fileInput.value = '';
         }
         
+        let currentFileFilter = 'All';
+        
         function uploadFileFromSection() {
             const fileInput = document.getElementById('fileUpload');
             const files = fileInput.files;
+            const category = document.getElementById('uploadFileCategory').value;
             
             if (files.length === 0) return;
             
@@ -2108,6 +2191,7 @@
                         path: data.path,
                         size: file.size,
                         type: file.type,
+                        category: category,
                         uploadDate: new Date().toLocaleDateString()
                     });
                     localStorage.setItem('uploadedFiles', JSON.stringify(uploadedFiles));
@@ -2120,6 +2204,18 @@
             }
             
             fileInput.value = '';
+        }
+        
+        function filterFiles(category) {
+            currentFileFilter = category;
+            
+            // Update button styles
+            document.querySelectorAll('[id^="filter-"]').forEach(btn => {
+                btn.style.background = 'var(--gray)';
+            });
+            document.getElementById(`filter-${category}`).style.background = 'var(--orange)';
+            
+            loadFiles();
         }
         
         function loadFiles() {
@@ -2138,6 +2234,7 @@
                             path: '/uploads/1763192867406_birria-fusion-logo.png',
                             size: 0,
                             type: 'image/png',
+                            category: 'Images',
                             uploadDate: 'Previously uploaded'
                         }
                     ];
@@ -2148,19 +2245,39 @@
         }
         
         function displayFiles(files) {
-            document.getElementById('filesList').innerHTML = files.map(file => {
+            // Filter files based on current filter
+            const filteredFiles = currentFileFilter === 'All' ? files : files.filter(file => file.category === currentFileFilter);
+            
+            const categoryColors = {
+                'General': '#6c757d',
+                'Event Contracts': '#ff6b35',
+                'Catering Contracts': '#28a745',
+                'Permits': '#dc3545',
+                'Insurance': '#6f42c1',
+                'Marketing': '#20c997',
+                'Images': '#17a2b8',
+                'Receipts': '#ffc107',
+                'Other': '#fd7e14'
+            };
+            
+            document.getElementById('filesList').innerHTML = filteredFiles.map(file => {
                 const isImage = file.type && file.type.startsWith('image/');
+                const category = file.category || 'General';
+                const categoryColor = categoryColors[category] || '#6c757d';
+                
                 const thumbnail = isImage ? 
                     `<img src="${file.path}" class="file-thumbnail">` : 
-                    `<div class="file-icon">${file.name.split('.').pop().toUpperCase()}</div>`;
+                    `<div class="file-icon" style="background: ${categoryColor};">${file.name.split('.').pop().toUpperCase()}</div>`;
                 
                 return `
                     <div class="file-card">
                         ${thumbnail}
                         <div class="file-name">${file.name}</div>
+                        <div class="file-meta" style="color: ${categoryColor}; font-weight: bold;">${category}</div>
                         <div class="file-meta">${file.size > 0 ? `${(file.size / 1024).toFixed(1)} KB` : 'Logo'}</div>
                         <div class="file-actions">
                             <button class="btn" onclick="viewFile('${file.path}')" style="background: #ff6b35; color: white;">View</button>
+                            <button class="btn" onclick="editFile(${file.id})" style="background: var(--success); color: white;">Edit</button>
                             ${file.id !== 1 ? `<button class="btn btn-danger" onclick="deleteFile(${file.id})">Del</button>` : ''}
                         </div>
                     </div>
@@ -2170,6 +2287,107 @@
         
         function viewFile(path) {
             window.open(path, '_blank');
+        }
+        
+        function editFile(id) {
+            // Handle existing logo file
+            if (id === 1) {
+                const modal = document.getElementById('addModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalForm = document.getElementById('modalForm');
+                
+                modalTitle.textContent = 'Edit File';
+                modalForm.innerHTML = `
+                    <div class="form">
+                        <div class="form-group">
+                            <input type="text" id="fileName" placeholder="File Name" value="birria-fusion-logo.png">
+                        </div>
+                        <div class="form-group">
+                            <select id="fileCategory">
+                                <option value="General">General</option>
+                                <option value="Event Contracts">Event Contracts</option>
+                                <option value="Catering Contracts">Catering Contracts</option>
+                                <option value="Permits">Permits</option>
+                                <option value="Insurance">Insurance</option>
+                                <option value="Marketing" selected>Marketing</option>
+                                <option value="Receipts">Receipts</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <button class="btn" onclick="updateFile(${id}); closeAddModal();">Update File</button>
+                    </div>
+                `;
+                
+                modal.classList.add('show');
+                return;
+            }
+            
+            const files = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+            const file = files.find(f => f.id === id);
+            if (!file) return;
+            
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Edit File';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="fileName" placeholder="File Name" value="${file.name}">
+                    </div>
+                    <div class="form-group">
+                        <select id="fileCategory">
+                            ${getAllFileCategories().map(cat => `<option value="${cat}" ${file.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                        </select>
+                    </div>
+                    <button class="btn" onclick="updateFile(${id}); closeAddModal();">Update File</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function updateFile(id) {
+            const newName = document.getElementById('fileName').value;
+            const newCategory = document.getElementById('fileCategory').value;
+            
+            if (!newName) {
+                alert('Please enter a file name');
+                return;
+            }
+            
+            // Handle existing logo file
+            if (id === 1) {
+                // Update the existing files array to include the logo with new details
+                const uploadedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+                const logoFile = {
+                    id: 1,
+                    name: newName,
+                    path: '/uploads/1763192867406_birria-fusion-logo.png',
+                    size: 0,
+                    type: 'image/png',
+                    category: newCategory,
+                    uploadDate: 'Previously uploaded'
+                };
+                
+                // Remove any existing logo entry and add updated one
+                const filteredFiles = uploadedFiles.filter(f => f.id !== 1);
+                filteredFiles.unshift(logoFile);
+                localStorage.setItem('uploadedFiles', JSON.stringify(filteredFiles));
+                loadFiles();
+                return;
+            }
+            
+            const files = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+            const fileIndex = files.findIndex(f => f.id === id);
+            
+            if (fileIndex !== -1) {
+                files[fileIndex].name = newName;
+                files[fileIndex].category = newCategory;
+                localStorage.setItem('uploadedFiles', JSON.stringify(files));
+                loadFiles();
+            }
         }
         
         function deleteFile(id) {
@@ -3100,6 +3318,14 @@
                     localStorage.setItem('eventStatuses', JSON.stringify(statuses));
                     loadEventStatuses();
                 }
+            } else if (editType === 'fileCategory') {
+                const categories = JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('fileCategories', JSON.stringify(categories));
+                    loadFileCategories();
+                }
             }
             closeEditModal();
         }
@@ -3127,6 +3353,11 @@
                 const filtered = statuses.filter(s => s !== editOriginalValue);
                 localStorage.setItem('eventStatuses', JSON.stringify(filtered));
                 loadEventStatuses();
+            } else if (editType === 'fileCategory') {
+                const categories = JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('fileCategories', JSON.stringify(filtered));
+                loadFileCategories();
             }
             closeEditModal();
         }
@@ -3183,6 +3414,47 @@
         
         function getAllEventStatuses() {
             return JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
+        }
+        
+        // File Category Functions
+        function addFileCategory() {
+            const category = document.getElementById('newFileCategory').value.trim();
+            if (!category) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            const categories = JSON.parse(localStorage.getItem('fileCategories') || '[]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('fileCategories', JSON.stringify(categories));
+                document.getElementById('newFileCategory').value = '';
+                loadFileCategories();
+            } else {
+                alert('Category already exists');
+            }
+        }
+        
+        function loadFileCategories() {
+            const categories = JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
+            
+            document.getElementById('fileCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editFileCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
+        }
+        
+        function editFileCategory(category) {
+            editType = 'fileCategory';
+            editOriginalValue = category;
+            document.getElementById('editModalTitle').textContent = 'Edit File Category';
+            document.getElementById('editInput').value = category;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function getAllFileCategories() {
+            return JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
         }
 
         // Data Management Functions
