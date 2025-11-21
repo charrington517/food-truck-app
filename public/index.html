@@ -633,11 +633,48 @@
 
         <!-- Tools Page -->
         <div id="tools" class="page">
-
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">📜 License Renewals</h3>
+                    <button class="btn" onclick="addLicense()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add License</button>
+                </div>
+                <div class="files-grid" id="licenseList"></div>
+            </div>
             
             <div class="section">
-                <h2 class="section-title">Equipment List</h2>
-                <div class="grid" id="toolsList"></div>
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">📅 Maintenance Schedule</h3>
+                    <button class="btn" onclick="addMaintenanceTask()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Task</button>
+                </div>
+                <div class="files-grid" id="maintenanceList"></div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">📱 QR Code Generator</h3>
+                </div>
+                <div class="form" style="max-width: 500px;">
+                    <div class="form-group">
+                        <select id="qrType" onchange="updateQRPlaceholder()">
+                            <option value="url">Website/Menu Link</option>
+                            <option value="text">Text Message</option>
+                            <option value="phone">Phone Number</option>
+                            <option value="email">Email Address</option>
+                            <option value="wifi">WiFi Network</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="qrContent" placeholder="Enter URL or text">
+                    </div>
+                    <div id="wifiFields" style="display: none;">
+                        <div class="form-row">
+                            <input type="text" id="wifiSSID" placeholder="Network Name (SSID)">
+                            <input type="password" id="wifiPassword" placeholder="Password">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="generateQR()" style="width: auto; padding: 12px 24px;">Generate QR Code</button>
+                </div>
+                <div id="qrResult" style="text-align: center; margin-top: 20px;"></div>
             </div>
             
             <div class="section">
@@ -654,10 +691,14 @@
 
         <!-- Catering Page -->
         <div id="catering" class="page">
-
             <div class="section">
                 <h2 class="section-title">Upcoming Orders</h2>
                 <div class="grid" id="cateringList"></div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Equipment & Rentals</h2>
+                <div class="grid" id="toolsList"></div>
             </div>
         </div>
 
@@ -890,8 +931,8 @@
             if (pageId === 'ingredients') loadIngredients();
             if (pageId === 'inventory') loadInventory();
             if (pageId === 'suppliers') loadSuppliers();
-            if (pageId === 'tools') { loadTools(); loadFiles(); }
-            if (pageId === 'catering') loadCatering();
+            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); }
+            if (pageId === 'catering') { loadCatering(); loadTools(); }
             if (pageId === 'analytics') loadAnalytics();
             if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadDefaultMargin(); }
         }
@@ -2459,6 +2500,333 @@
                 localStorage.clear();
                 alert('Data cleared! Please refresh the page.');
             }
+        }
+
+        // License Functions
+        function addLicense() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add License/Permit';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <select id="licenseType">
+                            <option value="Business License">Business License</option>
+                            <option value="Food Handler's Permit">Food Handler's Permit</option>
+                            <option value="Mobile Vendor Permit">Mobile Vendor Permit</option>
+                            <option value="Health Department Permit">Health Department Permit</option>
+                            <option value="Fire Department Permit">Fire Department Permit</option>
+                            <option value="State Sales Tax License">State Sales Tax License</option>
+                            <option value="Workers Compensation">Workers Compensation</option>
+                            <option value="General Liability Insurance">General Liability Insurance</option>
+                            <option value="Vehicle Registration">Vehicle Registration</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="customNameField" style="display: none;">
+                        <input type="text" id="customLicenseName" placeholder="Enter license name">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="licenseNumber" placeholder="License/Permit Number">
+                        <input type="text" id="issuingAgency" placeholder="Issuing Agency">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="expirationDate" placeholder="Expiration Date" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                        <input type="text" id="renewalCost" placeholder="Renewal Cost ($)">
+                    </div>
+                    <button class="btn" onclick="saveLicense(); closeAddModal();">Add License</button>
+                </div>
+            `;
+            
+            // Show custom name field when "Other" is selected
+            setTimeout(() => {
+                document.getElementById('licenseType').onchange = function() {
+                    const customField = document.getElementById('customNameField');
+                    customField.style.display = this.value === 'Other' ? 'block' : 'none';
+                };
+            }, 100);
+            
+            modal.classList.add('show');
+        }
+        
+        function saveLicense() {
+            const type = document.getElementById('licenseType').value;
+            const customName = document.getElementById('customLicenseName')?.value;
+            const name = type === 'Other' ? customName : type;
+            const number = document.getElementById('licenseNumber').value;
+            const agency = document.getElementById('issuingAgency').value;
+            const expiration = document.getElementById('expirationDate').value;
+            const cost = document.getElementById('renewalCost').value;
+            
+            if (!name || !expiration) {
+                alert('Please enter license name and expiration date');
+                return;
+            }
+            
+            const licenses = JSON.parse(localStorage.getItem('licenses') || '[]');
+            licenses.push({
+                id: Date.now(),
+                name,
+                number,
+                agency,
+                expiration,
+                cost
+            });
+            localStorage.setItem('licenses', JSON.stringify(licenses));
+            loadLicenses();
+        }
+        
+        function loadLicenses() {
+            const licenses = JSON.parse(localStorage.getItem('licenses') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            
+            document.getElementById('licenseList').innerHTML = licenses.map(license => {
+                const expDate = new Date(license.expiration);
+                const daysUntilExp = Math.ceil((expDate - new Date()) / (1000 * 60 * 60 * 24));
+                
+                let status, statusColor;
+                if (daysUntilExp < 0) {
+                    status = '🔴 EXPIRED';
+                    statusColor = 'var(--danger)';
+                } else if (daysUntilExp <= 30) {
+                    status = '🟡 Expires Soon';
+                    statusColor = 'var(--warning)';
+                } else {
+                    status = '🟢 Valid';
+                    statusColor = 'var(--success)';
+                }
+                
+                return `
+                    <div class="file-card">
+                        <div class="file-icon" style="background: ${statusColor}; font-size: 0.6em;">${license.name.slice(0,4).toUpperCase()}</div>
+                        <div class="file-name">${license.name}</div>
+                        <div class="file-meta">${license.agency || 'No agency'}</div>
+                        <div class="file-meta">Expires: ${license.expiration}</div>
+                        <div class="file-meta" style="color: ${statusColor}; font-weight: bold;">${status}</div>
+                        <div class="file-actions">
+                            <button class="btn" onclick="renewLicense(${license.id})" style="background: var(--orange); color: white;">Renew</button>
+                            <button class="btn btn-danger" onclick="deleteLicense(${license.id})">Del</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renewLicense(id) {
+            const licenses = JSON.parse(localStorage.getItem('licenses') || '[]');
+            const license = licenses.find(l => l.id === id);
+            if (!license) return;
+            
+            const newExpiration = prompt('Enter new expiration date (YYYY-MM-DD):', license.expiration);
+            if (newExpiration && /^\d{4}-\d{2}-\d{2}$/.test(newExpiration)) {
+                license.expiration = newExpiration;
+                localStorage.setItem('licenses', JSON.stringify(licenses));
+                loadLicenses();
+            }
+        }
+        
+        function deleteLicense(id) {
+            if (confirm('Delete this license/permit?')) {
+                const licenses = JSON.parse(localStorage.getItem('licenses') || '[]');
+                const filtered = licenses.filter(l => l.id !== id);
+                localStorage.setItem('licenses', JSON.stringify(filtered));
+                loadLicenses();
+            }
+        }
+
+        // Maintenance Functions
+        function addMaintenanceTask() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Maintenance Task';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="taskName" placeholder="Task Name (e.g., Clean Fryer, Health Inspection)">
+                    </div>
+                    <div class="form-row">
+                        <select id="taskType">
+                            <option value="Equipment">Equipment Service</option>
+                            <option value="Cleaning">Cleaning</option>
+                            <option value="Inspection">Health Inspection</option>
+                            <option value="Permit">Permit Renewal</option>
+                        </select>
+                        <select id="frequency">
+                            <option value="Daily">Daily</option>
+                            <option value="Weekly">Weekly</option>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Yearly">Yearly</option>
+                            <option value="Once">One-time</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="nextDue" placeholder="Next Due Date" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                        <input type="text" id="lastDone" placeholder="Last Completed" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                    </div>
+                    <button class="btn" onclick="saveMaintenanceTask(); closeAddModal();">Add Task</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function saveMaintenanceTask() {
+            const name = document.getElementById('taskName').value;
+            const type = document.getElementById('taskType').value;
+            const frequency = document.getElementById('frequency').value;
+            const nextDue = document.getElementById('nextDue').value;
+            const lastDone = document.getElementById('lastDone').value;
+            
+            if (!name || !nextDue) {
+                alert('Please enter task name and due date');
+                return;
+            }
+            
+            const tasks = JSON.parse(localStorage.getItem('maintenanceTasks') || '[]');
+            tasks.push({
+                id: Date.now(),
+                name,
+                type,
+                frequency,
+                nextDue,
+                lastDone,
+                completed: false
+            });
+            localStorage.setItem('maintenanceTasks', JSON.stringify(tasks));
+            loadMaintenanceTasks();
+        }
+        
+        function loadMaintenanceTasks() {
+            const tasks = JSON.parse(localStorage.getItem('maintenanceTasks') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            
+            document.getElementById('maintenanceList').innerHTML = tasks.map(task => {
+                const isOverdue = task.nextDue < today;
+                const isDueSoon = task.nextDue <= new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0];
+                const status = isOverdue ? '🔴 Overdue' : isDueSoon ? '🟡 Due Soon' : '🟢 On Track';
+                const statusColor = isOverdue ? 'var(--danger)' : isDueSoon ? 'var(--warning)' : 'var(--success)';
+                
+                return `
+                    <div class="file-card">
+                        <div class="file-icon" style="background: ${statusColor}; font-size: 0.7em;">${task.type.slice(0,3).toUpperCase()}</div>
+                        <div class="file-name">${task.name}</div>
+                        <div class="file-meta">${task.frequency} • Due: ${task.nextDue}</div>
+                        <div class="file-meta" style="color: ${statusColor}; font-weight: bold;">${status}</div>
+                        <div class="file-actions">
+                            <button class="btn" onclick="completeTask(${task.id})" style="background: var(--success); color: white;">Done</button>
+                            <button class="btn btn-danger" onclick="deleteMaintenanceTask(${task.id})">Del</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function completeTask(id) {
+            const tasks = JSON.parse(localStorage.getItem('maintenanceTasks') || '[]');
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            
+            const today = new Date().toISOString().split('T')[0];
+            task.lastDone = today;
+            
+            // Calculate next due date based on frequency
+            const nextDate = new Date(today);
+            switch(task.frequency) {
+                case 'Daily': nextDate.setDate(nextDate.getDate() + 1); break;
+                case 'Weekly': nextDate.setDate(nextDate.getDate() + 7); break;
+                case 'Monthly': nextDate.setMonth(nextDate.getMonth() + 1); break;
+                case 'Quarterly': nextDate.setMonth(nextDate.getMonth() + 3); break;
+                case 'Yearly': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
+                case 'Once': 
+                    tasks.splice(tasks.findIndex(t => t.id === id), 1);
+                    localStorage.setItem('maintenanceTasks', JSON.stringify(tasks));
+                    loadMaintenanceTasks();
+                    return;
+            }
+            
+            task.nextDue = nextDate.toISOString().split('T')[0];
+            localStorage.setItem('maintenanceTasks', JSON.stringify(tasks));
+            loadMaintenanceTasks();
+        }
+        
+        function deleteMaintenanceTask(id) {
+            if (confirm('Delete this maintenance task?')) {
+                const tasks = JSON.parse(localStorage.getItem('maintenanceTasks') || '[]');
+                const filtered = tasks.filter(t => t.id !== id);
+                localStorage.setItem('maintenanceTasks', JSON.stringify(filtered));
+                loadMaintenanceTasks();
+            }
+        }
+
+        // QR Code Functions
+        function updateQRPlaceholder() {
+            const type = document.getElementById('qrType').value;
+            const input = document.getElementById('qrContent');
+            const wifiFields = document.getElementById('wifiFields');
+            
+            wifiFields.style.display = type === 'wifi' ? 'block' : 'none';
+            
+            const placeholders = {
+                url: 'https://your-menu-website.com',
+                text: 'Welcome to Birria Fusion!',
+                phone: '+1-555-123-4567',
+                email: 'info@birriafusion.com',
+                wifi: 'Leave blank for WiFi'
+            };
+            
+            input.placeholder = placeholders[type];
+            if (type === 'wifi') input.style.display = 'none';
+            else input.style.display = 'block';
+        }
+        
+        function generateQR() {
+            const type = document.getElementById('qrType').value;
+            let content = '';
+            
+            if (type === 'wifi') {
+                const ssid = document.getElementById('wifiSSID').value;
+                const password = document.getElementById('wifiPassword').value;
+                if (!ssid) {
+                    alert('Please enter network name');
+                    return;
+                }
+                content = `WIFI:T:WPA;S:${ssid};P:${password};;`;
+            } else {
+                content = document.getElementById('qrContent').value;
+                if (!content) {
+                    alert('Please enter content for QR code');
+                    return;
+                }
+                
+                if (type === 'phone') content = `tel:${content}`;
+                if (type === 'email') content = `mailto:${content}`;
+            }
+            
+            // Generate QR code using Google Charts API
+            const size = '200x200';
+            const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=${size}&chl=${encodeURIComponent(content)}`;
+            
+            document.getElementById('qrResult').innerHTML = `
+                <div style="background: white; padding: 20px; border-radius: 12px; display: inline-block; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                    <img src="${qrUrl}" alt="QR Code" style="display: block; margin-bottom: 10px;">
+                    <div style="font-size: 12px; color: var(--gray); margin-bottom: 10px; word-break: break-all;">${content}</div>
+                    <button class="btn" onclick="downloadQR('${qrUrl}')" style="width: auto; padding: 8px 16px; font-size: 0.9em;">Download</button>
+                </div>
+            `;
+        }
+        
+        function downloadQR(url) {
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'qr-code.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
         // Initialize
