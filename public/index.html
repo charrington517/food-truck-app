@@ -640,6 +640,32 @@
         <div id="tools" class="page">
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">👥 Employee Time Clock</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div style="background: var(--gray-light); padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px;">Sign In/Out</h4>
+                        <select id="employeeSelect" style="width: 100%; margin-bottom: 10px;">
+                            <option value="">Select employee...</option>
+                        </select>
+                        <button class="btn" onclick="toggleEmployeeStatus()" id="clockBtn" style="width: 100%; padding: 10px;">Sign In</button>
+                        <div id="currentStatus" style="margin-top: 10px; font-size: 0.9em;"></div>
+                    </div>
+                    <div style="background: var(--gray-light); padding: 15px; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px;">Add Employee</h4>
+                        <input type="text" id="newEmployeeName" placeholder="Employee Name" style="width: 100%; margin-bottom: 8px;">
+                        <input type="text" id="newEmployeeRole" placeholder="Role (e.g., Cook, Cashier)" style="width: 100%; margin-bottom: 8px;">
+                        <button class="btn" onclick="addEmployee()" style="width: 100%; padding: 8px;">Add Employee</button>
+                    </div>
+                </div>
+                <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px;">
+                    <h4 style="margin-bottom: 10px;">Current Status</h4>
+                    <div id="employeeStatusList"></div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">📜 License Renewals</h3>
                     <button class="btn" onclick="addLicense()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add License</button>
                 </div>
@@ -1060,7 +1086,7 @@
             if (pageId === 'ingredients') loadIngredients();
             if (pageId === 'inventory') loadInventory();
             if (pageId === 'suppliers') loadSuppliers();
-            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); }
+            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); loadEmployees(); }
             if (pageId === 'catering') { loadCatering(); loadTools(); }
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
@@ -3828,6 +3854,144 @@
                 loadMaintenanceTasks();
             }
         }
+
+        // Employee Management Functions
+        function addEmployee() {
+            const name = document.getElementById('newEmployeeName').value.trim();
+            const role = document.getElementById('newEmployeeRole').value.trim();
+            
+            if (!name || !role) {
+                alert('Please enter employee name and role');
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            employees.push({
+                id: Date.now(),
+                name,
+                role,
+                status: 'signed-out',
+                signInTime: null,
+                totalHours: 0
+            });
+            localStorage.setItem('employees', JSON.stringify(employees));
+            
+            document.getElementById('newEmployeeName').value = '';
+            document.getElementById('newEmployeeRole').value = '';
+            loadEmployees();
+        }
+        
+        function loadEmployees() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const select = document.getElementById('employeeSelect');
+            
+            if (select) {
+                select.innerHTML = '<option value="">Select employee...</option>' +
+                    employees.map(emp => `<option value="${emp.id}">${emp.name} (${emp.role})</option>`).join('');
+            }
+            
+            updateEmployeeStatusList();
+            updateCurrentStatus();
+        }
+        
+        function toggleEmployeeStatus() {
+            const employeeId = document.getElementById('employeeSelect').value;
+            if (!employeeId) {
+                alert('Please select an employee');
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employee = employees.find(emp => emp.id == employeeId);
+            if (!employee) return;
+            
+            const now = new Date();
+            
+            if (employee.status === 'signed-out') {
+                employee.status = 'signed-in';
+                employee.signInTime = now.toISOString();
+            } else {
+                employee.status = 'signed-out';
+                if (employee.signInTime) {
+                    const signInTime = new Date(employee.signInTime);
+                    const hoursWorked = (now - signInTime) / (1000 * 60 * 60);
+                    employee.totalHours += hoursWorked;
+                }
+                employee.signInTime = null;
+            }
+            
+            localStorage.setItem('employees', JSON.stringify(employees));
+            updateCurrentStatus();
+            updateEmployeeStatusList();
+        }
+        
+        function updateCurrentStatus() {
+            const employeeId = document.getElementById('employeeSelect').value;
+            const btn = document.getElementById('clockBtn');
+            const status = document.getElementById('currentStatus');
+            
+            if (!employeeId) {
+                btn.textContent = 'Sign In';
+                btn.style.background = 'var(--orange)';
+                status.innerHTML = '';
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employee = employees.find(emp => emp.id == employeeId);
+            if (!employee) return;
+            
+            if (employee.status === 'signed-in') {
+                btn.textContent = 'Sign Out';
+                btn.style.background = 'var(--danger)';
+                const signInTime = new Date(employee.signInTime);
+                const currentTime = (new Date() - signInTime) / (1000 * 60 * 60);
+                status.innerHTML = `<div style="color: var(--success); font-weight: bold;">Signed in since ${signInTime.toLocaleTimeString()}</div><div>Current shift: ${currentTime.toFixed(1)} hours</div>`;
+            } else {
+                btn.textContent = 'Sign In';
+                btn.style.background = 'var(--success)';
+                status.innerHTML = `<div style="color: var(--gray);">Signed out</div><div>Total hours: ${employee.totalHours.toFixed(1)}</div>`;
+            }
+        }
+        
+        function updateEmployeeStatusList() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const list = document.getElementById('employeeStatusList');
+            
+            if (employees.length === 0) {
+                list.innerHTML = '<div style="color: var(--gray); font-style: italic;">No employees added yet</div>';
+                return;
+            }
+            
+            list.innerHTML = employees.map(emp => {
+                const statusColor = emp.status === 'signed-in' ? 'var(--success)' : 'var(--gray)';
+                const statusText = emp.status === 'signed-in' ? 'SIGNED IN' : 'Signed Out';
+                let timeInfo = '';
+                
+                if (emp.status === 'signed-in' && emp.signInTime) {
+                    const signInTime = new Date(emp.signInTime);
+                    const currentHours = (new Date() - signInTime) / (1000 * 60 * 60);
+                    timeInfo = `Current: ${currentHours.toFixed(1)}h`;
+                } else {
+                    timeInfo = `Total: ${emp.totalHours.toFixed(1)}h`;
+                }
+                
+                return `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px; margin-bottom: 5px; background: var(--gray-light); border-radius: 6px;">
+                        <div>
+                            <div style="font-weight: bold;">${emp.name}</div>
+                            <div style="font-size: 0.8em; color: var(--gray);">${emp.role}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: ${statusColor}; font-weight: bold; font-size: 0.8em;">${statusText}</div>
+                            <div style="font-size: 0.8em; color: var(--gray);">${timeInfo}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        document.getElementById('employeeSelect')?.addEventListener('change', updateCurrentStatus);
 
         // Cost Calculator Functions
         function toggleCostSection(section) {
