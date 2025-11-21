@@ -586,6 +586,11 @@
             </div>
 
             <div class="section">
+                <h2 class="section-title">Upcoming Schedule</h2>
+                <div class="grid" id="upcomingSchedule"></div>
+            </div>
+            
+            <div class="section">
                 <h2 class="section-title">Top Items by Food Cost</h2>
                 <div class="grid" id="topItems"></div>
             </div>
@@ -633,6 +638,15 @@
 
         <!-- Tools Page -->
         <div id="tools" class="page">
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">💰 Expense Tracking</h3>
+                    <button class="btn" onclick="addExpense()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Expense</button>
+                </div>
+                <div class="stats" id="expenseStats"></div>
+                <div class="grid" id="expenseList"></div>
+            </div>
+            
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">📜 License Renewals</h3>
@@ -699,6 +713,30 @@
             <div class="section">
                 <h2 class="section-title">Equipment & Rentals</h2>
                 <div class="grid" id="toolsList"></div>
+            </div>
+        </div>
+
+        <!-- Events Page -->
+        <div id="events" class="page">
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">🎆 Event Calendar</h2>
+                    <button class="btn" onclick="addEvent()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Event</button>
+                </div>
+                <div class="stats" id="eventStats"></div>
+                <div class="grid" id="eventList"></div>
+            </div>
+        </div>
+
+        <!-- Marketing Page -->
+        <div id="marketing" class="page">
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">⭐ Review Management</h2>
+                    <button class="btn" onclick="addReview()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Review</button>
+                </div>
+                <div class="stats" id="reviewStats"></div>
+                <div class="grid" id="reviewList"></div>
             </div>
         </div>
 
@@ -896,6 +934,8 @@
         <div class="extra-menu" id="extraMenu">
             <button onclick="showPage('tools')">Tools</button>
             <button onclick="showPage('catering')">Catering</button>
+            <button onclick="showPage('events')">Events</button>
+            <button onclick="showPage('marketing')">Marketing</button>
             <button onclick="showPage('analytics')">Analytics</button>
         </div>
     </nav>
@@ -931,8 +971,10 @@
             if (pageId === 'ingredients') loadIngredients();
             if (pageId === 'inventory') loadInventory();
             if (pageId === 'suppliers') loadSuppliers();
-            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); }
+            if (pageId === 'tools') { loadExpenses(); loadFiles(); loadLicenses(); loadMaintenanceTasks(); }
             if (pageId === 'catering') { loadCatering(); loadTools(); }
+            if (pageId === 'events') loadEvents();
+            if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') loadAnalytics();
             if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadDefaultMargin(); }
         }
@@ -1137,6 +1179,58 @@
         });
 
         // Dashboard Functions
+        function loadUpcomingSchedule() {
+            const today = new Date().toISOString().split('T')[0];
+            const nextWeek = new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0];
+            
+            // Get upcoming events
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            const upcomingEvents = events.filter(e => e.date >= today && e.date <= nextWeek && e.status === 'Accepted')
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            // Get upcoming catering
+            const catering = JSON.parse(localStorage.getItem('catering') || '[]');
+            const upcomingCatering = catering.filter(c => c.date >= today && c.date <= nextWeek)
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            let scheduleHtml = '';
+            
+            // Combine and sort all upcoming items
+            const allUpcoming = [
+                ...upcomingEvents.map(e => ({...e, type: 'event', icon: '🎆'})),
+                ...upcomingCatering.map(c => ({...c, type: 'catering', icon: '🎉'}))
+            ].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            if (allUpcoming.length === 0) {
+                scheduleHtml = `
+                    <div class="card" style="text-align: center; color: var(--gray);">
+                        <div class="card-title">No upcoming events</div>
+                        <div class="card-meta">Add events or catering orders to see your schedule</div>
+                    </div>
+                `;
+            } else {
+                scheduleHtml = allUpcoming.slice(0, 6).map(item => {
+                    const isToday = item.date === today;
+                    const daysDiff = Math.ceil((new Date(item.date) - new Date()) / (1000 * 60 * 60 * 24));
+                    const timeText = daysDiff === 0 ? 'Today' : daysDiff === 1 ? 'Tomorrow' : `${daysDiff} days`;
+                    
+                    return `
+                        <div class="card" style="${isToday ? 'border-color: var(--orange); background: rgba(255, 107, 53, 0.05);' : ''}">
+                            <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
+                                <span>${item.icon}</span>
+                                <span>${item.type === 'event' ? item.name : item.client}</span>
+                            </div>
+                            <div class="card-meta">${item.type === 'event' ? item.location : `${item.guests} guests`}</div>
+                            <div class="card-meta" style="color: ${isToday ? 'var(--orange)' : 'var(--gray)'}; font-weight: ${isToday ? 'bold' : 'normal'};">${item.date} • ${timeText}</div>
+                            ${item.type === 'catering' && item.price ? `<div class="card-meta">$${item.price}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            document.getElementById('upcomingSchedule').innerHTML = scheduleHtml;
+        }
+        
         function loadDashboard() {
             fetch('/api/menu')
                 .then(r => r.json())
@@ -1180,6 +1274,9 @@
                             </div>
                         `;
                     }).join('');
+                    
+                    // Load upcoming schedule
+                    loadUpcomingSchedule();
                 });
         }
 
@@ -2162,6 +2259,471 @@
             }
         }
         
+        // Event Functions
+        function addEvent() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Event';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="eventName" placeholder="Event Name (e.g., Downtown Food Festival)">
+                    </div>
+                    <div class="form-row">
+                        <select id="eventType">
+                            <option value="Festival">Festival</option>
+                            <option value="Farmers Market">Farmers Market</option>
+                            <option value="Street Fair">Street Fair</option>
+                            <option value="Concert">Concert</option>
+                            <option value="Sports Event">Sports Event</option>
+                            <option value="Corporate Event">Corporate Event</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <input type="text" id="eventLocation" placeholder="Location">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="eventDate" placeholder="Event Date" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                        <input type="text" id="eventTime" placeholder="Time (e.g., 10am-6pm)">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="applicationFee" placeholder="Application Fee ($)" step="0.01" min="0">
+                        <select id="eventStatus">
+                            <option value="Interested">Interested</option>
+                            <option value="Applied">Applied</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Rejected">Rejected</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="eventNotes" placeholder="Notes (organizer contact, requirements, competition...)" rows="2"></textarea>
+                    </div>
+                    <button class="btn" onclick="saveEvent(); closeAddModal();">Add Event</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function saveEvent() {
+            const name = document.getElementById('eventName').value;
+            const type = document.getElementById('eventType').value;
+            const location = document.getElementById('eventLocation').value;
+            const date = document.getElementById('eventDate').value;
+            const time = document.getElementById('eventTime').value;
+            const fee = parseFloat(document.getElementById('applicationFee').value) || 0;
+            const status = document.getElementById('eventStatus').value;
+            const notes = document.getElementById('eventNotes').value;
+            
+            if (!name || !location || !date) {
+                alert('Please fill in event name, location, and date');
+                return;
+            }
+            
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            events.push({
+                id: Date.now(),
+                name,
+                type,
+                location,
+                date,
+                time,
+                fee,
+                status,
+                notes
+            });
+            localStorage.setItem('events', JSON.stringify(events));
+            loadEvents();
+        }
+        
+        function loadEvents() {
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Calculate stats
+            const upcomingEvents = events.filter(e => e.date >= today && e.status === 'Accepted').length;
+            const appliedEvents = events.filter(e => e.status === 'Applied').length;
+            const completedEvents = events.filter(e => e.status === 'Completed').length;
+            const totalFees = events.reduce((sum, e) => sum + e.fee, 0);
+            
+            document.getElementById('eventStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${upcomingEvents}</div>
+                    <div class="stat-label">Upcoming Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${appliedEvents}</div>
+                    <div class="stat-label">Pending Applications</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${completedEvents}</div>
+                    <div class="stat-label">Completed Events</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">$${totalFees.toFixed(0)}</div>
+                    <div class="stat-label">Total Fees Paid</div>
+                </div>
+            `;
+            
+            // Show events sorted by date
+            const sortedEvents = events.sort((a, b) => new Date(a.date) - new Date(b.date));
+            document.getElementById('eventList').innerHTML = sortedEvents.map(event => {
+                const isUpcoming = event.date >= today;
+                const statusColors = {
+                    'Interested': '#6c757d',
+                    'Applied': '#ffc107',
+                    'Accepted': '#28a745',
+                    'Rejected': '#dc3545',
+                    'Completed': '#17a2b8'
+                };
+                
+                return `
+                    <div class="card">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>${event.name}</span>
+                            <span style="color: ${statusColors[event.status]}; font-size: 0.8em; font-weight: bold;">${event.status}</span>
+                        </div>
+                        <div class="card-meta">${event.type} • ${event.location}</div>
+                        <div class="card-meta">${event.date} ${event.time ? '• ' + event.time : ''}</div>
+                        ${event.fee > 0 ? `<div class="card-meta">Fee: $${event.fee.toFixed(2)}</div>` : ''}
+                        ${event.notes ? `<div class="card-meta" style="font-style: italic; margin-top: 8px;">${event.notes}</div>` : ''}
+                        <div class="card-actions">
+                            <button class="btn" onclick="updateEventStatus(${event.id})" style="background: var(--orange); color: white;">Update</button>
+                            <button class="btn btn-danger" onclick="deleteEvent(${event.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function updateEventStatus(id) {
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            const event = events.find(e => e.id === id);
+            if (!event) return;
+            
+            const newStatus = prompt('Update status:', event.status);
+            const validStatuses = ['Interested', 'Applied', 'Accepted', 'Rejected', 'Completed'];
+            
+            if (newStatus && validStatuses.includes(newStatus)) {
+                event.status = newStatus;
+                localStorage.setItem('events', JSON.stringify(events));
+                loadEvents();
+            }
+        }
+        
+        function deleteEvent(id) {
+            if (confirm('Delete this event?')) {
+                const events = JSON.parse(localStorage.getItem('events') || '[]');
+                const filtered = events.filter(e => e.id !== id);
+                localStorage.setItem('events', JSON.stringify(filtered));
+                loadEvents();
+            }
+        }
+
+        // Review Functions
+        function addReview() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Review';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-row">
+                        <select id="reviewPlatform">
+                            <option value="Google">Google</option>
+                            <option value="Yelp">Yelp</option>
+                            <option value="Facebook">Facebook</option>
+                            <option value="TripAdvisor">TripAdvisor</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <select id="reviewRating">
+                            <option value="5">5 Stars</option>
+                            <option value="4">4 Stars</option>
+                            <option value="3">3 Stars</option>
+                            <option value="2">2 Stars</option>
+                            <option value="1">1 Star</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="reviewerName" placeholder="Reviewer Name">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="reviewText" placeholder="Review text..." rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="reviewDate" placeholder="Review Date" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                        <select id="responseStatus">
+                            <option value="Not Responded">Not Responded</option>
+                            <option value="Responded">Responded</option>
+                            <option value="No Response Needed">No Response Needed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="responseText" placeholder="Your response (optional)..." rows="2"></textarea>
+                    </div>
+                    <button class="btn" onclick="saveReview(); closeAddModal();">Add Review</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function saveReview() {
+            const platform = document.getElementById('reviewPlatform').value;
+            const rating = parseInt(document.getElementById('reviewRating').value);
+            const reviewerName = document.getElementById('reviewerName').value;
+            const reviewText = document.getElementById('reviewText').value;
+            const reviewDate = document.getElementById('reviewDate').value;
+            const responseStatus = document.getElementById('responseStatus').value;
+            const responseText = document.getElementById('responseText').value;
+            
+            if (!reviewerName || !reviewText || !reviewDate) {
+                alert('Please fill in reviewer name, review text, and date');
+                return;
+            }
+            
+            const reviews = JSON.parse(localStorage.getItem('reviews') || '[]');
+            reviews.push({
+                id: Date.now(),
+                platform,
+                rating,
+                reviewerName,
+                reviewText,
+                reviewDate,
+                responseStatus,
+                responseText
+            });
+            localStorage.setItem('reviews', JSON.stringify(reviews));
+            loadReviews();
+        }
+        
+        function loadReviews() {
+            const reviews = JSON.parse(localStorage.getItem('reviews') || '[]');
+            
+            // Calculate stats
+            const avgRating = reviews.length > 0 ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1) : '0.0';
+            const totalReviews = reviews.length;
+            const needResponse = reviews.filter(r => r.responseStatus === 'Not Responded').length;
+            const thisMonth = new Date().toISOString().slice(0, 7);
+            const monthlyReviews = reviews.filter(r => r.reviewDate.startsWith(thisMonth)).length;
+            
+            document.getElementById('reviewStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${avgRating}</div>
+                    <div class="stat-label">Avg Rating</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${totalReviews}</div>
+                    <div class="stat-label">Total Reviews</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: ${needResponse > 0 ? 'var(--danger)' : 'var(--success)'}">${needResponse}</div>
+                    <div class="stat-label">Need Response</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${monthlyReviews}</div>
+                    <div class="stat-label">This Month</div>
+                </div>
+            `;
+            
+            // Show recent reviews
+            const recentReviews = reviews.sort((a, b) => new Date(b.reviewDate) - new Date(a.reviewDate)).slice(0, 10);
+            document.getElementById('reviewList').innerHTML = recentReviews.map(review => {
+                const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+                const statusColor = review.responseStatus === 'Not Responded' ? 'var(--danger)' : 
+                                   review.responseStatus === 'Responded' ? 'var(--success)' : 'var(--gray)';
+                
+                return `
+                    <div class="card">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>${review.reviewerName}</span>
+                            <span style="color: #ffc107;">${stars}</span>
+                        </div>
+                        <div class="card-meta">${review.platform} • ${review.reviewDate}</div>
+                        <div class="card-meta" style="font-style: italic; margin: 8px 0;">"${review.reviewText.substring(0, 100)}${review.reviewText.length > 100 ? '...' : ''}"</div>
+                        <div class="card-meta" style="color: ${statusColor}; font-weight: bold;">${review.responseStatus}</div>
+                        ${review.responseText ? `<div class="card-meta" style="background: var(--gray-light); padding: 8px; border-radius: 4px; margin-top: 8px;">Response: "${review.responseText.substring(0, 80)}${review.responseText.length > 80 ? '...' : ''}"</div>` : ''}
+                        <div class="card-actions">
+                            <button class="btn" onclick="respondToReview(${review.id})" style="background: var(--orange); color: white;">Respond</button>
+                            <button class="btn btn-danger" onclick="deleteReview(${review.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function respondToReview(id) {
+            const reviews = JSON.parse(localStorage.getItem('reviews') || '[]');
+            const review = reviews.find(r => r.id === id);
+            if (!review) return;
+            
+            const response = prompt('Enter your response:', review.responseText || '');
+            if (response !== null) {
+                review.responseText = response;
+                review.responseStatus = response.trim() ? 'Responded' : 'Not Responded';
+                localStorage.setItem('reviews', JSON.stringify(reviews));
+                loadReviews();
+            }
+        }
+        
+        function deleteReview(id) {
+            if (confirm('Delete this review?')) {
+                const reviews = JSON.parse(localStorage.getItem('reviews') || '[]');
+                const filtered = reviews.filter(r => r.id !== id);
+                localStorage.setItem('reviews', JSON.stringify(filtered));
+                loadReviews();
+            }
+        }
+
+        // Expense Functions
+        function addExpense() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Expense';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-row">
+                        <select id="expenseCategory">
+                            <option value="Fuel">Fuel</option>
+                            <option value="Supplies">Supplies</option>
+                            <option value="Permits">Permits & Licenses</option>
+                            <option value="Insurance">Insurance</option>
+                            <option value="Maintenance">Vehicle Maintenance</option>
+                            <option value="Marketing">Marketing</option>
+                            <option value="Utilities">Utilities</option>
+                            <option value="Labor">Labor</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <input type="number" id="expenseAmount" placeholder="Amount ($)" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="expenseDescription" placeholder="Description (e.g., Gas station fill-up, Paper towels)">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="expenseDate" placeholder="Date" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                        <select id="expensePayment">
+                            <option value="Cash">Cash</option>
+                            <option value="Card">Credit/Debit Card</option>
+                            <option value="Check">Check</option>
+                            <option value="Online">Online Payment</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="saveExpense(); closeAddModal();">Add Expense</button>
+                </div>
+            `;
+            
+            // Set today's date as default
+            setTimeout(() => {
+                document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+            }, 100);
+            
+            modal.classList.add('show');
+        }
+        
+        function saveExpense() {
+            const category = document.getElementById('expenseCategory').value;
+            const amount = parseFloat(document.getElementById('expenseAmount').value);
+            const description = document.getElementById('expenseDescription').value;
+            const date = document.getElementById('expenseDate').value;
+            const payment = document.getElementById('expensePayment').value;
+            
+            if (!amount || !description || !date) {
+                alert('Please fill in amount, description, and date');
+                return;
+            }
+            
+            const expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+            expenses.push({
+                id: Date.now(),
+                category,
+                amount,
+                description,
+                date,
+                payment
+            });
+            localStorage.setItem('expenses', JSON.stringify(expenses));
+            loadExpenses();
+        }
+        
+        function loadExpenses() {
+            const expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+            
+            // Calculate stats
+            const thisMonth = new Date().toISOString().slice(0, 7);
+            const monthlyExpenses = expenses.filter(e => e.date.startsWith(thisMonth));
+            const totalMonthly = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
+            
+            const categories = {};
+            monthlyExpenses.forEach(e => {
+                categories[e.category] = (categories[e.category] || 0) + e.amount;
+            });
+            
+            const topCategory = Object.keys(categories).reduce((a, b) => categories[a] > categories[b] ? a : b, 'None');
+            
+            document.getElementById('expenseStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">$${totalMonthly.toFixed(0)}</div>
+                    <div class="stat-label">This Month</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${monthlyExpenses.length}</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">$${(totalMonthly / (monthlyExpenses.length || 1)).toFixed(0)}</div>
+                    <div class="stat-label">Avg per Transaction</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${topCategory}</div>
+                    <div class="stat-label">Top Category</div>
+                </div>
+            `;
+            
+            // Show recent expenses
+            const recentExpenses = expenses.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+            document.getElementById('expenseList').innerHTML = recentExpenses.map(expense => {
+                const categoryColors = {
+                    'Fuel': '#ff6b35',
+                    'Supplies': '#28a745',
+                    'Permits': '#dc3545',
+                    'Insurance': '#6f42c1',
+                    'Maintenance': '#fd7e14',
+                    'Marketing': '#20c997',
+                    'Utilities': '#6c757d',
+                    'Labor': '#007bff',
+                    'Other': '#ffc107'
+                };
+                
+                return `
+                    <div class="card">
+                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                            <span>${expense.description}</span>
+                            <span style="color: ${categoryColors[expense.category] || '#666'}; font-weight: bold;">$${expense.amount.toFixed(2)}</span>
+                        </div>
+                        <div class="card-meta">${expense.category} • ${expense.date}</div>
+                        <div class="card-meta">Paid by ${expense.payment}</div>
+                        <div class="card-actions">
+                            <button class="btn btn-danger" onclick="deleteExpense(${expense.id})">Delete</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function deleteExpense(id) {
+            if (confirm('Delete this expense?')) {
+                const expenses = JSON.parse(localStorage.getItem('expenses') || '[]');
+                const filtered = expenses.filter(e => e.id !== id);
+                localStorage.setItem('expenses', JSON.stringify(filtered));
+                loadExpenses();
+            }
+        }
+
         // Analytics Functions
         function loadAnalytics() {
             fetch('/api/menu')
