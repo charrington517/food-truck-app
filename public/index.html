@@ -841,6 +841,22 @@
             </div>
             
             <div class="section">
+                <h2 class="section-title" onclick="toggleSettingsSection('eventStatuses')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Event Status Categories
+                    <span id="eventStatuses-icon">▼</span>
+                </h2>
+                <div id="eventStatuses-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-row">
+                            <input type="text" id="newEventStatus" placeholder="Add new status (e.g., Waitlisted, Confirmed)">
+                            <button class="btn" onclick="addEventStatus()" style="width: auto; padding: 12px 20px;">Add Status</button>
+                        </div>
+                        <div id="eventStatusesList" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
                 <h2 class="section-title" onclick="toggleSettingsSection('data')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                     Data Management
                     <span id="data-icon">▼</span>
@@ -976,7 +992,7 @@
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') loadAnalytics();
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadDefaultMargin(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadDefaultMargin(); }
         }
 
         // Modal Functions
@@ -2284,7 +2300,10 @@
                         <input type="text" id="eventLocation" placeholder="Location">
                     </div>
                     <div class="form-row">
-                        <input type="text" id="eventDate" placeholder="Event Date" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                        <input type="text" id="eventDate" placeholder="Start Date" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                        <input type="text" id="eventEndDate" placeholder="End Date (optional)" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+                    </div>
+                    <div class="form-group">
                         <input type="text" id="eventTime" placeholder="Time (e.g., 10am-6pm)">
                     </div>
                     <div class="form-row">
@@ -2293,6 +2312,7 @@
                             <option value="Interested">Interested</option>
                             <option value="Applied">Applied</option>
                             <option value="Accepted">Accepted</option>
+                            <option value="Accepted & Paid">Accepted & Paid</option>
                             <option value="Rejected">Rejected</option>
                             <option value="Completed">Completed</option>
                         </select>
@@ -2312,13 +2332,14 @@
             const type = document.getElementById('eventType').value;
             const location = document.getElementById('eventLocation').value;
             const date = document.getElementById('eventDate').value;
+            const endDate = document.getElementById('eventEndDate').value;
             const time = document.getElementById('eventTime').value;
             const fee = parseFloat(document.getElementById('applicationFee').value) || 0;
             const status = document.getElementById('eventStatus').value;
             const notes = document.getElementById('eventNotes').value;
             
             if (!name || !location || !date) {
-                alert('Please fill in event name, location, and date');
+                alert('Please fill in event name, location, and start date');
                 return;
             }
             
@@ -2329,10 +2350,12 @@
                 type,
                 location,
                 date,
+                endDate,
                 time,
                 fee,
                 status,
-                notes
+                notes,
+                paid: false
             });
             localStorage.setItem('events', JSON.stringify(events));
             loadEvents();
@@ -2346,7 +2369,7 @@
             const upcomingEvents = events.filter(e => e.date >= today && e.status === 'Accepted').length;
             const appliedEvents = events.filter(e => e.status === 'Applied').length;
             const completedEvents = events.filter(e => e.status === 'Completed').length;
-            const totalFees = events.reduce((sum, e) => sum + e.fee, 0);
+            const totalFees = events.reduce((sum, e) => sum + (e.paid ? e.fee : 0), 0);
             
             document.getElementById('eventStats').innerHTML = `
                 <div class="stat-card">
@@ -2375,23 +2398,36 @@
                     'Interested': '#6c757d',
                     'Applied': '#ffc107',
                     'Accepted': '#28a745',
+                    'Accepted & Paid': '#20c997',
                     'Rejected': '#dc3545',
                     'Completed': '#17a2b8'
                 };
                 
                 return `
                     <div class="card">
-                        <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
-                            <span>${event.name}</span>
-                            <span style="color: ${statusColors[event.status]}; font-size: 0.8em; font-weight: bold;">${event.status}</span>
+                        <div class="card-header" onclick="toggleEventDetails(${event.id})" style="cursor: pointer;">
+                            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>${event.name}</span>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <span style="color: ${statusColors[event.status]}; font-size: 0.8em; font-weight: bold;">${event.status}</span>
+                                    ${event.fee > 0 ? `<span style="color: ${event.paid ? 'var(--success)' : 'var(--danger)'}; font-size: 0.7em; font-weight: bold;">${event.paid ? '✓ PAID' : '✗ UNPAID'}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="card-meta" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>${event.type} • ${event.location}</span>
+                                <span>${event.endDate ? `${event.date} - ${event.endDate}` : event.date}</span>
+                            </div>
                         </div>
-                        <div class="card-meta">${event.type} • ${event.location}</div>
-                        <div class="card-meta">${event.date} ${event.time ? '• ' + event.time : ''}</div>
-                        ${event.fee > 0 ? `<div class="card-meta">Fee: $${event.fee.toFixed(2)}</div>` : ''}
-                        ${event.notes ? `<div class="card-meta" style="font-style: italic; margin-top: 8px;">${event.notes}</div>` : ''}
-                        <div class="card-actions">
-                            <button class="btn" onclick="updateEventStatus(${event.id})" style="background: var(--orange); color: white;">Update</button>
-                            <button class="btn btn-danger" onclick="deleteEvent(${event.id})">Delete</button>
+                        <div class="card-details" id="event-details-${event.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                            ${event.time ? `<div class="card-meta">Time: ${event.time}</div>` : ''}
+                            ${event.fee > 0 ? `<div class="card-meta">Fee: $${event.fee.toFixed(2)}</div>` : ''}
+                            ${event.notes ? `<div class="card-meta" style="font-style: italic;">Notes: ${event.notes}</div>` : ''}
+                            <div class="card-actions" style="margin-top: 10px;">
+                                <button class="btn" onclick="editEvent(${event.id})" style="background: var(--orange); color: white;">Edit</button>
+                                <button class="btn" onclick="updateEventStatus(${event.id})" style="background: var(--success); color: white;">Status</button>
+                                ${event.fee > 0 ? `<button class="btn" onclick="togglePayment(${event.id})" style="background: ${event.paid ? 'var(--danger)' : 'var(--success)'}; color: white;">${event.paid ? 'Mark Unpaid' : 'Mark Paid'}</button>` : ''}
+                                <button class="btn btn-danger" onclick="deleteEvent(${event.id})">Delete</button>
+                            </div>
                         </div>
                     </div>
                 `;
@@ -2403,11 +2439,96 @@
             const event = events.find(e => e.id === id);
             if (!event) return;
             
-            const newStatus = prompt('Update status:', event.status);
-            const validStatuses = ['Interested', 'Applied', 'Accepted', 'Rejected', 'Completed'];
+            const statusOptions = ['Interested', 'Applied', 'Accepted', 'Accepted & Paid', 'Rejected', 'Completed'];
+            const currentIndex = statusOptions.indexOf(event.status);
+            const optionsText = statusOptions.map((status, index) => `${index + 1}. ${status}`).join('\n');
             
-            if (newStatus && validStatuses.includes(newStatus)) {
-                event.status = newStatus;
+            const choice = prompt(`Current status: ${event.status}\n\nSelect new status:\n${optionsText}\n\nEnter number (1-5):`);
+            const choiceNum = parseInt(choice);
+            
+            if (choiceNum >= 1 && choiceNum <= 5) {
+                event.status = statusOptions[choiceNum - 1];
+                localStorage.setItem('events', JSON.stringify(events));
+                loadEvents();
+            }
+        }
+        
+        function editEvent(id) {
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            const event = events.find(e => e.id === id);
+            if (!event) return;
+            
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Edit Event';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="eventName" placeholder="Event Name" value="${event.name}">
+                    </div>
+                    <div class="form-row">
+                        <select id="eventType">
+                            <option value="Festival" ${event.type === 'Festival' ? 'selected' : ''}>Festival</option>
+                            <option value="Farmers Market" ${event.type === 'Farmers Market' ? 'selected' : ''}>Farmers Market</option>
+                            <option value="Street Fair" ${event.type === 'Street Fair' ? 'selected' : ''}>Street Fair</option>
+                            <option value="Concert" ${event.type === 'Concert' ? 'selected' : ''}>Concert</option>
+                            <option value="Sports Event" ${event.type === 'Sports Event' ? 'selected' : ''}>Sports Event</option>
+                            <option value="Corporate Event" ${event.type === 'Corporate Event' ? 'selected' : ''}>Corporate Event</option>
+                            <option value="Other" ${event.type === 'Other' ? 'selected' : ''}>Other</option>
+                        </select>
+                        <input type="text" id="eventLocation" placeholder="Location" value="${event.location}">
+                    </div>
+                    <div class="form-row">
+                        <input type="date" id="eventDate" value="${event.date}">
+                        <input type="date" id="eventEndDate" placeholder="End Date" value="${event.endDate || ''}">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="eventTime" placeholder="Time" value="${event.time || ''}">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="applicationFee" placeholder="Application Fee ($)" step="0.01" min="0" value="${event.fee}">
+                        <select id="eventStatus">
+                            <option value="Interested" ${event.status === 'Interested' ? 'selected' : ''}>Interested</option>
+                            <option value="Applied" ${event.status === 'Applied' ? 'selected' : ''}>Applied</option>
+                            <option value="Accepted" ${event.status === 'Accepted' ? 'selected' : ''}>Accepted</option>
+                            <option value="Accepted & Paid" ${event.status === 'Accepted & Paid' ? 'selected' : ''}>Accepted & Paid</option>
+                            <option value="Rejected" ${event.status === 'Rejected' ? 'selected' : ''}>Rejected</option>
+                            <option value="Completed" ${event.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="eventNotes" placeholder="Notes" rows="2">${event.notes || ''}</textarea>
+                    </div>
+                    <button class="btn" onclick="updateEvent(${id}); closeAddModal();">Update Event</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function updateEvent(id) {
+            const name = document.getElementById('eventName').value;
+            const type = document.getElementById('eventType').value;
+            const location = document.getElementById('eventLocation').value;
+            const date = document.getElementById('eventDate').value;
+            const endDate = document.getElementById('eventEndDate').value;
+            const time = document.getElementById('eventTime').value;
+            const fee = parseFloat(document.getElementById('applicationFee').value) || 0;
+            const status = document.getElementById('eventStatus').value;
+            const notes = document.getElementById('eventNotes').value;
+            
+            if (!name || !location || !date) {
+                alert('Please fill in event name, location, and start date');
+                return;
+            }
+            
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            const eventIndex = events.findIndex(e => e.id === id);
+            if (eventIndex !== -1) {
+                const currentEvent = events[eventIndex];
+                events[eventIndex] = { id, name, type, location, date, endDate, time, fee, status, notes, paid: currentEvent.paid || false };
                 localStorage.setItem('events', JSON.stringify(events));
                 loadEvents();
             }
@@ -2420,6 +2541,26 @@
                 localStorage.setItem('events', JSON.stringify(filtered));
                 loadEvents();
             }
+        }
+        
+        function toggleEventDetails(id) {
+            const details = document.getElementById(`event-details-${id}`);
+            
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+            } else {
+                details.style.display = 'none';
+            }
+        }
+        
+        function togglePayment(id) {
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            const event = events.find(e => e.id === id);
+            if (!event) return;
+            
+            event.paid = !event.paid;
+            localStorage.setItem('events', JSON.stringify(events));
+            loadEvents();
         }
 
         // Review Functions
@@ -2951,6 +3092,14 @@
                     localStorage.setItem('supplierCategories', JSON.stringify(categories));
                     loadSupplierCategories();
                 }
+            } else if (editType === 'eventStatus') {
+                const statuses = JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
+                const index = statuses.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    statuses[index] = newValue;
+                    localStorage.setItem('eventStatuses', JSON.stringify(statuses));
+                    loadEventStatuses();
+                }
             }
             closeEditModal();
         }
@@ -2973,6 +3122,11 @@
                 const filtered = categories.filter(c => c !== editOriginalValue);
                 localStorage.setItem('supplierCategories', JSON.stringify(filtered));
                 loadSupplierCategories();
+            } else if (editType === 'eventStatus') {
+                const statuses = JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
+                const filtered = statuses.filter(s => s !== editOriginalValue);
+                localStorage.setItem('eventStatuses', JSON.stringify(filtered));
+                loadEventStatuses();
             }
             closeEditModal();
         }
@@ -2988,6 +3142,47 @@
         
         function getAllMeasurementUnits() {
             return JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
+        }
+        
+        // Event Status Functions
+        function addEventStatus() {
+            const status = document.getElementById('newEventStatus').value.trim();
+            if (!status) {
+                alert('Please enter a status name');
+                return;
+            }
+            
+            const statuses = JSON.parse(localStorage.getItem('eventStatuses') || '[]');
+            if (!statuses.includes(status)) {
+                statuses.push(status);
+                localStorage.setItem('eventStatuses', JSON.stringify(statuses));
+                document.getElementById('newEventStatus').value = '';
+                loadEventStatuses();
+            } else {
+                alert('Status already exists');
+            }
+        }
+        
+        function loadEventStatuses() {
+            const statuses = JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
+            
+            document.getElementById('eventStatusesList').innerHTML = statuses.map(status => `
+                <span onclick="editEventStatus('${status}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${status}
+                </span>
+            `).join('');
+        }
+        
+        function editEventStatus(status) {
+            editType = 'eventStatus';
+            editOriginalValue = status;
+            document.getElementById('editModalTitle').textContent = 'Edit Event Status';
+            document.getElementById('editInput').value = status;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function getAllEventStatuses() {
+            return JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
         }
 
         // Data Management Functions
