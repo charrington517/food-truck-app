@@ -804,13 +804,24 @@
                     form = `
                         <div class="form">
                             <div class="form-group">
-                                <select id="inventoryIngredient">
-                                    <option value="">Select ingredient...</option>
+                                <input type="text" id="inventoryItemName" placeholder="Item Name (e.g., Paper Towels, Ground Beef)">
+                            </div>
+                            <div class="form-row">
+                                <select id="inventoryCategory">
+                                    <option value="Food">Food</option>
+                                    <option value="Cleaning Supplies">Cleaning Supplies</option>
+                                    <option value="To Go Supplies">To Go Supplies</option>
+                                    <option value="Equipment">Equipment</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <select id="inventoryUnit">
+                                    <option value="">Select unit...</option>
+                                    ${getAllMeasurementUnits().map(unit => `<option value="${unit}">${unit}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="form-row">
                                 <input type="number" id="currentStock" placeholder="Current Stock" step="0.1">
-                                <input type="number" id="minStock" placeholder="Min Stock" step="0.1" value="5">
+                                <input type="number" id="minStock" placeholder="Min Stock" step="0.1">
                             </div>
                             <button class="btn" onclick="addInventoryItem(); closeAddModal();">Add to Inventory</button>
                         </div>
@@ -899,16 +910,18 @@
             
             // Load ingredients for inventory dropdown if needed
             if (currentPage === 'inventory') {
-                fetch('/api/ingredients')
-                    .then(r => r.json())
-                    .then(ingredients => {
-                        const inventorySelect = document.getElementById('inventoryIngredient');
-                        if (inventorySelect) {
-                            inventorySelect.innerHTML = 
-                                '<option value="">Select ingredient...</option>' +
-                                ingredients.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
-                        }
-                    });
+                setTimeout(() => {
+                    fetch('/api/ingredients')
+                        .then(r => r.json())
+                        .then(ingredients => {
+                            const inventorySelect = document.getElementById('inventoryIngredient');
+                            if (inventorySelect) {
+                                inventorySelect.innerHTML = 
+                                    '<option value="">Select ingredient...</option>' +
+                                    ingredients.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                            }
+                        });
+                }, 100);
             }
             
             modal.classList.add('show');
@@ -1441,23 +1454,26 @@
 
         // Inventory Functions
         function addInventoryItem() {
-            const ingredientId = document.getElementById('inventoryIngredient').value;
+            const itemName = document.getElementById('inventoryItemName').value.trim();
+            const category = document.getElementById('inventoryCategory').value;
+            const unit = document.getElementById('inventoryUnit').value.trim();
             const currentStock = parseFloat(document.getElementById('currentStock').value) || 0;
-            const minStock = parseFloat(document.getElementById('minStock').value) || 5;
+            const minStock = parseFloat(document.getElementById('minStock').value) || 0;
 
-            if (!ingredientId) {
-                alert('Please select an ingredient');
+            if (!itemName || !unit) {
+                alert('Please enter item name and unit');
                 return;
             }
 
             fetch('/api/inventory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ingredient_id: ingredientId, current_stock: currentStock, min_stock: minStock, max_stock: 100 })
+                body: JSON.stringify({ name: itemName, unit: unit, category: category, current_stock: currentStock, min_stock: minStock, max_stock: 100 })
             }).then(() => {
-                document.getElementById('inventoryIngredient').value = '';
+                document.getElementById('inventoryItemName').value = '';
+                document.getElementById('inventoryUnit').value = '';
                 document.getElementById('currentStock').value = '';
-                document.getElementById('minStock').value = '5';
+                document.getElementById('minStock').value = '';
                 loadInventory();
             });
         }
