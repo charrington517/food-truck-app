@@ -614,10 +614,31 @@
             <img src="/uploads/1763192867406_birria-fusion-logo.png" alt="Logo" class="login-logo">
             <h1 style="color: var(--orange); margin-bottom: 30px;">Birria Fusion</h1>
             <div class="login-form">
-                <input type="text" id="loginUsername" placeholder="Username" style="margin-bottom: 15px;">
-                <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom: 20px;">
-                <button class="btn" onclick="attemptLogin()" style="width: 100%; margin-bottom: 15px;">Login</button>
-                <div id="loginError" style="color: var(--danger); font-size: 14px; text-align: center;"></div>
+                <div id="loginSection">
+                    <input type="text" id="loginUsername" placeholder="Username" style="margin-bottom: 15px;">
+                    <input type="password" id="loginPassword" placeholder="Password" style="margin-bottom: 20px;">
+                    <button class="btn" onclick="attemptLogin()" style="width: 100%; margin-bottom: 15px;">Login</button>
+                    <button class="btn" onclick="showEmployeeRegistration()" style="width: 100%; background: var(--success); margin-bottom: 15px;">New Employee? Register Here</button>
+                </div>
+                <div id="registerSection" style="display: none;">
+                    <input type="text" id="regName" placeholder="Your Full Name" style="margin-bottom: 10px;">
+                    <select id="regRole" style="margin-bottom: 10px;">
+                        <option value="">Select your role...</option>
+                        <option value="Cook">Cook</option>
+                        <option value="Cashier">Cashier</option>
+                        <option value="Prep Cook">Prep Cook</option>
+                        <option value="Server">Server</option>
+                        <option value="Driver">Driver</option>
+                        <option value="Cleaner">Cleaner</option>
+                    </select>
+                    <input type="text" id="regUsername" placeholder="Create Username" style="margin-bottom: 10px;">
+                    <input type="password" id="regPassword" placeholder="Create Password" style="margin-bottom: 10px;">
+                    <input type="email" id="regEmail" placeholder="Email (optional)" style="margin-bottom: 10px;">
+                    <input type="tel" id="regPhone" placeholder="Phone (optional)" style="margin-bottom: 15px;">
+                    <button class="btn" onclick="registerEmployee()" style="width: 100%; margin-bottom: 10px;">Register</button>
+                    <button class="btn" onclick="showLogin()" style="width: 100%; background: var(--gray);">Back to Login</button>
+                </div>
+                <div id="loginError" style="color: var(--danger); font-size: 14px; text-align: center; margin-top: 10px;"></div>
             </div>
         </div>
     </div>
@@ -1201,6 +1222,77 @@
             } else {
                 errorDiv.textContent = 'Invalid username or password';
             }
+        }
+
+        function showEmployeeRegistration() {
+            document.getElementById('loginSection').style.display = 'none';
+            document.getElementById('registerSection').style.display = 'block';
+            document.getElementById('loginError').textContent = '';
+        }
+
+        function showLogin() {
+            document.getElementById('loginSection').style.display = 'block';
+            document.getElementById('registerSection').style.display = 'none';
+            document.getElementById('loginError').textContent = '';
+        }
+
+        function registerEmployee() {
+            const name = document.getElementById('regName').value.trim();
+            const role = document.getElementById('regRole').value;
+            const username = document.getElementById('regUsername').value.trim();
+            const password = document.getElementById('regPassword').value.trim();
+            const email = document.getElementById('regEmail').value.trim();
+            const phone = document.getElementById('regPhone').value.trim();
+            const errorDiv = document.getElementById('loginError');
+
+            if (!name || !role || !username || !password) {
+                errorDiv.textContent = 'Please fill in name, role, username, and password';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            if (users.find(u => u.username === username)) {
+                errorDiv.textContent = 'Username already exists. Please choose another.';
+                return;
+            }
+
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const newEmployee = {
+                id: Date.now(),
+                name,
+                role,
+                username,
+                email,
+                phone,
+                address: '',
+                notes: 'Self-registered',
+                status: 'signed-out',
+                signInTime: null,
+                totalHours: 0
+            };
+
+            employees.push(newEmployee);
+            localStorage.setItem('employees', JSON.stringify(employees));
+
+            users.push({
+                id: newEmployee.id,
+                username,
+                password,
+                role: 'Employee',
+                name,
+                employeeId: newEmployee.id
+            });
+            localStorage.setItem('users', JSON.stringify(users));
+
+            errorDiv.style.color = 'var(--success)';
+            errorDiv.textContent = 'Registration successful! You can now login.';
+            
+            setTimeout(() => {
+                showLogin();
+                document.getElementById('loginUsername').value = username;
+                errorDiv.textContent = '';
+                errorDiv.style.color = 'var(--danger)';
+            }, 2000);
         }
 
         function logout() {
@@ -4399,9 +4491,18 @@
         function addEmployee() {
             const name = document.getElementById('newEmployeeName').value.trim();
             const role = document.getElementById('newEmployeeRole').value.trim();
+            const username = document.getElementById('newEmployeeUsername').value.trim();
+            const password = document.getElementById('newEmployeePassword').value.trim();
             
-            if (!name || !role) {
-                alert('Please enter employee name and role');
+            if (!name || !role || !username || !password) {
+                alert('Please enter employee name, role, username, and password');
+                return;
+            }
+            
+            // Check if username already exists
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            if (users.find(u => u.username === username)) {
+                alert('Username already exists. Please choose a different username.');
                 return;
             }
             
@@ -4411,10 +4512,11 @@
             const notes = document.getElementById('newEmployeeNotes').value.trim();
             
             const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-            employees.push({
+            const newEmployee = {
                 id: Date.now(),
                 name,
                 role,
+                username,
                 email,
                 phone,
                 address,
@@ -4422,11 +4524,26 @@
                 status: 'signed-out',
                 signInTime: null,
                 totalHours: 0
-            });
+            };
+            
+            employees.push(newEmployee);
             localStorage.setItem('employees', JSON.stringify(employees));
+            
+            // Add to users list for login
+            users.push({
+                id: newEmployee.id,
+                username,
+                password,
+                role: 'Employee',
+                name,
+                employeeId: newEmployee.id
+            });
+            localStorage.setItem('users', JSON.stringify(users));
             
             document.getElementById('newEmployeeName').value = '';
             document.getElementById('newEmployeeRole').value = '';
+            document.getElementById('newEmployeeUsername').value = '';
+            document.getElementById('newEmployeePassword').value = '';
             document.getElementById('newEmployeeEmail').value = '';
             document.getElementById('newEmployeePhone').value = '';
             document.getElementById('newEmployeeAddress').value = '';
