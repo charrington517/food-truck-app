@@ -24,6 +24,8 @@
             --border: #e0e0e0;
         }
 
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
+
         [data-theme="dark"] {
             --white: #1a1a1a;
             --gray-light: #2c2c2c;
@@ -31,8 +33,6 @@
             --gray: #cccccc;
             --border: #404040;
         }
-
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
 
         body {
             font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -710,16 +710,28 @@
                         <button class="btn" onclick="toggleEmployeeStatus()" id="clockBtn" style="width: 100%; padding: 10px;">Sign In</button>
                         <div id="currentStatus" style="margin-top: 10px; font-size: 0.9em;"></div>
                     </div>
-                    <div style="background: var(--gray-light); padding: 15px; border-radius: 8px;">
-                        <h4 style="margin-bottom: 10px;">Add Employee</h4>
-                        <input type="text" id="newEmployeeName" placeholder="Employee Name" style="width: 100%; margin-bottom: 8px;">
-                        <input type="text" id="newEmployeeRole" placeholder="Role (e.g., Cook, Cashier)" style="width: 100%; margin-bottom: 8px;">
-                        <button class="btn" onclick="addEmployee()" style="width: 100%; padding: 8px;">Add Employee</button>
+                    <div style="background: var(--gray-light); border-radius: 8px;">
+                        <h4 onclick="toggleAddEmployee()" style="margin: 0; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Add Employee <span id="add-emp-icon">▼</span></h4>
+                        <div id="add-employee-form" style="display: none; padding: 0 15px 15px 15px;">
+                            <input type="text" id="newEmployeeName" placeholder="Employee Name" style="width: 100%; margin-bottom: 8px;">
+                            <select id="newEmployeeRole" style="width: 100%; margin-bottom: 8px;">
+                                <option value="">Select role...</option>
+                            </select>
+                            <input type="email" id="newEmployeeEmail" placeholder="Email" style="width: 100%; margin-bottom: 8px;">
+                            <input type="tel" id="newEmployeePhone" placeholder="Phone" style="width: 100%; margin-bottom: 8px;">
+                            <input type="text" id="newEmployeeAddress" placeholder="Address" style="width: 100%; margin-bottom: 8px;">
+                            <textarea id="newEmployeeNotes" placeholder="Notes" rows="2" style="width: 100%; margin-bottom: 8px;"></textarea>
+                            <button class="btn" onclick="addEmployee()" style="width: 100%; padding: 8px;">Add Employee</button>
+                        </div>
                     </div>
                 </div>
                 <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px;">
                     <h4 style="margin-bottom: 10px;">Current Status</h4>
                     <div id="employeeStatusList"></div>
+                </div>
+                <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
+                    <h4 onclick="toggleTimePunches()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Time Punch History <span id="punch-icon">▼</span></h4>
+                    <div id="timePunchHistory" style="display: none; margin-top: 15px;"></div>
                 </div>
             </div>
         </div>
@@ -1028,6 +1040,22 @@
             </div>
             
             <div class="section">
+                <h2 class="section-title" onclick="toggleSettingsSection('employeeRoles')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Employee Roles
+                    <span id="employeeRoles-icon">▼</span>
+                </h2>
+                <div id="employeeRoles-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-row">
+                            <input type="text" id="newEmployeeRoleInput" placeholder="Add new role (e.g., Assistant Manager, Dishwasher)">
+                            <button class="btn" onclick="addEmployeeRole()" style="width: auto; padding: 12px 20px;">Add Role</button>
+                        </div>
+                        <div id="employeeRolesList" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
                 <h2 class="section-title" onclick="toggleSettingsSection('data')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                     Data Management
                     <span id="data-icon">▼</span>
@@ -1227,13 +1255,22 @@
             if (pageId === 'ingredients') loadIngredients();
             if (pageId === 'inventory') loadInventory();
             if (pageId === 'suppliers') loadSuppliers();
-            if (pageId === 'employee') { loadEmployees(); }
+            if (pageId === 'employee') { 
+                loadEmployees(); 
+                updateEmployeeRoleDropdown();
+                setTimeout(() => {
+                    const employeeSelect = document.getElementById('employeeSelect');
+                    if (employeeSelect) {
+                        employeeSelect.addEventListener('change', updateCurrentStatus);
+                    }
+                }, 100);
+            }
             if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); }
             if (pageId === 'catering') { loadCatering(); loadTools(); }
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadDefaultMargin(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadDefaultMargin(); }
         }
 
         // Modal Functions
@@ -3531,6 +3568,15 @@
                     localStorage.setItem('fileCategories', JSON.stringify(categories));
                     loadFileCategories();
                 }
+            } else if (editType === 'employeeRole') {
+                const roles = JSON.parse(localStorage.getItem('employeeRoles') || '["Cook","Cashier","Manager","Prep Cook","Server","Driver","Cleaner"]');
+                const index = roles.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    roles[index] = newValue;
+                    localStorage.setItem('employeeRoles', JSON.stringify(roles));
+                    loadEmployeeRoles();
+                    updateEmployeeRoleDropdown();
+                }
             }
             closeEditModal();
         }
@@ -3563,6 +3609,12 @@
                 const filtered = categories.filter(c => c !== editOriginalValue);
                 localStorage.setItem('fileCategories', JSON.stringify(filtered));
                 loadFileCategories();
+            } else if (editType === 'employeeRole') {
+                const roles = JSON.parse(localStorage.getItem('employeeRoles') || '["Cook","Cashier","Manager","Prep Cook","Server","Driver","Cleaner"]');
+                const filtered = roles.filter(r => r !== editOriginalValue);
+                localStorage.setItem('employeeRoles', JSON.stringify(filtered));
+                loadEmployeeRoles();
+                updateEmployeeRoleDropdown();
             }
             closeEditModal();
         }
@@ -3660,6 +3712,57 @@
         
         function getAllFileCategories() {
             return JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
+        }
+        
+        // Employee Roles Functions
+        function addEmployeeRole() {
+            const role = document.getElementById('newEmployeeRoleInput').value.trim();
+            if (!role) {
+                alert('Please enter a role name');
+                return;
+            }
+            
+            const roles = JSON.parse(localStorage.getItem('employeeRoles') || '[]');
+            if (!roles.includes(role)) {
+                roles.push(role);
+                localStorage.setItem('employeeRoles', JSON.stringify(roles));
+                document.getElementById('newEmployeeRoleInput').value = '';
+                loadEmployeeRoles();
+                updateEmployeeRoleDropdown();
+            } else {
+                alert('Role already exists');
+            }
+        }
+        
+        function loadEmployeeRoles() {
+            const roles = JSON.parse(localStorage.getItem('employeeRoles') || '["Cook","Cashier","Manager","Prep Cook","Server","Driver","Cleaner"]');
+            
+            document.getElementById('employeeRolesList').innerHTML = roles.map(role => `
+                <span onclick="editEmployeeRole('${role}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${role}
+                </span>
+            `).join('');
+        }
+        
+        function editEmployeeRole(role) {
+            editType = 'employeeRole';
+            editOriginalValue = role;
+            document.getElementById('editModalTitle').textContent = 'Edit Employee Role';
+            document.getElementById('editInput').value = role;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function getAllEmployeeRoles() {
+            return JSON.parse(localStorage.getItem('employeeRoles') || '["Cook","Cashier","Manager","Prep Cook","Server","Driver","Cleaner"]');
+        }
+        
+        function updateEmployeeRoleDropdown() {
+            const roleSelect = document.getElementById('newEmployeeRole');
+            if (roleSelect) {
+                const roles = getAllEmployeeRoles();
+                roleSelect.innerHTML = '<option value="">Select role...</option>' + 
+                    roles.map(role => `<option value="${role}">${role}</option>`).join('');
+            }
         }
 
         // Data Management Functions
@@ -3997,6 +4100,301 @@
             }
         }
 
+        // Employee Functions
+        function addEmployee() {
+            const name = document.getElementById('newEmployeeName').value.trim();
+            const role = document.getElementById('newEmployeeRole').value;
+            const email = document.getElementById('newEmployeeEmail').value.trim();
+            const phone = document.getElementById('newEmployeePhone').value.trim();
+            const address = document.getElementById('newEmployeeAddress').value.trim();
+            const notes = document.getElementById('newEmployeeNotes').value.trim();
+            
+            if (!name || !role) {
+                alert('Please enter employee name and role');
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const newEmployee = {
+                id: Date.now(),
+                name,
+                role,
+                email,
+                phone,
+                address,
+                notes,
+                status: 'signed-out',
+                signInTime: null
+            };
+            
+            employees.push(newEmployee);
+            localStorage.setItem('employees', JSON.stringify(employees));
+            
+            // Clear form
+            document.getElementById('newEmployeeName').value = '';
+            document.getElementById('newEmployeeRole').value = '';
+            document.getElementById('newEmployeeEmail').value = '';
+            document.getElementById('newEmployeePhone').value = '';
+            document.getElementById('newEmployeeAddress').value = '';
+            document.getElementById('newEmployeeNotes').value = '';
+            
+            loadEmployees();
+        }
+        
+        function loadEmployees() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            
+            // Update employee select dropdown
+            const employeeSelect = document.getElementById('employeeSelect');
+            employeeSelect.innerHTML = '<option value="">Select employee...</option>' +
+                employees.map(emp => `<option value="${emp.id}">${emp.name} (${emp.role})</option>`).join('');
+            
+            // Update status list
+            const statusList = document.getElementById('employeeStatusList');
+            if (employees.length === 0) {
+                statusList.innerHTML = '<div style="color: var(--gray); font-style: italic;">No employees added yet. Add an employee above to get started.</div>';
+                return;
+            }
+            
+            console.log('Loading employees:', employees);
+            
+            statusList.innerHTML = employees.map(emp => {
+                const statusColor = emp.status === 'signed-in' ? 'var(--success)' : 'var(--gray)';
+                const statusText = emp.status === 'signed-in' ? `Signed in at ${emp.signInTime}` : 'Signed out';
+                
+                return `
+                    <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px;">
+                        <div onclick="toggleEmployeeDetails(${emp.id})" style="cursor: pointer; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="font-weight: bold; font-size: 1.1em;">${emp.name}</div>
+                                <div style="font-size: 0.9em; color: var(--gray);">${emp.role}</div>
+                                <div style="font-size: 0.8em; color: ${statusColor};">${statusText}</div>
+                            </div>
+                            <span id="emp-icon-${emp.id}" style="font-size: 1.2em;">▼</span>
+                        </div>
+                        <div id="emp-details-${emp.id}" style="display: none; padding: 0 15px 15px 15px; border-top: 1px solid var(--border);">
+                            ${emp.email ? `<div style="margin: 8px 0;"><strong>Email:</strong> ${emp.email}</div>` : ''}
+                            ${emp.phone ? `<div style="margin: 8px 0;"><strong>Phone:</strong> ${emp.phone}</div>` : ''}
+                            ${emp.address ? `<div style="margin: 8px 0;"><strong>Address:</strong> ${emp.address}</div>` : ''}
+                            ${emp.notes ? `<div style="margin: 8px 0;"><strong>Notes:</strong> ${emp.notes}</div>` : ''}
+                            <div style="display: flex; gap: 8px; margin-top: 15px;">
+                                <button class="btn" onclick="editEmployee(${emp.id})" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--orange); color: white;">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteEmployee(${emp.id})" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            // Update current status for time clock functionality
+            updateCurrentStatus();
+        }
+        
+        function editEmployee(id) {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employee = employees.find(emp => emp.id === id);
+            if (!employee) return;
+            
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Edit Employee';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="editEmployeeName" placeholder="Employee Name" value="${employee.name}">
+                    </div>
+                    <div class="form-group">
+                        <select id="editEmployeeRole">
+                            <option value="">Select role...</option>
+                            ${getAllEmployeeRoles().map(role => `<option value="${role}" ${employee.role === role ? 'selected' : ''}>${role}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="editEmployeeEmail" placeholder="Email" value="${employee.email || ''}">
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" id="editEmployeePhone" placeholder="Phone" value="${employee.phone || ''}">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="editEmployeeAddress" placeholder="Address" value="${employee.address || ''}">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="editEmployeeNotes" placeholder="Notes" rows="2">${employee.notes || ''}</textarea>
+                    </div>
+                    <button class="btn" onclick="updateEmployee(${id}); closeAddModal();">Update Employee</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function updateEmployee(id) {
+            const name = document.getElementById('editEmployeeName').value.trim();
+            const role = document.getElementById('editEmployeeRole').value;
+            const email = document.getElementById('editEmployeeEmail').value.trim();
+            const phone = document.getElementById('editEmployeePhone').value.trim();
+            const address = document.getElementById('editEmployeeAddress').value.trim();
+            const notes = document.getElementById('editEmployeeNotes').value.trim();
+            
+            if (!name || !role) {
+                alert('Please enter employee name and role');
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employeeIndex = employees.findIndex(emp => emp.id === id);
+            
+            if (employeeIndex !== -1) {
+                employees[employeeIndex] = {
+                    ...employees[employeeIndex],
+                    name,
+                    role,
+                    email,
+                    phone,
+                    address,
+                    notes
+                };
+                localStorage.setItem('employees', JSON.stringify(employees));
+                loadEmployees();
+            }
+        }
+        
+        function deleteEmployee(id) {
+            if (confirm('Delete this employee?')) {
+                const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+                const filtered = employees.filter(emp => emp.id !== id);
+                localStorage.setItem('employees', JSON.stringify(filtered));
+                loadEmployees();
+            }
+        }
+        
+        function toggleEmployeeStatus() {
+            const selectedId = document.getElementById('employeeSelect').value;
+            if (!selectedId) {
+                alert('Please select an employee');
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employee = employees.find(emp => emp.id == selectedId);
+            if (!employee) return;
+            
+            if (employee.status === 'signed-out') {
+                employee.status = 'signed-in';
+                employee.signInTime = new Date().toLocaleTimeString();
+            } else {
+                employee.status = 'signed-out';
+                employee.signInTime = null;
+            }
+            
+            localStorage.setItem('employees', JSON.stringify(employees));
+            loadEmployees();
+            updateCurrentStatus();
+        }
+        
+        function updateCurrentStatus() {
+            const selectedId = document.getElementById('employeeSelect').value;
+            const statusDiv = document.getElementById('currentStatus');
+            const clockBtn = document.getElementById('clockBtn');
+            
+            if (!selectedId) {
+                statusDiv.textContent = '';
+                clockBtn.textContent = 'Sign In';
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employee = employees.find(emp => emp.id == selectedId);
+            
+            if (employee) {
+                if (employee.status === 'signed-in') {
+                    statusDiv.textContent = `Signed in at ${employee.signInTime}`;
+                    statusDiv.style.color = 'var(--success)';
+                    clockBtn.textContent = 'Sign Out';
+                } else {
+                    statusDiv.textContent = 'Currently signed out';
+                    statusDiv.style.color = 'var(--gray)';
+                    clockBtn.textContent = 'Sign In';
+                }
+            }
+        }
+        
+        window.toggleEmployeeDetails = function(id) {
+            const details = document.getElementById(`emp-details-${id}`);
+            const icon = document.getElementById(`emp-icon-${id}`);
+            
+            if (details && icon) {
+                if (details.style.display === 'none') {
+                    details.style.display = 'block';
+                    icon.textContent = '▲';
+                } else {
+                    details.style.display = 'none';
+                    icon.textContent = '▼';
+                }
+            }
+        };
+        
+        function toggleAddEmployee() {
+            const form = document.getElementById('add-employee-form');
+            const icon = document.getElementById('add-emp-icon');
+            
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                form.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function toggleTimePunches() {
+            const history = document.getElementById('timePunchHistory');
+            const icon = document.getElementById('punch-icon');
+            
+            if (history.style.display === 'none') {
+                history.style.display = 'block';
+                icon.textContent = '▲';
+                loadTimePunchHistory();
+            } else {
+                history.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function loadTimePunchHistory() {
+            const punches = JSON.parse(localStorage.getItem('timePunches') || '[]');
+            const history = document.getElementById('timePunchHistory');
+            
+            if (punches.length === 0) {
+                history.innerHTML = '<div style="color: var(--gray); font-style: italic;">No time punches recorded yet.</div>';
+                return;
+            }
+            
+            const today = new Date().toDateString();
+            const recentPunches = punches.slice(-20).reverse();
+            
+            history.innerHTML = recentPunches.map(punch => {
+                const date = new Date(punch.timestamp);
+                const isToday = date.toDateString() === today;
+                const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                const dateStr = isToday ? 'Today' : date.toLocaleDateString();
+                
+                return `
+                    <div style="display: flex; justify-content: space-between; padding: 8px; margin-bottom: 5px; background: var(--gray-light); border-radius: 6px;">
+                        <div>
+                            <div style="font-weight: bold;">${punch.employeeName}</div>
+                            <div style="font-size: 0.8em; color: var(--gray);">${dateStr} at ${timeStr}</div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="color: ${punch.action === 'sign-in' ? 'var(--success)' : 'var(--danger)'}; font-weight: bold; font-size: 0.9em;">${punch.action.toUpperCase()}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
         // Employee Management Functions
         function addEmployee() {
             const name = document.getElementById('newEmployeeName').value.trim();
@@ -4007,11 +4405,20 @@
                 return;
             }
             
+            const email = document.getElementById('newEmployeeEmail').value.trim();
+            const phone = document.getElementById('newEmployeePhone').value.trim();
+            const address = document.getElementById('newEmployeeAddress').value.trim();
+            const notes = document.getElementById('newEmployeeNotes').value.trim();
+            
             const employees = JSON.parse(localStorage.getItem('employees') || '[]');
             employees.push({
                 id: Date.now(),
                 name,
                 role,
+                email,
+                phone,
+                address,
+                notes,
                 status: 'signed-out',
                 signInTime: null,
                 totalHours: 0
@@ -4020,21 +4427,14 @@
             
             document.getElementById('newEmployeeName').value = '';
             document.getElementById('newEmployeeRole').value = '';
+            document.getElementById('newEmployeeEmail').value = '';
+            document.getElementById('newEmployeePhone').value = '';
+            document.getElementById('newEmployeeAddress').value = '';
+            document.getElementById('newEmployeeNotes').value = '';
             loadEmployees();
         }
         
-        function loadEmployees() {
-            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-            const select = document.getElementById('employeeSelect');
-            
-            if (select) {
-                select.innerHTML = '<option value="">Select employee...</option>' +
-                    employees.map(emp => `<option value="${emp.id}">${emp.name} (${emp.role})</option>`).join('');
-            }
-            
-            updateEmployeeStatusList();
-            updateCurrentStatus();
-        }
+
         
         function toggleEmployeeStatus() {
             const employeeId = document.getElementById('employeeSelect').value;
@@ -4048,12 +4448,30 @@
             if (!employee) return;
             
             const now = new Date();
+            const punches = JSON.parse(localStorage.getItem('timePunches') || '[]');
             
             if (employee.status === 'signed-out') {
                 employee.status = 'signed-in';
                 employee.signInTime = now.toISOString();
+                
+                // Record sign-in punch
+                punches.push({
+                    employeeId: employee.id,
+                    employeeName: employee.name,
+                    action: 'sign-in',
+                    timestamp: now.toISOString()
+                });
             } else {
                 employee.status = 'signed-out';
+                
+                // Record sign-out punch
+                punches.push({
+                    employeeId: employee.id,
+                    employeeName: employee.name,
+                    action: 'sign-out',
+                    timestamp: now.toISOString()
+                });
+                
                 if (employee.signInTime) {
                     const signInTime = new Date(employee.signInTime);
                     const hoursWorked = (now - signInTime) / (1000 * 60 * 60);
@@ -4063,6 +4481,7 @@
             }
             
             localStorage.setItem('employees', JSON.stringify(employees));
+            localStorage.setItem('timePunches', JSON.stringify(punches));
             updateCurrentStatus();
             updateEmployeeStatusList();
         }
@@ -4319,6 +4738,86 @@
                 attemptLogin();
             }
         });
+        
+        function editEmployee(id) {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employee = employees.find(emp => emp.id === id);
+            if (!employee) return;
+            
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Edit Employee';
+            const roles = getAllEmployeeRoles();
+            
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="editEmployeeName" placeholder="Employee Name" value="${employee.name}">
+                    </div>
+                    <div class="form-group">
+                        <select id="editEmployeeRole">
+                            <option value="">Select role...</option>
+                            ${roles.map(role => `<option value="${role}" ${employee.role === role ? 'selected' : ''}>${role}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="email" id="editEmployeeEmail" placeholder="Email" value="${employee.email || ''}">
+                    </div>
+                    <div class="form-group">
+                        <input type="tel" id="editEmployeePhone" placeholder="Phone" value="${employee.phone || ''}">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="editEmployeeAddress" placeholder="Address" value="${employee.address || ''}">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="editEmployeeNotes" placeholder="Notes" rows="2">${employee.notes || ''}</textarea>
+                    </div>
+                    <button class="btn" onclick="updateEmployee(${id}); closeAddModal();">Update Employee</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function updateEmployee(id) {
+            const name = document.getElementById('editEmployeeName').value.trim();
+            const role = document.getElementById('editEmployeeRole').value;
+            
+            if (!name || !role) {
+                alert('Please enter employee name and select a role');
+                return;
+            }
+            
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employeeIndex = employees.findIndex(emp => emp.id === id);
+            
+            const email = document.getElementById('editEmployeeEmail').value.trim();
+            const phone = document.getElementById('editEmployeePhone').value.trim();
+            const address = document.getElementById('editEmployeeAddress').value.trim();
+            const notes = document.getElementById('editEmployeeNotes').value.trim();
+            
+            if (employeeIndex !== -1) {
+                employees[employeeIndex].name = name;
+                employees[employeeIndex].role = role;
+                employees[employeeIndex].email = email;
+                employees[employeeIndex].phone = phone;
+                employees[employeeIndex].address = address;
+                employees[employeeIndex].notes = notes;
+                localStorage.setItem('employees', JSON.stringify(employees));
+                loadEmployees();
+            }
+        }
+        
+        function deleteEmployee(id) {
+            if (confirm('Delete this employee? This will remove all their time records.')) {
+                const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+                const filtered = employees.filter(emp => emp.id !== id);
+                localStorage.setItem('employees', JSON.stringify(filtered));
+                loadEmployees();
+            }
+        }
     </script>
 </body>
 </html>
