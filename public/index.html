@@ -738,10 +738,211 @@
                             <select id="newEmployeeRole" style="width: 100%; margin-bottom: 8px;">
                                 <option value="">Select role...</option>
                             </select>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="newEmployeeUsername" placeholder="Username" style="width: 100%;">
+                                <input type="password" id="newEmployeePassword" placeholder="Password" style="width: 100%;">
+                            </div>
                             <input type="email" id="newEmployeeEmail" placeholder="Email" style="width: 100%; margin-bottom: 8px;">
                             <input type="tel" id="newEmployeePhone" placeholder="Phone" style="width: 100%; margin-bottom: 8px;">
                             <input type="text" id="newEmployeeAddress" placeholder="Address" style="width: 100%; margin-bottom: 8px;">
                             <textarea id="newEmployeeNotes" placeholder="Notes" rows="2" style="width: 100%; margin-bottom: 8px;"></textarea>
+                            
+                            <div style="background: var(--gray-light); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
+                                <h5 style="margin: 0 0 8px 0;">Access Permissions:</h5>
+                                
+                                <!-- Dashboard -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('dashboard')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Dashboard</strong>
+                                        <span id="dashboard-perm-icon">▼</span>
+                                    </div>
+                                    <div id="dashboard-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Dashboard</div><div><input type="checkbox" id="perm-dashboard-read" checked disabled></div><div><input type="checkbox" id="perm-dashboard-write" checked disabled></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Menu -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('menu')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Menu</strong>
+                                        <span id="menu-perm-icon">▼</span>
+                                    </div>
+                                    <div id="menu-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Recipes</div><div><input type="checkbox" id="perm-menu-view-read"></div><div><input type="checkbox" id="perm-menu-view-write" disabled></div>
+                                            <div>Add Recipes</div><div><input type="checkbox" id="perm-menu-add-read" disabled></div><div><input type="checkbox" id="perm-menu-add-write"></div>
+                                            <div>Edit Recipes</div><div><input type="checkbox" id="perm-menu-edit-read" disabled></div><div><input type="checkbox" id="perm-menu-edit-write"></div>
+                                            <div>Delete Recipes</div><div><input type="checkbox" id="perm-menu-delete-read" disabled></div><div><input type="checkbox" id="perm-menu-delete-write"></div>
+                                            <div>View Costs</div><div><input type="checkbox" id="perm-menu-costs-read"></div><div><input type="checkbox" id="perm-menu-costs-write" disabled></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Ingredients -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('ingredients')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Ingredients</strong>
+                                        <span id="ingredients-perm-icon">▼</span>
+                                    </div>
+                                    <div id="ingredients-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Ingredients</div><div><input type="checkbox" id="perm-ingredients-view-read"></div><div><input type="checkbox" id="perm-ingredients-view-write" disabled></div>
+                                            <div>Add Ingredients</div><div><input type="checkbox" id="perm-ingredients-add-read" disabled></div><div><input type="checkbox" id="perm-ingredients-add-write"></div>
+                                            <div>Edit Ingredients</div><div><input type="checkbox" id="perm-ingredients-edit-read" disabled></div><div><input type="checkbox" id="perm-ingredients-edit-write"></div>
+                                            <div>Delete Ingredients</div><div><input type="checkbox" id="perm-ingredients-delete-read" disabled></div><div><input type="checkbox" id="perm-ingredients-delete-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Inventory -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('inventory')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Inventory</strong>
+                                        <span id="inventory-perm-icon">▼</span>
+                                    </div>
+                                    <div id="inventory-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Inventory</div><div><input type="checkbox" id="perm-inventory-view-read"></div><div><input type="checkbox" id="perm-inventory-view-write" disabled></div>
+                                            <div>Add Items</div><div><input type="checkbox" id="perm-inventory-add-read" disabled></div><div><input type="checkbox" id="perm-inventory-add-write"></div>
+                                            <div>Edit Stock Levels</div><div><input type="checkbox" id="perm-inventory-edit-read" disabled></div><div><input type="checkbox" id="perm-inventory-edit-write"></div>
+                                            <div>Delete Items</div><div><input type="checkbox" id="perm-inventory-delete-read" disabled></div><div><input type="checkbox" id="perm-inventory-delete-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Suppliers -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('suppliers')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Suppliers</strong>
+                                        <span id="suppliers-perm-icon">▼</span>
+                                    </div>
+                                    <div id="suppliers-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Suppliers</div><div><input type="checkbox" id="perm-suppliers-view-read"></div><div><input type="checkbox" id="perm-suppliers-view-write" disabled></div>
+                                            <div>Add Suppliers</div><div><input type="checkbox" id="perm-suppliers-add-read" disabled></div><div><input type="checkbox" id="perm-suppliers-add-write"></div>
+                                            <div>Edit Suppliers</div><div><input type="checkbox" id="perm-suppliers-edit-read" disabled></div><div><input type="checkbox" id="perm-suppliers-edit-write"></div>
+                                            <div>Delete Suppliers</div><div><input type="checkbox" id="perm-suppliers-delete-read" disabled></div><div><input type="checkbox" id="perm-suppliers-delete-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Employee -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('employee')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Employee</strong>
+                                        <span id="employee-perm-icon">▼</span>
+                                    </div>
+                                    <div id="employee-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>Time Clock</div><div><input type="checkbox" id="perm-timeclock-read" checked disabled></div><div><input type="checkbox" id="perm-timeclock-write" checked disabled></div>
+                                            <div>Add Employees</div><div><input type="checkbox" id="perm-emp-add-read" disabled></div><div><input type="checkbox" id="perm-emp-add-write"></div>
+                                            <div>View All Employees</div><div><input type="checkbox" id="perm-emp-view-read"></div><div><input type="checkbox" id="perm-emp-view-write" disabled></div>
+                                            <div>Time Punch History</div><div><input type="checkbox" id="perm-punch-history-read"></div><div><input type="checkbox" id="perm-punch-history-write" disabled></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Tools -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('tools')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Tools</strong>
+                                        <span id="tools-perm-icon">▼</span>
+                                    </div>
+                                    <div id="tools-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Files</div><div><input type="checkbox" id="perm-tools-files-read"></div><div><input type="checkbox" id="perm-tools-files-write" disabled></div>
+                                            <div>Upload Files</div><div><input type="checkbox" id="perm-tools-upload-read" disabled></div><div><input type="checkbox" id="perm-tools-upload-write"></div>
+                                            <div>Cost Calculator</div><div><input type="checkbox" id="perm-tools-calc-read"></div><div><input type="checkbox" id="perm-tools-calc-write" disabled></div>
+                                            <div>QR Generator</div><div><input type="checkbox" id="perm-tools-qr-read"></div><div><input type="checkbox" id="perm-tools-qr-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Catering -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('catering')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Catering</strong>
+                                        <span id="catering-perm-icon">▼</span>
+                                    </div>
+                                    <div id="catering-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Orders</div><div><input type="checkbox" id="perm-catering-view-read"></div><div><input type="checkbox" id="perm-catering-view-write" disabled></div>
+                                            <div>Add Orders</div><div><input type="checkbox" id="perm-catering-add-read" disabled></div><div><input type="checkbox" id="perm-catering-add-write"></div>
+                                            <div>Edit Orders</div><div><input type="checkbox" id="perm-catering-edit-read" disabled></div><div><input type="checkbox" id="perm-catering-edit-write"></div>
+                                            <div>Delete Orders</div><div><input type="checkbox" id="perm-catering-delete-read" disabled></div><div><input type="checkbox" id="perm-catering-delete-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Events -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('events')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Events</strong>
+                                        <span id="events-perm-icon">▼</span>
+                                    </div>
+                                    <div id="events-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Events</div><div><input type="checkbox" id="perm-events-view-read"></div><div><input type="checkbox" id="perm-events-view-write" disabled></div>
+                                            <div>Add Events</div><div><input type="checkbox" id="perm-events-add-read" disabled></div><div><input type="checkbox" id="perm-events-add-write"></div>
+                                            <div>Edit Events</div><div><input type="checkbox" id="perm-events-edit-read" disabled></div><div><input type="checkbox" id="perm-events-edit-write"></div>
+                                            <div>Delete Events</div><div><input type="checkbox" id="perm-events-delete-read" disabled></div><div><input type="checkbox" id="perm-events-delete-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Marketing -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('marketing')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Marketing</strong>
+                                        <span id="marketing-perm-icon">▼</span>
+                                    </div>
+                                    <div id="marketing-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Reviews</div><div><input type="checkbox" id="perm-marketing-view-read"></div><div><input type="checkbox" id="perm-marketing-view-write" disabled></div>
+                                            <div>Add Reviews</div><div><input type="checkbox" id="perm-marketing-add-read" disabled></div><div><input type="checkbox" id="perm-marketing-add-write"></div>
+                                            <div>Respond to Reviews</div><div><input type="checkbox" id="perm-marketing-respond-read" disabled></div><div><input type="checkbox" id="perm-marketing-respond-write"></div>
+                                            <div>Delete Reviews</div><div><input type="checkbox" id="perm-marketing-delete-read" disabled></div><div><input type="checkbox" id="perm-marketing-delete-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Analytics -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('analytics')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Analytics</strong>
+                                        <span id="analytics-perm-icon">▼</span>
+                                    </div>
+                                    <div id="analytics-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>View Expenses</div><div><input type="checkbox" id="perm-analytics-expenses-read"></div><div><input type="checkbox" id="perm-analytics-expenses-write" disabled></div>
+                                            <div>Add Expenses</div><div><input type="checkbox" id="perm-analytics-add-read" disabled></div><div><input type="checkbox" id="perm-analytics-add-write"></div>
+                                            <div>Food Cost Analysis</div><div><input type="checkbox" id="perm-analytics-costs-read"></div><div><input type="checkbox" id="perm-analytics-costs-write" disabled></div>
+                                            <div>Delete Expenses</div><div><input type="checkbox" id="perm-analytics-delete-read" disabled></div><div><input type="checkbox" id="perm-analytics-delete-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Settings -->
+                                <div style="margin-bottom: 10px;">
+                                    <div onclick="togglePermSection('settings')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: var(--white); padding: 8px; border-radius: 4px;">
+                                        <strong>Settings</strong>
+                                        <span id="settings-perm-icon">▼</span>
+                                    </div>
+                                    <div id="settings-permissions" style="display: none; margin-top: 5px; padding: 5px;">
+                                        <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 5px; font-size: 0.8em;">
+                                            <div>Theme Settings</div><div><input type="checkbox" id="perm-theme-read"></div><div><input type="checkbox" id="perm-theme-write"></div>
+                                            <div>Business Info</div><div><input type="checkbox" id="perm-business-read"></div><div><input type="checkbox" id="perm-business-write"></div>
+                                            <div>Menu Categories</div><div><input type="checkbox" id="perm-categories-read"></div><div><input type="checkbox" id="perm-categories-write"></div>
+                                            <div>Employee Roles</div><div><input type="checkbox" id="perm-roles-read"></div><div><input type="checkbox" id="perm-roles-write"></div>
+                                            <div>Role Permissions</div><div><input type="checkbox" id="perm-permissions-read"></div><div><input type="checkbox" id="perm-permissions-write"></div>
+                                            <div>Data Management</div><div><input type="checkbox" id="perm-data-read"></div><div><input type="checkbox" id="perm-data-write"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             <button class="btn" onclick="addEmployee()" style="width: 100%; padding: 8px;">Add Employee</button>
                         </div>
                     </div>
@@ -752,7 +953,12 @@
                 </div>
                 <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
                     <h4 onclick="toggleTimePunches()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Time Punch History <span id="punch-icon">▼</span></h4>
-                    <div id="timePunchHistory" style="display: none; margin-top: 15px;"></div>
+                    <div id="timePunchHistoryContainer" style="display: none; margin-top: 15px;">
+                        <select id="punchFilter" onchange="loadTimePunchHistory()" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                            <option value="all">All Employees</option>
+                        </select>
+                        <div id="timePunchHistory"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1076,6 +1282,7 @@
                 </div>
             </div>
             
+
             <div class="section">
                 <h2 class="section-title" onclick="toggleSettingsSection('data')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                     Data Management
@@ -1319,8 +1526,73 @@
             }
         }
 
+        // Permission Functions
+        function hasPermission(page) {
+            if (!currentUser || currentUser.role !== 'Employee') return true;
+            const permissions = currentUser.permissions || {};
+            return permissions[page] && (permissions[page].read || permissions[page].write);
+        }
+        
+        function isReadOnly(page) {
+            if (!currentUser || currentUser.role !== 'Employee') return false;
+            const permissions = currentUser.permissions || {};
+            return permissions[page] && permissions[page].read && !permissions[page].write;
+        }
+        
+        function togglePermSection(section) {
+            const content = document.getElementById(`${section}-permissions`);
+            const icon = document.getElementById(`${section}-perm-icon`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+
+        
+        function hideSettingsSections() {
+            if (!currentUser || currentUser.role !== 'Employee') return;
+            const sections = currentUser.permissions?.settingsSections || {};
+            
+            // Hide sections based on permissions
+            if (!sections.theme?.read) document.getElementById('theme-content')?.parentElement?.remove();
+            if (!sections.business?.read) document.getElementById('business-content')?.parentElement?.remove();
+            if (!sections.categories?.read) {
+                document.getElementById('menuCategories-content')?.parentElement?.remove();
+                document.getElementById('supplierCategories-content')?.parentElement?.remove();
+                document.getElementById('units-content')?.parentElement?.remove();
+                document.getElementById('eventStatuses-content')?.parentElement?.remove();
+                document.getElementById('fileCategories-content')?.parentElement?.remove();
+            }
+            if (!sections.roles?.read) document.getElementById('employeeRoles-content')?.parentElement?.remove();
+            if (!sections.permissions?.read) document.getElementById('permissions-content')?.parentElement?.remove();
+            if (!sections.data?.read) document.getElementById('data-content')?.parentElement?.remove();
+            
+            // Hide write functions (buttons) for read-only sections
+            Object.keys(sections).forEach(section => {
+                if (sections[section].read && !sections[section].write) {
+                    const sectionElement = document.getElementById(`${section}-content`);
+                    if (sectionElement) {
+                        sectionElement.querySelectorAll('button, input[type="text"], select').forEach(el => {
+                            if (!el.type || el.type !== 'checkbox') el.disabled = true;
+                        });
+                    }
+                }
+            });
+        }
+
         // Page Navigation
         function showPage(pageId) {
+            // Check permissions
+            if (!hasPermission(pageId)) {
+                alert('Access denied. You do not have permission to view this page.');
+                return;
+            }
+            
             currentPage = pageId;
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -1333,9 +1605,9 @@
             
             document.getElementById('extraMenu').classList.remove('show');
             
-            // Show/hide FAB based on page
+            // Show/hide FAB based on page and permissions
             const fabBtn = document.getElementById('fabBtn');
-            if (['dashboard', 'analytics', 'settings', 'marketing', 'events'].includes(pageId)) {
+            if (['dashboard', 'analytics', 'settings', 'marketing', 'events', 'catering', 'employee', 'tools'].includes(pageId) || isReadOnly(pageId)) {
                 fabBtn.style.display = 'none';
             } else {
                 fabBtn.style.display = 'block';
@@ -1362,7 +1634,21 @@
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadDefaultMargin(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadDefaultMargin(); hideSettingsSections(); }
+            
+            // Hide add buttons for read-only access
+            if (isReadOnly(pageId)) {
+                setTimeout(() => {
+                    document.querySelectorAll('.btn').forEach(btn => {
+                        if (btn.textContent.includes('Add') || btn.textContent.includes('Edit') || btn.textContent.includes('Delete')) {
+                            btn.style.display = 'none';
+                        }
+                    });
+                    document.querySelectorAll('.card-actions').forEach(actions => {
+                        actions.style.display = 'none';
+                    });
+                }, 100);
+            }
         }
 
         // Modal Functions
@@ -4442,30 +4728,44 @@
         }
         
         function toggleTimePunches() {
-            const history = document.getElementById('timePunchHistory');
+            const container = document.getElementById('timePunchHistoryContainer');
             const icon = document.getElementById('punch-icon');
             
-            if (history.style.display === 'none') {
-                history.style.display = 'block';
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
                 icon.textContent = '▲';
+                updatePunchFilter();
                 loadTimePunchHistory();
             } else {
-                history.style.display = 'none';
+                container.style.display = 'none';
                 icon.textContent = '▼';
             }
+        }
+        
+        function updatePunchFilter() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const filter = document.getElementById('punchFilter');
+            const currentValue = filter.value;
+            
+            filter.innerHTML = '<option value="all">All Employees</option>' + 
+                employees.map(emp => `<option value="${emp.name}" ${currentValue === emp.name ? 'selected' : ''}>${emp.name}</option>`).join('');
         }
         
         function loadTimePunchHistory() {
             const punches = JSON.parse(localStorage.getItem('timePunches') || '[]');
             const history = document.getElementById('timePunchHistory');
+            const filterValue = document.getElementById('punchFilter').value;
             
-            if (punches.length === 0) {
+            // Filter punches by selected employee
+            const filteredPunches = filterValue === 'all' ? punches : punches.filter(p => p.employeeName === filterValue);
+            
+            if (filteredPunches.length === 0) {
                 history.innerHTML = '<div style="color: var(--gray); font-style: italic;">No time punches recorded yet.</div>';
                 return;
             }
             
             const today = new Date().toDateString();
-            const recentPunches = punches.slice(-20).reverse();
+            const recentPunches = filteredPunches.slice(-20).reverse();
             
             history.innerHTML = recentPunches.map(punch => {
                 const date = new Date(punch.timestamp);
@@ -4511,6 +4811,30 @@
             const address = document.getElementById('newEmployeeAddress').value.trim();
             const notes = document.getElementById('newEmployeeNotes').value.trim();
             
+            // Collect permissions
+            const permissions = {
+                dashboard: { read: true, write: true },
+                menu: { read: document.getElementById('perm-menu-read').checked, write: document.getElementById('perm-menu-write').checked },
+                ingredients: { read: document.getElementById('perm-ingredients-read').checked, write: document.getElementById('perm-ingredients-write').checked },
+                inventory: { read: document.getElementById('perm-inventory-read').checked, write: document.getElementById('perm-inventory-write').checked },
+                suppliers: { read: document.getElementById('perm-suppliers-read').checked, write: document.getElementById('perm-suppliers-write').checked },
+                employee: { read: true, write: false },
+                tools: { read: document.getElementById('perm-tools-read').checked, write: document.getElementById('perm-tools-write').checked },
+                catering: { read: document.getElementById('perm-catering-read').checked, write: document.getElementById('perm-catering-write').checked },
+                events: { read: document.getElementById('perm-events-read').checked, write: document.getElementById('perm-events-write').checked },
+                marketing: { read: document.getElementById('perm-marketing-read').checked, write: document.getElementById('perm-marketing-write').checked },
+                analytics: { read: document.getElementById('perm-analytics-read').checked, write: document.getElementById('perm-analytics-write').checked },
+                settings: { read: document.getElementById('perm-settings-read').checked, write: document.getElementById('perm-settings-write').checked },
+                settingsSections: {
+                    theme: { read: document.getElementById('perm-theme-read').checked, write: document.getElementById('perm-theme-write').checked },
+                    business: { read: document.getElementById('perm-business-read').checked, write: document.getElementById('perm-business-write').checked },
+                    categories: { read: document.getElementById('perm-categories-read').checked, write: document.getElementById('perm-categories-write').checked },
+                    roles: { read: document.getElementById('perm-roles-read').checked, write: document.getElementById('perm-roles-write').checked },
+                    permissions: { read: document.getElementById('perm-permissions-read').checked, write: document.getElementById('perm-permissions-write').checked },
+                    data: { read: document.getElementById('perm-data-read').checked, write: document.getElementById('perm-data-write').checked }
+                }
+            };
+            
             const employees = JSON.parse(localStorage.getItem('employees') || '[]');
             const newEmployee = {
                 id: Date.now(),
@@ -4521,6 +4845,7 @@
                 phone,
                 address,
                 notes,
+                permissions,
                 status: 'signed-out',
                 signInTime: null,
                 totalHours: 0
@@ -4536,14 +4861,17 @@
                 password,
                 role: 'Employee',
                 name,
-                employeeId: newEmployee.id
+                employeeId: newEmployee.id,
+                permissions
             });
             localStorage.setItem('users', JSON.stringify(users));
             
+            // Clear form
             document.getElementById('newEmployeeName').value = '';
             document.getElementById('newEmployeeRole').value = '';
             document.getElementById('newEmployeeUsername').value = '';
             document.getElementById('newEmployeePassword').value = '';
+            document.querySelectorAll('[id^="perm-"]').forEach(cb => { if (!cb.disabled) cb.checked = false; });
             document.getElementById('newEmployeeEmail').value = '';
             document.getElementById('newEmployeePhone').value = '';
             document.getElementById('newEmployeeAddress').value = '';
