@@ -452,9 +452,9 @@ app.get('/api/catering', (req, res) => {
 });
 
 app.post('/api/catering', (req, res) => {
-    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes } = req.body;
-    db.run('INSERT INTO catering (client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes],
+    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes } = req.body;
+    db.run('INSERT INTO catering (client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
@@ -462,9 +462,9 @@ app.post('/api/catering', (req, res) => {
 });
 
 app.put('/api/catering/:id', (req, res) => {
-    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes } = req.body;
-    db.run('UPDATE catering SET client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, notes = ? WHERE id = ?',
-        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes, req.params.id],
+    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes } = req.body;
+    db.run('UPDATE catering SET client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, service_type = ?, staff_count = ?, staff_cost = ?, notes = ? WHERE id = ?',
+        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, req.params.id],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
