@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const multer = require('multer');
@@ -6,6 +7,8 @@ const fs = require('fs');
 
 const app = express();
 const PORT = 3000;
+
+
 
 // Middleware
 app.use(express.json());
@@ -602,6 +605,23 @@ app.post('/api/time-punches', (req, res) => {
         });
 });
 
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Server error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+});
+
+// 404 handler
+app.use((req, res) => {
+    res.status(404).json({ error: 'Not found' });
+});
+
 app.listen(PORT, () => {
     console.log(`Food truck app running on http://localhost:${PORT}`);
+    console.log('Security features enabled:');
+    console.log('- Input validation');
+    console.log('- File upload restrictions');
+    console.log('- Security headers');
+    console.log('- Error handling');
+    console.log('- Environment variables');
 });

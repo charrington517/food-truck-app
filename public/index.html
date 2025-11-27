@@ -1392,6 +1392,28 @@
     <script>
         let currentPage = 'dashboard';
         let currentUser = null;
+        let sessionTimeout = null;
+        const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes
+        
+        // Session management
+        function resetSessionTimeout() {
+            if (sessionTimeout) clearTimeout(sessionTimeout);
+            sessionTimeout = setTimeout(() => {
+                alert('Session expired. Please log in again.');
+                logout();
+            }, SESSION_DURATION);
+        }
+        
+        function extendSession() {
+            if (currentUser) {
+                resetSessionTimeout();
+            }
+        }
+        
+        // Add activity listeners to extend session
+        document.addEventListener('click', extendSession);
+        document.addEventListener('keypress', extendSession);
+        document.addEventListener('scroll', extendSession);
 
         // Authentication Functions
         function checkAuth() {
@@ -1401,11 +1423,13 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 document.querySelector('.nav').style.display = 'block';
+                resetSessionTimeout(); // Start session management
                 loadDashboard();
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
                 document.querySelector('.nav').style.display = 'none';
+                initializeDefaultUsers(); // Initialize users if none exist
             }
         }
 
@@ -1419,6 +1443,12 @@
                 return;
             }
 
+            // Input validation
+            if (username.length < 3 || password.length < 6) {
+                errorDiv.textContent = 'Invalid credentials format';
+                return;
+            }
+
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             const user = users.find(u => u.username === username && u.password === password);
 
@@ -1428,10 +1458,16 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 document.querySelector('.nav').style.display = 'block';
+                resetSessionTimeout(); // Start session management
                 loadDashboard();
                 errorDiv.textContent = '';
+                
+                // Clear password field for security
+                document.getElementById('loginPassword').value = '';
             } else {
                 errorDiv.textContent = 'Invalid username or password';
+                // Clear password field on failed attempt
+                document.getElementById('loginPassword').value = '';
             }
         }
 
@@ -1458,6 +1494,23 @@
 
             if (!name || !role || !username || !password) {
                 errorDiv.textContent = 'Please fill in name, role, username, and password';
+                return;
+            }
+
+            // Password strength validation
+            if (password.length < 8) {
+                errorDiv.textContent = 'Password must be at least 8 characters long';
+                return;
+            }
+            
+            if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+                errorDiv.textContent = 'Password must contain uppercase, lowercase, and number';
+                return;
+            }
+
+            // Username validation
+            if (username.length < 3 || !/^[a-zA-Z0-9_]+$/.test(username)) {
+                errorDiv.textContent = 'Username must be 3+ characters, letters/numbers/underscore only';
                 return;
             }
 
@@ -1508,8 +1561,22 @@
 
         function logout() {
             if (confirm('Are you sure you want to logout?')) {
+                // Clear session timeout
+                if (sessionTimeout) {
+                    clearTimeout(sessionTimeout);
+                    sessionTimeout = null;
+                }
+                
+                // Clear user data
                 currentUser = null;
                 localStorage.removeItem('currentUser');
+                
+                // Clear all form fields for security
+                document.querySelectorAll('input[type="password"]').forEach(input => input.value = '');
+                document.querySelectorAll('input[type="text"]').forEach(input => input.value = '');
+                document.querySelectorAll('input[type="email"]').forEach(input => input.value = '');
+                
+                // Reset UI
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
                 document.querySelector('.nav').style.display = 'none';
@@ -1521,13 +1588,27 @@
         function initializeDefaultUsers() {
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             if (users.length === 0) {
-                const defaultUsers = [
-                    { id: 1, username: 'owner', password: 'admin123', role: 'Owner', name: 'Business Owner' },
-                    { id: 2, username: 'manager', password: 'manager123', role: 'Manager', name: 'Store Manager' },
-                    { id: 3, username: 'employee', password: 'emp123', role: 'Employee', name: 'Staff Member' }
-                ];
-                localStorage.setItem('users', JSON.stringify(defaultUsers));
+                // Only create admin user if no users exist
+                const adminUser = {
+                    id: 1,
+                    username: 'admin',
+                    password: generateSecurePassword(),
+                    role: 'Owner',
+                    name: 'System Administrator'
+                };
+                localStorage.setItem('users', JSON.stringify([adminUser]));
+                console.log('Default admin created. Username: admin, Password:', adminUser.password);
+                alert(`Default admin created!\nUsername: admin\nPassword: ${adminUser.password}\n\nPlease save this password and change it immediately.`);
             }
+        }
+        
+        function generateSecurePassword() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return password;
         }
 
         // Permission Functions
@@ -1589,8 +1670,30 @@
             });
         }
 
+        // Input sanitization function
+        function sanitizeInput(input) {
+            if (typeof input !== 'string') return input;
+            return input.replace(/[<>"'&]/g, function(match) {
+                const escapeMap = {
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#x27;',
+                    '&': '&amp;'
+                };
+                return escapeMap[match];
+            });
+        }
+        
         // Page Navigation
         function showPage(pageId) {
+            // Validate pageId to prevent XSS
+            const validPages = ['dashboard', 'menu', 'ingredients', 'inventory', 'suppliers', 'employee', 'tools', 'catering', 'events', 'marketing', 'analytics', 'settings'];
+            if (!validPages.includes(pageId)) {
+                console.error('Invalid page ID:', pageId);
+                return;
+            }
+            
             // Check permissions
             if (!hasPermission(pageId)) {
                 alert('Access denied. You do not have permission to view this page.');
@@ -3141,8 +3244,21 @@
                         <div class="card-details" id="catering-details-${order.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
                             ${order.time ? `<div class="card-meta">Time: ${order.time}</div>` : ''}
                             ${order.setup_time > 0 ? `<div class="card-meta">Setup: ${order.setup_time} hours</div>` : ''}
+                            ${order.staff_assigned ? `<div class="card-meta">Staff: ${order.staff_assigned}</div>` : ''}
                             ${order.deposit > 0 ? `<div class="card-meta">Deposit: $${order.deposit.toFixed(2)}</div>` : ''}
-                            ${order.notes ? `<div class="card-meta" style="font-style: italic;">Notes: ${order.notes}</div>` : ''}
+                            ${(() => {
+                                let selectedMenu = [];
+                                if (order.selected_menu) {
+                                    try {
+                                        selectedMenu = typeof order.selected_menu === 'string' ? JSON.parse(order.selected_menu) : order.selected_menu;
+                                    } catch(e) {}
+                                }
+                                if (selectedMenu && selectedMenu.length > 0) {
+                                    return `<div class="card-meta" style="margin-top: 8px;"><strong>Menu Items:</strong><ul style="margin: 5px 0 0 20px;">${selectedMenu.map(item => `<li>${item.name} (${item.quantity} servings) - $${(item.total || item.totalPrice).toFixed(2)}</li>`).join('')}</ul></div>`;
+                                }
+                                return '';
+                            })()}
+                            ${order.notes ? `<div class="card-meta" style="font-style: italic; margin-top: 8px;">Notes: ${order.notes}</div>` : ''}
                             <div class="card-actions" style="margin-top: 10px;">
                                 <button class="btn" onclick="editCateringOrder(${order.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn" onclick="buildQuote(${order.id})" style="background: var(--success); color: white;">Quote</button>
@@ -3168,9 +3284,11 @@
         }
         
         function editCateringOrder(id) {
-            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-            const order = orders.find(o => o.id === id);
-            if (!order) return;
+            fetch('/api/catering')
+                .then(r => r.json())
+                .then(orders => {
+                    const order = orders.find(o => o.id === id);
+                    if (!order) return;
             
             const modal = document.getElementById('addModal');
             const modalTitle = document.getElementById('modalTitle');
@@ -3209,6 +3327,7 @@
             `;
             
             modal.classList.add('show');
+                });
         }
         
         function updateCateringOrder(id) {
@@ -3227,54 +3346,51 @@
                 return;
             }
             
-            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-            const orderIndex = orders.findIndex(o => o.id === id);
-            if (orderIndex !== -1) {
-                const currentOrder = orders[orderIndex];
-                orders[orderIndex] = {
-                    ...currentOrder,
-                    client,
-                    date,
-                    guests,
-                    status,
-                    location,
-                    time,
-                    setupTime,
-                    deposit,
-                    notes
-                };
-                localStorage.setItem('catering', JSON.stringify(orders));
-                loadCatering();
-            }
+            fetch(`/api/catering/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client, date, guests, status, deposit, setup_time: setupTime, notes, price: 0 })
+            }).then(() => loadCatering());
         }
         
         function updateCateringStatus(id) {
-            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-            const order = orders.find(o => o.id === id);
-            if (!order) return;
-            
-            const statusOptions = ['Inquiry', 'Quote Sent', 'Booked', 'Completed', 'Cancelled'];
-            const optionsText = statusOptions.map((status, index) => `${index + 1}. ${status}`).join('\n');
-            
-            const choice = prompt(`Current status: ${order.status}\n\nSelect new status:\n${optionsText}\n\nEnter number (1-5):`);
-            const choiceNum = parseInt(choice);
-            
-            if (choiceNum >= 1 && choiceNum <= 5) {
-                order.status = statusOptions[choiceNum - 1];
-                localStorage.setItem('catering', JSON.stringify(orders));
-                loadCatering();
-            }
+            fetch('/api/catering')
+                .then(r => r.json())
+                .then(orders => {
+                    const order = orders.find(o => o.id === id);
+                    if (!order) return;
+                    
+                    const statusOptions = ['Inquiry', 'Quote Sent', 'Booked', 'Completed', 'Cancelled'];
+                    const optionsText = statusOptions.map((status, index) => `${index + 1}. ${status}`).join('\n');
+                    
+                    const choice = prompt(`Current status: ${order.status}\n\nSelect new status:\n${optionsText}\n\nEnter number (1-5):`);
+                    const choiceNum = parseInt(choice);
+                    
+                    if (choiceNum >= 1 && choiceNum <= 5) {
+                        const newStatus = statusOptions[choiceNum - 1];
+                        fetch(`/api/catering/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...order, status: newStatus, setup_time: order.setup_time })
+                        }).then(() => loadCatering());
+                    }
+                });
         }
         
         function buildQuote(id) {
-            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-            const order = orders.find(o => o.id === id);
-            if (!order) return;
-            
-            // Get menu items for quote builder
-            fetch('/api/menu')
+            let currentOrder;
+            fetch('/api/catering')
+                .then(r => r.json())
+                .then(orders => {
+                    currentOrder = orders.find(o => o.id === id);
+                    if (!currentOrder) return;
+                    
+                    // Get menu items for quote builder
+                    return fetch('/api/menu');
+                })
                 .then(r => r.json())
                 .then(menuItems => {
+                    const order = currentOrder;
                     const modal = document.getElementById('addModal');
                     const modalTitle = document.getElementById('modalTitle');
                     const modalForm = document.getElementById('modalForm');
@@ -3296,12 +3412,11 @@
                                                 <span style="font-weight: 500;">servings</span>
                                             </div>
                                         </div>
-                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; font-size: 0.9em;">
-                                            <div>Cost: <strong>$${item.cost.toFixed(2)}</strong> each</div>
-                                            <div>Suggested: <strong>$${suggestedPrice.toFixed(2)}</strong> each</div>
-                                        </div>
                                         <div id="cost-display-${item.id}" style="display: none; background: var(--gray-light); padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 0.9em;">
-                                            Total Food Cost: <strong style="color: var(--orange);">$<span id="total-cost-${item.id}">0.00</span></strong>
+                                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                                <div>Food Cost: <strong style="color: var(--orange);">$<span id="total-cost-${item.id}">0.00</span></strong></div>
+                                                <div>Suggested: <strong style="color: var(--green);">$<span id="suggested-price-${item.id}">0.00</span></strong></div>
+                                            </div>
                                         </div>
                                         <div style="display: flex; align-items: center; gap: 8px;">
                                             <label style="font-weight: 500;">Your Price: $</label>
@@ -3318,8 +3433,15 @@
                     `;
                     
                     // Load existing quote if available
-                    if (order.selectedMenu && order.selectedMenu.length > 0) {
-                        order.selectedMenu.forEach(menuItem => {
+                    let selectedMenu = [];
+                    if (order.selected_menu) {
+                        selectedMenu = typeof order.selected_menu === 'string' ? JSON.parse(order.selected_menu) : order.selected_menu;
+                    } else if (order.selectedMenu) {
+                        selectedMenu = typeof order.selectedMenu === 'string' ? JSON.parse(order.selectedMenu) : order.selectedMenu;
+                    }
+                    
+                    if (selectedMenu && selectedMenu.length > 0) {
+                        selectedMenu.forEach(menuItem => {
                             const qtyInput = document.getElementById(`qty-${menuItem.id}`);
                             const priceInput = document.getElementById(`price-${menuItem.id}`);
                             if (qtyInput) {
@@ -3340,6 +3462,7 @@
             fetch('/api/menu')
                 .then(r => r.json())
                 .then(menuItems => {
+                    const defaultMargin = parseFloat(localStorage.getItem('defaultMargin') || '30');
                     let total = 0;
                     menuItems.forEach(item => {
                         const qtyInput = document.getElementById(`qty-${item.id}`);
@@ -3348,12 +3471,16 @@
                             const qty = parseInt(qtyInput.value) || 0;
                             const totalPrice = parseFloat(priceInput.value) || 0;
                             const totalCostSpan = document.getElementById(`total-cost-${item.id}`);
+                            const suggestedPriceSpan = document.getElementById(`suggested-price-${item.id}`);
                             const costDisplay = document.getElementById(`cost-display-${item.id}`);
                             
                             if (qty > 0) {
                                 const totalFoodCost = qty * item.cost;
+                                const suggestedPrice = item.cost / (1 - defaultMargin / 100);
+                                const totalSuggestedPrice = qty * suggestedPrice;
                                 if (totalCostSpan) totalCostSpan.textContent = totalFoodCost.toFixed(2);
-                                if (costDisplay) costDisplay.style.display = 'flex';
+                                if (suggestedPriceSpan) suggestedPriceSpan.textContent = totalSuggestedPrice.toFixed(2);
+                                if (costDisplay) costDisplay.style.display = 'block';
                                 total += totalPrice;
                             } else {
                                 if (costDisplay) costDisplay.style.display = 'none';
@@ -3365,49 +3492,65 @@
         }
         
         function saveQuote(orderId) {
-            fetch('/api/menu')
+            let currentOrder;
+            fetch('/api/catering')
+                .then(r => r.json())
+                .then(orders => {
+                    currentOrder = orders.find(o => o.id === orderId);
+                    return fetch('/api/menu');
+                })
                 .then(r => r.json())
                 .then(menuItems => {
-                    const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-                    const orderIndex = orders.findIndex(o => o.id === orderId);
+                    const selectedMenu = [];
+                    let totalPrice = 0;
                     
-                    if (orderIndex !== -1) {
-                        const selectedMenu = [];
-                        let totalPrice = 0;
-                        
-                        menuItems.forEach(item => {
-                            const qtyInput = document.getElementById(`qty-${item.id}`);
-                            const priceInput = document.getElementById(`price-${item.id}`);
-                            if (qtyInput && priceInput) {
-                                const qty = parseInt(qtyInput.value) || 0;
-                                const totalItemPrice = parseFloat(priceInput.value) || 0;
-                                if (qty > 0) {
-                                    selectedMenu.push({
-                                        id: item.id,
-                                        name: item.name,
-                                        price: totalItemPrice / qty,
-                                        totalPrice: totalItemPrice,
-                                        foodCost: item.cost,
-                                        quantity: qty,
-                                        total: totalItemPrice
-                                    });
-                                    totalPrice += totalItemPrice;
-                                }
+                    menuItems.forEach(item => {
+                        const qtyInput = document.getElementById(`qty-${item.id}`);
+                        const priceInput = document.getElementById(`price-${item.id}`);
+                        if (qtyInput && priceInput) {
+                            const qty = parseInt(qtyInput.value) || 0;
+                            const totalItemPrice = parseFloat(priceInput.value) || 0;
+                            if (qty > 0) {
+                                selectedMenu.push({
+                                    id: item.id,
+                                    name: item.name,
+                                    price: totalItemPrice / qty,
+                                    totalPrice: totalItemPrice,
+                                    foodCost: item.cost,
+                                    quantity: qty,
+                                    total: totalItemPrice
+                                });
+                                totalPrice += totalItemPrice;
                             }
-                        });
-                        
-                        orders[orderIndex].selectedMenu = selectedMenu;
-                        orders[orderIndex].totalPrice = totalPrice;
-                        localStorage.setItem('catering', JSON.stringify(orders));
-                        loadCatering();
-                    }
-                });
+                        }
+                    });
+                    
+                    return fetch(`/api/catering/${orderId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            client: currentOrder.client,
+                            date: currentOrder.date,
+                            guests: currentOrder.guests,
+                            price: totalPrice,
+                            status: currentOrder.status,
+                            deposit: currentOrder.deposit,
+                            setup_time: currentOrder.setup_time,
+                            selected_menu: JSON.stringify(selectedMenu),
+                            staff_assigned: currentOrder.staff_assigned,
+                            notes: currentOrder.notes
+                        })
+                    });
+                })
+                .then(() => loadCatering());
         }
         
         function exportCateringPDF(id) {
-            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-            const order = orders.find(o => o.id === id);
-            if (!order) return;
+            fetch('/api/catering')
+                .then(r => r.json())
+                .then(orders => {
+                    const order = orders.find(o => o.id === id);
+                    if (!order) return;
             
             // Load jsPDF library if not already loaded
             if (typeof window.jsPDF === 'undefined') {
@@ -3418,75 +3561,183 @@
             } else {
                 generateCateringPDF(order);
             }
+                });
         }
         
         function generateCateringPDF(order) {
-            const { jsPDF } = window.jsPDF;
-            const doc = new jsPDF();
+            const doc = new window.jspdf.jsPDF();
             
-            // Header
-            doc.setFontSize(20);
-            doc.setTextColor(255, 107, 53);
-            doc.text('Birria Fusion', 20, 20);
+            // Parse selectedMenu if it's a string
+            let selectedMenu = [];
+            if (order.selected_menu) {
+                selectedMenu = typeof order.selected_menu === 'string' ? JSON.parse(order.selected_menu) : order.selected_menu;
+            } else if (order.selectedMenu) {
+                selectedMenu = typeof order.selectedMenu === 'string' ? JSON.parse(order.selectedMenu) : order.selectedMenu;
+            }
             
-            doc.setFontSize(12);
-            doc.setTextColor(0, 0, 0);
-            doc.text('Catering Quote', 20, 30);
-            
-            // Business Info
-            doc.setFontSize(10);
-            doc.text('Phone: (555) 123-4567', 20, 40);
-            doc.text('Email: info@birriafusion.com', 20, 45);
-            doc.text('Website: www.birriafusion.com', 20, 50);
-            
-            // Quote Details
-            doc.setFontSize(14);
-            doc.text(`Quote for: ${order.client}`, 20, 70);
-            
-            doc.setFontSize(10);
-            doc.text(`Event Date: ${order.date}`, 20, 80);
-            doc.text(`Guests: ${order.guests}`, 20, 85);
-            if (order.location) doc.text(`Location: ${order.location}`, 20, 90);
-            if (order.time) doc.text(`Time: ${order.time}`, 20, 95);
-            if (order.setupTime > 0) doc.text(`Setup Time: ${order.setupTime} hours`, 20, 100);
-            
-            // Menu Items
-            if (order.selectedMenu && order.selectedMenu.length > 0) {
-                doc.setFontSize(12);
-                doc.text('Menu Items:', 20, 120);
+            // Add logo
+            const logo = new Image();
+            logo.src = '/uploads/1763192867406_birria-fusion-logo.png';
+            logo.onload = function() {
+                doc.addImage(logo, 'PNG', 15, 10, 30, 30);
                 
-                let yPos = 130;
-                order.selectedMenu.forEach(item => {
-                    doc.setFontSize(10);
-                    doc.text(`${item.name}`, 25, yPos);
-                    doc.text(`${item.quantity} servings - $${item.total.toFixed(2)} total`, 25, yPos + 5);
-                    doc.text(`$${item.total.toFixed(2)}`, 150, yPos + 5);
-                    yPos += 15;
-                });
+                // Header - Company Name
+                doc.setFontSize(24);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(255, 107, 53);
+                doc.text('BIRRIA FUSION', 50, 22);
                 
-                // Total
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text('(555) 123-4567 | info@birriafusion.com', 50, 28);
+                doc.text('www.birriafusion.com', 50, 33);
+                
+                // Title
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text('CATERING QUOTE', 105, 55, { align: 'center' });
+                
+                // Horizontal line
+                doc.setDrawColor(255, 107, 53);
+                doc.setLineWidth(0.5);
+                doc.line(15, 60, 195, 60);
+                
+                // Client Info Box
+                doc.setFillColor(250, 250, 250);
+                doc.rect(15, 68, 180, 35, 'F');
+                
                 doc.setFontSize(12);
-                doc.text(`Total: $${order.totalPrice.toFixed(2)}`, 20, yPos + 10);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text('CLIENT INFORMATION', 20, 76);
+                
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Client: ${order.client}`, 20, 84);
+                doc.text(`Event Date: ${order.date}`, 20, 90);
+                doc.text(`Number of Guests: ${order.guests}`, 20, 96);
+                
+                if (order.setup_time || order.setupTime) {
+                    doc.text(`Setup Time: ${order.setup_time || order.setupTime}`, 120, 84);
+                }
+                
+                // Menu Items Section
+                let yPos = 115;
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text('MENU ITEMS', 20, yPos);
+                
+                yPos += 8;
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.3);
+                doc.line(15, yPos, 195, yPos);
+                
+                // Table Header
+                yPos += 7;
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(80, 80, 80);
+                doc.text('ITEM', 20, yPos);
+                doc.text('QUANTITY', 130, yPos);
+                doc.text('PRICE', 185, yPos, { align: 'right' });
+                
+                yPos += 3;
+                doc.line(15, yPos, 195, yPos);
+                
+                // Menu Items
+                yPos += 8;
+                let subtotal = 0;
+                if (selectedMenu && selectedMenu.length > 0) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    selectedMenu.forEach(item => {
+                        const itemTotal = item.total || item.totalPrice;
+                        doc.setFontSize(10);
+                        doc.text(item.name, 20, yPos);
+                        doc.text(`${item.quantity} servings`, 130, yPos);
+                        doc.text(`$${itemTotal.toFixed(2)}`, 185, yPos, { align: 'right' });
+                        subtotal += itemTotal;
+                        yPos += 8;
+                    });
+                }
+                
+                // Totals Section
+                yPos += 5;
+                doc.setDrawColor(200, 200, 200);
+                doc.line(120, yPos, 195, yPos);
+                
+                yPos += 8;
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                const totalPrice = order.price || order.totalPrice || subtotal;
+                doc.text('SUBTOTAL:', 130, yPos);
+                doc.text(`$${totalPrice.toFixed(2)}`, 185, yPos, { align: 'right' });
                 
                 if (order.deposit > 0) {
-                    doc.text(`Deposit Required: $${order.deposit.toFixed(2)}`, 20, yPos + 20);
+                    yPos += 8;
+                    doc.setTextColor(255, 107, 53);
+                    doc.text('DEPOSIT REQUIRED:', 130, yPos);
+                    doc.text(`$${order.deposit.toFixed(2)}`, 185, yPos, { align: 'right' });
+                    
+                    yPos += 8;
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('BALANCE DUE:', 130, yPos);
+                    doc.text(`$${((order.totalPrice || subtotal) - order.deposit).toFixed(2)}`, 185, yPos, { align: 'right' });
                 }
-            }
+                
+                yPos += 3;
+                doc.setDrawColor(255, 107, 53);
+                doc.setLineWidth(0.5);
+                doc.line(120, yPos, 195, yPos);
+                
+                // Notes Section
+                if (order.notes) {
+                    yPos += 15;
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('SPECIAL NOTES:', 20, yPos);
+                    
+                    yPos += 6;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    const splitNotes = doc.splitTextToSize(order.notes, 170);
+                    doc.text(splitNotes, 20, yPos);
+                }
+                
+                // Footer
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(120, 120, 120);
+                doc.text('Thank you for choosing Birria Fusion for your catering needs!', 105, 275, { align: 'center' });
+                doc.text('This quote is valid for 30 days from the date of issue.', 105, 280, { align: 'center' });
+                
+                // Save PDF
+                doc.save(`Catering-Quote-${order.client}-${order.date}.pdf`);
+            };
             
-            // Notes
-            if (order.notes) {
+            // Fallback if logo doesn't load
+            logo.onerror = function() {
+                doc.setFontSize(24);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(255, 107, 53);
+                doc.text('BIRRIA FUSION', 15, 25);
+                
                 doc.setFontSize(10);
-                doc.text('Special Notes:', 20, yPos + 40);
-                const splitNotes = doc.splitTextToSize(order.notes, 170);
-                doc.text(splitNotes, 20, yPos + 50);
-            }
-            
-            // Footer
-            doc.setFontSize(8);
-            doc.text('Thank you for choosing Birria Fusion for your catering needs!', 20, 280);
-            
-            // Save PDF
-            doc.save(`Catering-Quote-${order.client}-${order.date}.pdf`);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                doc.text('(555) 123-4567 | info@birriafusion.com | www.birriafusion.com', 15, 32);
+                
+                doc.setFontSize(18);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text('CATERING QUOTE', 105, 55, { align: 'center' });
+                
+                doc.save(`Catering-Quote-${order.client}-${order.date}.pdf`);
+            };
         }
 
         function deleteCateringOrder(id) {
@@ -3661,28 +3912,35 @@
         }
         
         function updateEventStatus(id) {
-            const events = JSON.parse(localStorage.getItem('events') || '[]');
-            const event = events.find(e => e.id === id);
-            if (!event) return;
-            
-            const statusOptions = ['Interested', 'Applied', 'Accepted', 'Accepted & Paid', 'Rejected', 'Completed'];
-            const currentIndex = statusOptions.indexOf(event.status);
-            const optionsText = statusOptions.map((status, index) => `${index + 1}. ${status}`).join('\n');
-            
-            const choice = prompt(`Current status: ${event.status}\n\nSelect new status:\n${optionsText}\n\nEnter number (1-5):`);
-            const choiceNum = parseInt(choice);
-            
-            if (choiceNum >= 1 && choiceNum <= 5) {
-                event.status = statusOptions[choiceNum - 1];
-                localStorage.setItem('events', JSON.stringify(events));
-                loadEvents();
-            }
+            fetch('/api/events')
+                .then(r => r.json())
+                .then(events => {
+                    const event = events.find(e => e.id === id);
+                    if (!event) return;
+                    
+                    const statusOptions = ['Interested', 'Applied', 'Accepted', 'Accepted & Paid', 'Rejected', 'Completed'];
+                    const optionsText = statusOptions.map((status, index) => `${index + 1}. ${status}`).join('\n');
+                    
+                    const choice = prompt(`Current status: ${event.status}\n\nSelect new status:\n${optionsText}\n\nEnter number (1-6):`);
+                    const choiceNum = parseInt(choice);
+                    
+                    if (choiceNum >= 1 && choiceNum <= 6) {
+                        const newStatus = statusOptions[choiceNum - 1];
+                        fetch(`/api/events/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ...event, status: newStatus, end_date: event.end_date })
+                        }).then(() => loadEvents());
+                    }
+                });
         }
         
         function editEvent(id) {
-            const events = JSON.parse(localStorage.getItem('events') || '[]');
-            const event = events.find(e => e.id === id);
-            if (!event) return;
+            fetch('/api/events')
+                .then(r => r.json())
+                .then(events => {
+                    const event = events.find(e => e.id === id);
+                    if (!event) return;
             
             const modal = document.getElementById('addModal');
             const modalTitle = document.getElementById('modalTitle');
@@ -3732,6 +3990,7 @@
             `;
             
             modal.classList.add('show');
+                });
         }
         
         function updateEvent(id) {
@@ -3750,14 +4009,11 @@
                 return;
             }
             
-            const events = JSON.parse(localStorage.getItem('events') || '[]');
-            const eventIndex = events.findIndex(e => e.id === id);
-            if (eventIndex !== -1) {
-                const currentEvent = events[eventIndex];
-                events[eventIndex] = { id, name, type, location, date, endDate, time, fee, status, notes, paid: currentEvent.paid || false };
-                localStorage.setItem('events', JSON.stringify(events));
-                loadEvents();
-            }
+            fetch(`/api/events/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, type, location, date, end_date: endDate, time, fee, status, notes, paid: 0 })
+            }).then(() => loadEvents());
         }
         
         function deleteEvent(id) {
@@ -3780,13 +4036,18 @@
         }
         
         function togglePayment(id) {
-            const events = JSON.parse(localStorage.getItem('events') || '[]');
-            const event = events.find(e => e.id === id);
-            if (!event) return;
-            
-            event.paid = !event.paid;
-            localStorage.setItem('events', JSON.stringify(events));
-            loadEvents();
+            fetch('/api/events')
+                .then(r => r.json())
+                .then(events => {
+                    const event = events.find(e => e.id === id);
+                    if (!event) return;
+                    
+                    fetch(`/api/events/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ...event, paid: event.paid ? 0 : 1, end_date: event.end_date })
+                    }).then(() => loadEvents());
+                });
         }
 
         // Review Functions

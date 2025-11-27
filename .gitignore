@@ -1,5 +1,6 @@
 node_modules/
-*.log
 .env
+*.db
+uploads/
 .DS_Store
-foodtruck.db
+*.log
