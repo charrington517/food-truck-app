@@ -720,15 +720,15 @@
         <div id="employee" class="page">
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; font-size: 1.2em;">👥 Employee Time Clock</h3>
+                    <h3 style="margin: 0; font-size: 1.2em;">Employee Time Clock</h3>
                 </div>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;">
                     <div style="background: var(--gray-light); padding: 15px; border-radius: 8px;">
-                        <h4 style="margin-bottom: 10px;">Sign In/Out</h4>
+                        <h4 style="margin-bottom: 10px;">Punch In/Out</h4>
                         <select id="employeeSelect" style="width: 100%; margin-bottom: 10px;">
                             <option value="">Select employee...</option>
                         </select>
-                        <button class="btn" onclick="toggleEmployeeStatus()" id="clockBtn" style="width: 100%; padding: 10px;">Sign In</button>
+                        <button class="btn" onclick="toggleEmployeeStatus()" id="clockBtn" style="width: 100%; padding: 10px;">Punch In</button>
                         <div id="currentStatus" style="margin-top: 10px; font-size: 0.9em;"></div>
                     </div>
                     <div style="background: var(--gray-light); border-radius: 8px;">
@@ -968,7 +968,7 @@
             
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; font-size: 1.2em;">📜 License Renewals</h3>
+                    <h3 style="margin: 0; font-size: 1.2em;">License Renewals</h3>
                     <button class="btn" onclick="addLicense()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add License</button>
                 </div>
                 <div class="files-grid" id="licenseList"></div>
@@ -976,7 +976,7 @@
             
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; font-size: 1.2em;">📅 Maintenance Schedule</h3>
+                    <h3 style="margin: 0; font-size: 1.2em;">Maintenance Schedule</h3>
                     <button class="btn" onclick="addMaintenanceTask()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Task</button>
                 </div>
                 <div class="files-grid" id="maintenanceList"></div>
@@ -984,7 +984,7 @@
             
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; font-size: 1.2em;">🧮 Cost Calculator</h3>
+                    <h3 style="margin: 0; font-size: 1.2em;">Cost Calculator</h3>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px;">
                     <div style="background: var(--gray-light); border-radius: 8px;">
@@ -1021,7 +1021,7 @@
             
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; font-size: 1.2em;">📱 QR Code Generator</h3>
+                    <h3 style="margin: 0; font-size: 1.2em;">QR Code Generator</h3>
                 </div>
                 <div class="form" style="max-width: 500px;">
                     <div class="form-group">
@@ -1049,7 +1049,7 @@
             
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h3 style="margin: 0; font-size: 1.2em;">📁 Files</h3>
+                    <h3 style="margin: 0; font-size: 1.2em;">Files</h3>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <select id="uploadFileCategory" style="padding: 8px; font-size: 0.9em;">
                             <option value="General">General</option>
@@ -1148,7 +1148,7 @@
                     <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
                         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/>
                     </svg>
-                    Sign Out
+                    Punch Out
                 </button>
             </div>
             
@@ -5655,7 +5655,7 @@
             
             if (!selectedId) {
                 statusDiv.textContent = '';
-                clockBtn.textContent = 'Sign In';
+                clockBtn.textContent = 'Punch In';
                 return;
             }
             
@@ -5666,11 +5666,11 @@
                 if (employee.status === 'signed-in') {
                     statusDiv.textContent = `Signed in at ${employee.signInTime}`;
                     statusDiv.style.color = 'var(--success)';
-                    clockBtn.textContent = 'Sign Out';
+                    clockBtn.textContent = 'Punch Out';
                 } else {
                     statusDiv.textContent = 'Currently signed out';
                     statusDiv.style.color = 'var(--gray)';
-                    clockBtn.textContent = 'Sign In';
+                    clockBtn.textContent = 'Punch In';
                 }
             }
         }
@@ -5756,7 +5756,7 @@
                             <div style="font-size: 0.8em; color: var(--gray);">${dateStr} at ${timeStr}</div>
                         </div>
                         <div style="text-align: right;">
-                            <div style="color: ${punch.action === 'sign-in' ? 'var(--success)' : 'var(--danger)'}; font-weight: bold; font-size: 0.9em;">${punch.action.toUpperCase()}</div>
+                            <div style="color: ${(punch.action === 'punch-in' || punch.action === 'sign-in') ? 'var(--success)' : 'var(--danger)'}; font-weight: bold; font-size: 0.9em;">${punch.action.replace('sign-', 'punch-').toUpperCase()}</div>
                         </div>
                     </div>
                 `;
@@ -5879,7 +5879,7 @@
                 punches.push({
                     employeeId: employee.id,
                     employeeName: employee.name,
-                    action: 'sign-in',
+                    action: 'punch-in',
                     timestamp: now.toISOString()
                 });
             } else {
@@ -5889,7 +5889,7 @@
                 punches.push({
                     employeeId: employee.id,
                     employeeName: employee.name,
-                    action: 'sign-out',
+                    action: 'punch-out',
                     timestamp: now.toISOString()
                 });
                 
@@ -5913,7 +5913,7 @@
             const status = document.getElementById('currentStatus');
             
             if (!employeeId) {
-                btn.textContent = 'Sign In';
+                btn.textContent = 'Punch In';
                 btn.style.background = 'var(--orange)';
                 status.innerHTML = '';
                 return;
@@ -5924,13 +5924,13 @@
             if (!employee) return;
             
             if (employee.status === 'signed-in') {
-                btn.textContent = 'Sign Out';
+                btn.textContent = 'Punch Out';
                 btn.style.background = 'var(--danger)';
                 const signInTime = new Date(employee.signInTime);
                 const currentTime = (new Date() - signInTime) / (1000 * 60 * 60);
                 status.innerHTML = `<div style="color: var(--success); font-weight: bold;">Signed in since ${signInTime.toLocaleTimeString()}</div><div>Current shift: ${currentTime.toFixed(1)} hours</div>`;
             } else {
-                btn.textContent = 'Sign In';
+                btn.textContent = 'Punch In';
                 btn.style.background = 'var(--success)';
                 status.innerHTML = `<div style="color: var(--gray);">Signed out</div><div>Total hours: ${employee.totalHours.toFixed(1)}</div>`;
             }
