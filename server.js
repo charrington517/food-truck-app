@@ -79,6 +79,129 @@ db.serialize(() => {
     db.run(`ALTER TABLE suppliers ADD COLUMN address TEXT`, (err) => {
         // Ignore error if column already exists
     });
+
+    // Employees table
+    db.run(`CREATE TABLE IF NOT EXISTS employees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        role TEXT NOT NULL,
+        username TEXT,
+        email TEXT,
+        phone TEXT,
+        address TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'signed-out',
+        sign_in_time TEXT,
+        total_hours REAL DEFAULT 0,
+        permissions TEXT
+    )`);
+
+    // Users table
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        role TEXT NOT NULL,
+        name TEXT NOT NULL,
+        employee_id INTEGER,
+        permissions TEXT
+    )`);
+
+    // Events table
+    db.run(`CREATE TABLE IF NOT EXISTS events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT,
+        location TEXT,
+        date TEXT,
+        end_date TEXT,
+        time TEXT,
+        fee REAL DEFAULT 0,
+        status TEXT DEFAULT 'Interested',
+        notes TEXT,
+        paid INTEGER DEFAULT 0
+    )`);
+
+    // Catering table
+    db.run(`CREATE TABLE IF NOT EXISTS catering (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        client TEXT NOT NULL,
+        date TEXT NOT NULL,
+        guests INTEGER,
+        price REAL,
+        status TEXT DEFAULT 'Inquiry',
+        deposit REAL DEFAULT 0,
+        setup_time TEXT,
+        selected_menu TEXT,
+        staff_assigned TEXT,
+        notes TEXT
+    )`);
+
+    // Reviews table
+    db.run(`CREATE TABLE IF NOT EXISTS reviews (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        platform TEXT,
+        rating INTEGER,
+        reviewer_name TEXT,
+        review_text TEXT,
+        review_date TEXT,
+        response_status TEXT DEFAULT 'Not Responded',
+        response_text TEXT
+    )`);
+
+    // Expenses table
+    db.run(`CREATE TABLE IF NOT EXISTS expenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT,
+        amount REAL,
+        description TEXT,
+        date TEXT,
+        payment TEXT
+    )`);
+
+    // Tools table
+    db.run(`CREATE TABLE IF NOT EXISTS tools (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        category TEXT,
+        status TEXT DEFAULT 'Working'
+    )`);
+
+    // Files table
+    db.run(`CREATE TABLE IF NOT EXISTS files (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        path TEXT NOT NULL,
+        size INTEGER,
+        type TEXT,
+        category TEXT DEFAULT 'General',
+        upload_date TEXT
+    )`);
+
+    // Business info table
+    db.run(`CREATE TABLE IF NOT EXISTS business_info (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT,
+        default_margin REAL DEFAULT 30
+    )`);
+
+    // Settings table
+    db.run(`CREATE TABLE IF NOT EXISTS settings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        key TEXT UNIQUE,
+        value TEXT
+    )`);
+
+    // Time punches table
+    db.run(`CREATE TABLE IF NOT EXISTS time_punches (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER,
+        sign_in_time TEXT,
+        sign_out_time TEXT,
+        total_hours REAL,
+        date TEXT,
+        FOREIGN KEY (employee_id) REFERENCES employees (id)
+    )`);
 });
 
 // API Routes
@@ -245,6 +368,238 @@ app.post('/upload', upload.single('file'), (req, res) => {
         filename: req.file.filename,
         path: `/uploads/${req.file.filename}`
     });
+});
+
+// Employee API endpoints
+app.get('/api/employees', (req, res) => {
+    db.all('SELECT * FROM employees ORDER BY name', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/employees', (req, res) => {
+    const { name, role, username, email, phone, address, notes, permissions } = req.body;
+    db.run('INSERT INTO employees (name, role, username, email, phone, address, notes, permissions) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [name, role, username, email, phone, address, notes, JSON.stringify(permissions)],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/employees/:id', (req, res) => {
+    const { name, role, username, email, phone, address, notes, status, permissions } = req.body;
+    db.run('UPDATE employees SET name = ?, role = ?, username = ?, email = ?, phone = ?, address = ?, notes = ?, status = ?, permissions = ? WHERE id = ?',
+        [name, role, username, email, phone, address, notes, status, JSON.stringify(permissions), req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/employees/:id', (req, res) => {
+    db.run('DELETE FROM employees WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Events API endpoints
+app.get('/api/events', (req, res) => {
+    db.all('SELECT * FROM events ORDER BY date', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/events', (req, res) => {
+    const { name, type, location, date, end_date, time, fee, status, notes } = req.body;
+    db.run('INSERT INTO events (name, type, location, date, end_date, time, fee, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [name, type, location, date, end_date, time, fee, status, notes],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/events/:id', (req, res) => {
+    const { name, type, location, date, end_date, time, fee, status, notes, paid } = req.body;
+    db.run('UPDATE events SET name = ?, type = ?, location = ?, date = ?, end_date = ?, time = ?, fee = ?, status = ?, notes = ?, paid = ? WHERE id = ?',
+        [name, type, location, date, end_date, time, fee, status, notes, paid ? 1 : 0, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/events/:id', (req, res) => {
+    db.run('DELETE FROM events WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Catering API endpoints
+app.get('/api/catering', (req, res) => {
+    db.all('SELECT * FROM catering ORDER BY date', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/catering', (req, res) => {
+    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes } = req.body;
+    db.run('INSERT INTO catering (client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/catering/:id', (req, res) => {
+    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes } = req.body;
+    db.run('UPDATE catering SET client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, notes = ? WHERE id = ?',
+        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, notes, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/catering/:id', (req, res) => {
+    db.run('DELETE FROM catering WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Reviews API endpoints
+app.get('/api/reviews', (req, res) => {
+    db.all('SELECT * FROM reviews ORDER BY review_date DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/reviews', (req, res) => {
+    const { platform, rating, reviewer_name, review_text, review_date, response_status, response_text } = req.body;
+    db.run('INSERT INTO reviews (platform, rating, reviewer_name, review_text, review_date, response_status, response_text) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [platform, rating, reviewer_name, review_text, review_date, response_status, response_text],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/reviews/:id', (req, res) => {
+    const { response_text, response_status } = req.body;
+    db.run('UPDATE reviews SET response_text = ?, response_status = ? WHERE id = ?',
+        [response_text, response_status, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/reviews/:id', (req, res) => {
+    db.run('DELETE FROM reviews WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Expenses API endpoints
+app.get('/api/expenses', (req, res) => {
+    db.all('SELECT * FROM expenses ORDER BY date DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/expenses', (req, res) => {
+    const { category, amount, description, date, payment } = req.body;
+    db.run('INSERT INTO expenses (category, amount, description, date, payment) VALUES (?, ?, ?, ?, ?)',
+        [category, amount, description, date, payment],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.delete('/api/expenses/:id', (req, res) => {
+    db.run('DELETE FROM expenses WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Tools API endpoints
+app.get('/api/tools', (req, res) => {
+    db.all('SELECT * FROM tools ORDER BY name', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/tools', (req, res) => {
+    const { name, category, status } = req.body;
+    db.run('INSERT INTO tools (name, category, status) VALUES (?, ?, ?)',
+        [name, category, status],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.delete('/api/tools/:id', (req, res) => {
+    db.run('DELETE FROM tools WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Users API endpoints
+app.get('/api/users', (req, res) => {
+    db.all('SELECT id, username, role, name, employee_id FROM users', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/users', (req, res) => {
+    const { username, password, role, name, employee_id, permissions } = req.body;
+    db.run('INSERT INTO users (username, password, role, name, employee_id, permissions) VALUES (?, ?, ?, ?, ?, ?)',
+        [username, password, role, name, employee_id, JSON.stringify(permissions)],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+// Time punches API endpoints
+app.get('/api/time-punches', (req, res) => {
+    const query = `
+        SELECT tp.*, e.name as employee_name 
+        FROM time_punches tp 
+        JOIN employees e ON tp.employee_id = e.id 
+        ORDER BY tp.sign_in_time DESC
+    `;
+    db.all(query, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/time-punches', (req, res) => {
+    const { employee_id, sign_in_time, sign_out_time, total_hours, date } = req.body;
+    db.run('INSERT INTO time_punches (employee_id, sign_in_time, sign_out_time, total_hours, date) VALUES (?, ?, ?, ?, ?)',
+        [employee_id, sign_in_time, sign_out_time, total_hours, date],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
 });
 
 app.listen(PORT, () => {

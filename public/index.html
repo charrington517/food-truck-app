@@ -1082,7 +1082,11 @@
         <!-- Catering Page -->
         <div id="catering" class="page">
             <div class="section">
-                <h2 class="section-title">Upcoming Orders</h2>
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Catering Orders</h2>
+                    <button class="btn" onclick="addCateringOrder()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Order</button>
+                </div>
+                <div class="stats" id="cateringStats"></div>
                 <div class="grid" id="cateringList"></div>
             </div>
             
@@ -1096,7 +1100,7 @@
         <div id="events" class="page">
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">🎆 Event Calendar</h2>
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Event Calendar</h2>
                     <button class="btn" onclick="addEvent()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Event</button>
                 </div>
                 <div class="stats" id="eventStats"></div>
@@ -1897,54 +1901,52 @@
         // Dashboard Functions
         function loadUpcomingSchedule() {
             const today = new Date().toISOString().split('T')[0];
-            const nextWeek = new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0];
+            const futureDate = new Date(Date.now() + 60*24*60*60*1000).toISOString().split('T')[0];
             
-            // Get upcoming events
-            const events = JSON.parse(localStorage.getItem('events') || '[]');
-            const upcomingEvents = events.filter(e => e.date >= today && e.date <= nextWeek && e.status === 'Accepted')
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            // Get upcoming catering
-            const catering = JSON.parse(localStorage.getItem('catering') || '[]');
-            const upcomingCatering = catering.filter(c => c.date >= today && c.date <= nextWeek)
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            let scheduleHtml = '';
-            
-            // Combine and sort all upcoming items
-            const allUpcoming = [
-                ...upcomingEvents.map(e => ({...e, type: 'event', icon: '🎆'})),
-                ...upcomingCatering.map(c => ({...c, type: 'catering', icon: '🎉'}))
-            ].sort((a, b) => new Date(a.date) - new Date(b.date));
-            
-            if (allUpcoming.length === 0) {
-                scheduleHtml = `
-                    <div class="card" style="text-align: center; color: var(--gray);">
-                        <div class="card-title">No upcoming events</div>
-                        <div class="card-meta">Add events or catering orders to see your schedule</div>
-                    </div>
-                `;
-            } else {
-                scheduleHtml = allUpcoming.slice(0, 6).map(item => {
-                    const isToday = item.date === today;
-                    const daysDiff = Math.ceil((new Date(item.date) - new Date()) / (1000 * 60 * 60 * 24));
-                    const timeText = daysDiff === 0 ? 'Today' : daysDiff === 1 ? 'Tomorrow' : `${daysDiff} days`;
-                    
-                    return `
-                        <div class="card" style="${isToday ? 'border-color: var(--orange); background: rgba(255, 107, 53, 0.05);' : ''}">
-                            <div class="card-title" style="display: flex; align-items: center; gap: 8px;">
-                                <span>${item.icon}</span>
-                                <span>${item.type === 'event' ? item.name : item.client}</span>
-                            </div>
-                            <div class="card-meta">${item.type === 'event' ? item.location : `${item.guests} guests`}</div>
-                            <div class="card-meta" style="color: ${isToday ? 'var(--orange)' : 'var(--gray)'}; font-weight: ${isToday ? 'bold' : 'normal'};">${item.date} • ${timeText}</div>
-                            ${item.type === 'catering' && item.price ? `<div class="card-meta">$${item.price}</div>` : ''}
+            Promise.all([
+                fetch('/api/events').then(r => r.json()),
+                fetch('/api/catering').then(r => r.json())
+            ]).then(([events, catering]) => {
+                const upcomingEvents = events.filter(e => e.date && e.date >= today && e.date <= futureDate);
+                const upcomingCatering = catering.filter(c => c.date && c.date >= today && c.date <= futureDate);
+                
+                const allUpcoming = [
+                    ...upcomingEvents.map(e => ({...e, type: 'event'})),
+                    ...upcomingCatering.map(c => ({...c, type: 'catering'}))
+                ].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                let scheduleHtml = '';
+                if (allUpcoming.length === 0) {
+                    scheduleHtml = `
+                        <div class="card" style="text-align: center; color: var(--gray);">
+                            <div class="card-title">No upcoming events</div>
+                            <div class="card-meta">Add events or catering orders to see your schedule</div>
                         </div>
                     `;
-                }).join('');
-            }
-            
-            document.getElementById('upcomingSchedule').innerHTML = scheduleHtml;
+                } else {
+                    scheduleHtml = allUpcoming.slice(0, 6).map(item => {
+                        const isToday = item.date === today;
+                        const daysDiff = Math.ceil((new Date(item.date) - new Date()) / (1000 * 60 * 60 * 24));
+                        const timeText = daysDiff === 0 ? 'Today' : daysDiff === 1 ? 'Tomorrow' : `${daysDiff} days`;
+                        const typeColor = item.type === 'event' ? '#17a2b8' : '#28a745';
+                        const typeLabel = item.type === 'event' ? 'EVENT' : 'CATERING';
+                        
+                        return `
+                            <div class="card" style="${isToday ? 'border-color: var(--orange); background: rgba(255, 107, 53, 0.05);' : ''} cursor: pointer; border-left: 4px solid ${typeColor};" onclick="${item.type === 'event' ? `showPage('events');` : `showPage('catering');`}">
+                                <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span>${item.type === 'event' ? item.name : item.client}</span>
+                                    <span style="background: ${typeColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold;">${typeLabel}</span>
+                                </div>
+                                <div class="card-meta">${item.type === 'event' ? item.location : `${item.guests} guests`}</div>
+                                <div class="card-meta" style="color: ${isToday ? 'var(--orange)' : 'var(--gray)'}; font-weight: ${isToday ? 'bold' : 'normal'};">${item.date} • ${timeText}</div>
+                                ${item.type === 'catering' && item.price ? `<div class="card-meta">$${item.price.toFixed(2)}</div>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                document.getElementById('upcomingSchedule').innerHTML = scheduleHtml;
+            });
         }
         
         function loadDashboard() {
@@ -3021,40 +3023,148 @@
         
         // Catering Functions
         function addCateringOrder() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Catering Order';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-row">
+                        <input type="text" id="cateringClient" placeholder="Client Name">
+                        <input type="date" id="cateringDate">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1">
+                        <select id="cateringStatus">
+                            <option value="Inquiry">Inquiry</option>
+                            <option value="Quote Sent">Quote Sent</option>
+                            <option value="Booked">Booked</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="cateringLocation" placeholder="Event Location">
+                        <input type="time" id="cateringTime" placeholder="Event Time">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="setupTime" placeholder="Setup Time (hours)" step="0.5" min="0">
+                        <input type="number" id="cateringDeposit" placeholder="Deposit ($)" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="cateringNotes" placeholder="Special requests, dietary restrictions, etc..." rows="2"></textarea>
+                    </div>
+                    <button class="btn" onclick="saveCateringOrder(); closeAddModal();">Add Catering Order</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function saveCateringOrder() {
             const client = document.getElementById('cateringClient').value;
             const date = document.getElementById('cateringDate').value;
-            const guests = document.getElementById('cateringGuests').value;
-            const price = document.getElementById('cateringPrice').value;
+            const guests = parseInt(document.getElementById('cateringGuests').value);
+            const status = document.getElementById('cateringStatus').value;
+            const location = document.getElementById('cateringLocation').value;
+            const time = document.getElementById('cateringTime').value;
+            const setupTime = parseFloat(document.getElementById('setupTime').value) || 0;
+            const deposit = parseFloat(document.getElementById('cateringDeposit').value) || 0;
+            const notes = document.getElementById('cateringNotes').value;
             
             if (!client || !date || !guests) {
-                alert('Please fill in required fields');
+                alert('Please fill in client name, date, and number of guests');
                 return;
             }
             
-            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-            orders.push({ id: Date.now(), client, date, guests, price });
-            localStorage.setItem('catering', JSON.stringify(orders));
-            
-            document.getElementById('cateringClient').value = '';
-            document.getElementById('cateringDate').value = '';
-            document.getElementById('cateringGuests').value = '';
-            document.getElementById('cateringPrice').value = '';
-            loadCatering();
+            fetch('/api/catering', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client, date, guests, status, price: 0, deposit, setup_time: setupTime, notes })
+            }).then(() => loadCatering());
         }
         
         function loadCatering() {
-            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-            document.getElementById('cateringList').innerHTML = orders.map(order => `
-                <div class="card">
-                    <div class="card-title">${order.client}</div>
-                    <div class="card-meta">${order.date} • ${order.guests} guests</div>
-                    <div class="card-meta">$${order.price || 'TBD'}</div>
-                    <div class="card-actions">
-                        <button class="btn" onclick="editCateringOrder(${order.id})" style="background: var(--orange); color: white;">Edit</button>
-                        <button class="btn btn-danger" onclick="deleteCateringOrder(${order.id})">Delete</button>
-                    </div>
+            fetch('/api/catering')
+                .then(r => r.json())
+                .then(orders => {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // Calculate stats
+            const upcomingOrders = orders.filter(o => o.date >= today && o.status !== 'Completed' && o.status !== 'Cancelled').length;
+            const bookedOrders = orders.filter(o => o.status === 'Booked').length;
+            const totalRevenue = orders.filter(o => o.status === 'Completed').reduce((sum, o) => sum + (o.price || 0), 0);
+            const pendingQuotes = orders.filter(o => o.status === 'Inquiry').length;
+            
+            document.getElementById('cateringStats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-number">${upcomingOrders}</div>
+                    <div class="stat-label">Upcoming Orders</div>
                 </div>
-            `).join('');
+                <div class="stat-card">
+                    <div class="stat-number">${bookedOrders}</div>
+                    <div class="stat-label">Booked Orders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">$${totalRevenue.toFixed(0)}</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" style="color: ${pendingQuotes > 0 ? 'var(--warning)' : 'var(--success)'}">${pendingQuotes}</div>
+                    <div class="stat-label">Pending Quotes</div>
+                </div>
+            `;
+            
+            // Show orders sorted by date
+            const sortedOrders = orders.sort((a, b) => new Date(a.date) - new Date(b.date));
+            document.getElementById('cateringList').innerHTML = sortedOrders.map(order => {
+                const statusColors = {
+                    'Inquiry': '#6c757d',
+                    'Quote Sent': '#ffc107',
+                    'Booked': '#28a745',
+                    'Completed': '#17a2b8',
+                    'Cancelled': '#dc3545'
+                };
+                
+                return `
+                    <div class="card">
+                        <div class="card-header" onclick="toggleCateringDetails(${order.id})" style="cursor: pointer;">
+                            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                <span>${order.client}</span>
+                                <span style="color: ${statusColors[order.status]}; font-size: 0.8em; font-weight: bold;">${order.status}</span>
+                            </div>
+                            <div class="card-meta">${order.date} • ${order.guests} guests</div>
+                            ${order.location ? `<div class="card-meta">${order.location}</div>` : ''}
+                            ${order.price > 0 ? `<div class="card-meta">$${order.price.toFixed(2)}</div>` : ''}
+                        </div>
+                        <div class="card-details" id="catering-details-${order.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                            ${order.time ? `<div class="card-meta">Time: ${order.time}</div>` : ''}
+                            ${order.setup_time > 0 ? `<div class="card-meta">Setup: ${order.setup_time} hours</div>` : ''}
+                            ${order.deposit > 0 ? `<div class="card-meta">Deposit: $${order.deposit.toFixed(2)}</div>` : ''}
+                            ${order.notes ? `<div class="card-meta" style="font-style: italic;">Notes: ${order.notes}</div>` : ''}
+                            <div class="card-actions" style="margin-top: 10px;">
+                                <button class="btn" onclick="editCateringOrder(${order.id})" style="background: var(--orange); color: white;">Edit</button>
+                                <button class="btn" onclick="buildQuote(${order.id})" style="background: var(--success); color: white;">Quote</button>
+                                <button class="btn" onclick="exportCateringPDF(${order.id})" style="background: var(--warning); color: white;">PDF</button>
+                                <button class="btn" onclick="updateCateringStatus(${order.id})" style="background: var(--success); color: white;">Status</button>
+                                <button class="btn btn-danger" onclick="deleteCateringOrder(${order.id})">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+                });
+        }
+        
+        function toggleCateringDetails(id) {
+            const details = document.getElementById(`catering-details-${id}`);
+            
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+            } else {
+                details.style.display = 'none';
+            }
         }
         
         function editCateringOrder(id) {
@@ -3075,7 +3185,24 @@
                     </div>
                     <div class="form-row">
                         <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1" value="${order.guests}">
-                        <input type="number" id="cateringPrice" placeholder="Total Price ($)" step="0.01" value="${order.price || ''}">
+                        <select id="cateringStatus">
+                            <option value="Inquiry" ${order.status === 'Inquiry' ? 'selected' : ''}>Inquiry</option>
+                            <option value="Quote Sent" ${order.status === 'Quote Sent' ? 'selected' : ''}>Quote Sent</option>
+                            <option value="Booked" ${order.status === 'Booked' ? 'selected' : ''}>Booked</option>
+                            <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                            <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="cateringLocation" placeholder="Event Location" value="${order.location || ''}">
+                        <input type="time" id="cateringTime" placeholder="Event Time" value="${order.time || ''}">
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="setupTime" placeholder="Setup Time (hours)" step="0.5" min="0" value="${order.setupTime || 0}">
+                        <input type="number" id="cateringDeposit" placeholder="Deposit ($)" step="0.01" min="0" value="${order.deposit || 0}">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="cateringNotes" placeholder="Special requests, dietary restrictions, etc..." rows="2">${order.notes || ''}</textarea>
                     </div>
                     <button class="btn" onclick="updateCateringOrder(${id}); closeAddModal();">Update Catering Order</button>
                 </div>
@@ -3087,21 +3214,279 @@
         function updateCateringOrder(id) {
             const client = document.getElementById('cateringClient').value;
             const date = document.getElementById('cateringDate').value;
-            const guests = document.getElementById('cateringGuests').value;
-            const price = document.getElementById('cateringPrice').value;
+            const guests = parseInt(document.getElementById('cateringGuests').value);
+            const status = document.getElementById('cateringStatus').value;
+            const location = document.getElementById('cateringLocation').value;
+            const time = document.getElementById('cateringTime').value;
+            const setupTime = parseFloat(document.getElementById('setupTime').value) || 0;
+            const deposit = parseFloat(document.getElementById('cateringDeposit').value) || 0;
+            const notes = document.getElementById('cateringNotes').value;
             
             if (!client || !date || !guests) {
-                alert('Please fill in required fields');
+                alert('Please fill in client name, date, and number of guests');
                 return;
             }
             
             const orders = JSON.parse(localStorage.getItem('catering') || '[]');
             const orderIndex = orders.findIndex(o => o.id === id);
             if (orderIndex !== -1) {
-                orders[orderIndex] = { id, client, date, guests, price };
+                const currentOrder = orders[orderIndex];
+                orders[orderIndex] = {
+                    ...currentOrder,
+                    client,
+                    date,
+                    guests,
+                    status,
+                    location,
+                    time,
+                    setupTime,
+                    deposit,
+                    notes
+                };
                 localStorage.setItem('catering', JSON.stringify(orders));
                 loadCatering();
             }
+        }
+        
+        function updateCateringStatus(id) {
+            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+            
+            const statusOptions = ['Inquiry', 'Quote Sent', 'Booked', 'Completed', 'Cancelled'];
+            const optionsText = statusOptions.map((status, index) => `${index + 1}. ${status}`).join('\n');
+            
+            const choice = prompt(`Current status: ${order.status}\n\nSelect new status:\n${optionsText}\n\nEnter number (1-5):`);
+            const choiceNum = parseInt(choice);
+            
+            if (choiceNum >= 1 && choiceNum <= 5) {
+                order.status = statusOptions[choiceNum - 1];
+                localStorage.setItem('catering', JSON.stringify(orders));
+                loadCatering();
+            }
+        }
+        
+        function buildQuote(id) {
+            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+            
+            // Get menu items for quote builder
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(menuItems => {
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = `Build Quote - ${order.client}`;
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <h4 style="margin-bottom: 10px;">Select Menu Items</h4>
+                            <div id="menuSelection" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 6px; margin-bottom: 15px;">
+                                ${menuItems.map(item => {
+                                    const defaultMargin = parseFloat(localStorage.getItem('defaultMargin') || '30');
+                                    const suggestedPrice = item.cost / (1 - defaultMargin / 100);
+                                    return `
+                                    <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 12px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                            <h4 style="margin: 0; color: var(--charcoal);">${item.name}</h4>
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <input type="number" id="qty-${item.id}" min="0" value="0" style="width: 70px; padding: 8px; text-align: center; border: 2px solid var(--border); border-radius: 6px;" onchange="updateQuoteTotal()" placeholder="0">
+                                                <span style="font-weight: 500;">servings</span>
+                                            </div>
+                                        </div>
+                                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; font-size: 0.9em;">
+                                            <div>Cost: <strong>$${item.cost.toFixed(2)}</strong> each</div>
+                                            <div>Suggested: <strong>$${suggestedPrice.toFixed(2)}</strong> each</div>
+                                        </div>
+                                        <div id="cost-display-${item.id}" style="display: none; background: var(--gray-light); padding: 8px; border-radius: 4px; margin-bottom: 8px; font-size: 0.9em;">
+                                            Total Food Cost: <strong style="color: var(--orange);">$<span id="total-cost-${item.id}">0.00</span></strong>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <label style="font-weight: 500;">Your Price: $</label>
+                                            <input type="number" id="price-${item.id}" step="0.01" min="0" value="0" style="flex: 1; padding: 8px; border: 2px solid var(--border); border-radius: 6px;" onchange="updateQuoteTotal()">
+                                        </div>
+                                    </div>
+                                `}).join('')}
+                            </div>
+                            <div style="text-align: right; margin-bottom: 15px; font-weight: bold; font-size: 1.1em;">
+                                Total: $<span id="quoteTotal">0.00</span>
+                            </div>
+                            <button class="btn" onclick="saveQuote(${id}); closeAddModal();">Save Quote</button>
+                        </div>
+                    `;
+                    
+                    // Load existing quote if available
+                    if (order.selectedMenu && order.selectedMenu.length > 0) {
+                        order.selectedMenu.forEach(menuItem => {
+                            const qtyInput = document.getElementById(`qty-${menuItem.id}`);
+                            const priceInput = document.getElementById(`price-${menuItem.id}`);
+                            if (qtyInput) {
+                                qtyInput.value = menuItem.quantity;
+                            }
+                            if (priceInput && menuItem.totalPrice !== undefined) {
+                                priceInput.value = menuItem.totalPrice.toFixed(2);
+                            }
+                        });
+                        updateQuoteTotal();
+                    }
+                    
+                    modal.classList.add('show');
+                });
+        }
+        
+        function updateQuoteTotal() {
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(menuItems => {
+                    let total = 0;
+                    menuItems.forEach(item => {
+                        const qtyInput = document.getElementById(`qty-${item.id}`);
+                        const priceInput = document.getElementById(`price-${item.id}`);
+                        if (qtyInput && priceInput) {
+                            const qty = parseInt(qtyInput.value) || 0;
+                            const totalPrice = parseFloat(priceInput.value) || 0;
+                            const totalCostSpan = document.getElementById(`total-cost-${item.id}`);
+                            const costDisplay = document.getElementById(`cost-display-${item.id}`);
+                            
+                            if (qty > 0) {
+                                const totalFoodCost = qty * item.cost;
+                                if (totalCostSpan) totalCostSpan.textContent = totalFoodCost.toFixed(2);
+                                if (costDisplay) costDisplay.style.display = 'flex';
+                                total += totalPrice;
+                            } else {
+                                if (costDisplay) costDisplay.style.display = 'none';
+                            }
+                        }
+                    });
+                    document.getElementById('quoteTotal').textContent = total.toFixed(2);
+                });
+        }
+        
+        function saveQuote(orderId) {
+            fetch('/api/menu')
+                .then(r => r.json())
+                .then(menuItems => {
+                    const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+                    const orderIndex = orders.findIndex(o => o.id === orderId);
+                    
+                    if (orderIndex !== -1) {
+                        const selectedMenu = [];
+                        let totalPrice = 0;
+                        
+                        menuItems.forEach(item => {
+                            const qtyInput = document.getElementById(`qty-${item.id}`);
+                            const priceInput = document.getElementById(`price-${item.id}`);
+                            if (qtyInput && priceInput) {
+                                const qty = parseInt(qtyInput.value) || 0;
+                                const totalItemPrice = parseFloat(priceInput.value) || 0;
+                                if (qty > 0) {
+                                    selectedMenu.push({
+                                        id: item.id,
+                                        name: item.name,
+                                        price: totalItemPrice / qty,
+                                        totalPrice: totalItemPrice,
+                                        foodCost: item.cost,
+                                        quantity: qty,
+                                        total: totalItemPrice
+                                    });
+                                    totalPrice += totalItemPrice;
+                                }
+                            }
+                        });
+                        
+                        orders[orderIndex].selectedMenu = selectedMenu;
+                        orders[orderIndex].totalPrice = totalPrice;
+                        localStorage.setItem('catering', JSON.stringify(orders));
+                        loadCatering();
+                    }
+                });
+        }
+        
+        function exportCateringPDF(id) {
+            const orders = JSON.parse(localStorage.getItem('catering') || '[]');
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+            
+            // Load jsPDF library if not already loaded
+            if (typeof window.jsPDF === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                script.onload = () => generateCateringPDF(order);
+                document.head.appendChild(script);
+            } else {
+                generateCateringPDF(order);
+            }
+        }
+        
+        function generateCateringPDF(order) {
+            const { jsPDF } = window.jsPDF;
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFontSize(20);
+            doc.setTextColor(255, 107, 53);
+            doc.text('Birria Fusion', 20, 20);
+            
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Catering Quote', 20, 30);
+            
+            // Business Info
+            doc.setFontSize(10);
+            doc.text('Phone: (555) 123-4567', 20, 40);
+            doc.text('Email: info@birriafusion.com', 20, 45);
+            doc.text('Website: www.birriafusion.com', 20, 50);
+            
+            // Quote Details
+            doc.setFontSize(14);
+            doc.text(`Quote for: ${order.client}`, 20, 70);
+            
+            doc.setFontSize(10);
+            doc.text(`Event Date: ${order.date}`, 20, 80);
+            doc.text(`Guests: ${order.guests}`, 20, 85);
+            if (order.location) doc.text(`Location: ${order.location}`, 20, 90);
+            if (order.time) doc.text(`Time: ${order.time}`, 20, 95);
+            if (order.setupTime > 0) doc.text(`Setup Time: ${order.setupTime} hours`, 20, 100);
+            
+            // Menu Items
+            if (order.selectedMenu && order.selectedMenu.length > 0) {
+                doc.setFontSize(12);
+                doc.text('Menu Items:', 20, 120);
+                
+                let yPos = 130;
+                order.selectedMenu.forEach(item => {
+                    doc.setFontSize(10);
+                    doc.text(`${item.name}`, 25, yPos);
+                    doc.text(`${item.quantity} servings - $${item.total.toFixed(2)} total`, 25, yPos + 5);
+                    doc.text(`$${item.total.toFixed(2)}`, 150, yPos + 5);
+                    yPos += 15;
+                });
+                
+                // Total
+                doc.setFontSize(12);
+                doc.text(`Total: $${order.totalPrice.toFixed(2)}`, 20, yPos + 10);
+                
+                if (order.deposit > 0) {
+                    doc.text(`Deposit Required: $${order.deposit.toFixed(2)}`, 20, yPos + 20);
+                }
+            }
+            
+            // Notes
+            if (order.notes) {
+                doc.setFontSize(10);
+                doc.text('Special Notes:', 20, yPos + 40);
+                const splitNotes = doc.splitTextToSize(order.notes, 170);
+                doc.text(splitNotes, 20, yPos + 50);
+            }
+            
+            // Footer
+            doc.setFontSize(8);
+            doc.text('Thank you for choosing Birria Fusion for your catering needs!', 20, 280);
+            
+            // Save PDF
+            doc.save(`Catering-Quote-${order.client}-${order.date}.pdf`);
         }
 
         function deleteCateringOrder(id) {
@@ -3200,7 +3585,9 @@
         }
         
         function loadEvents() {
-            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            fetch('/api/events')
+                .then(r => r.json())
+                .then(events => {
             const today = new Date().toISOString().split('T')[0];
             
             // Calculate stats
@@ -3246,14 +3633,14 @@
                         <div class="card-header" onclick="toggleEventDetails(${event.id})" style="cursor: pointer;">
                             <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
                                 <span>${event.name}</span>
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <span style="color: ${statusColors[event.status]}; font-size: 0.8em; font-weight: bold;">${event.status}</span>
-                                    ${event.fee > 0 ? `<span style="color: ${event.paid ? 'var(--success)' : 'var(--danger)'}; font-size: 0.7em; font-weight: bold;">${event.paid ? '✓ PAID' : '✗ UNPAID'}</span>` : ''}
+                                <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                                    <span style="color: ${statusColors[event.status]}; font-size: 0.8em; font-weight: bold; white-space: nowrap;">${event.status}</span>
+                                    ${event.fee > 0 ? `<span style="color: ${event.paid ? 'var(--success)' : 'var(--danger)'}; font-size: 0.7em; font-weight: bold; white-space: nowrap;">${event.paid ? '✓ PAID' : '✗ UNPAID'}</span>` : ''}
                                 </div>
                             </div>
                             <div class="card-meta" style="display: flex; justify-content: space-between; align-items: center;">
                                 <span>${event.type} • ${event.location}</span>
-                                <span>${event.endDate ? `${event.date} - ${event.endDate}` : event.date}</span>
+                                <span>${event.end_date ? `${event.date} - ${event.end_date}` : event.date}</span>
                             </div>
                         </div>
                         <div class="card-details" id="event-details-${event.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
@@ -3270,6 +3657,7 @@
                     </div>
                 `;
             }).join('');
+            });
         }
         
         function updateEventStatus(id) {
