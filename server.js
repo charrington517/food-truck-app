@@ -139,6 +139,14 @@ db.serialize(() => {
         staff_assigned TEXT,
         notes TEXT
     )`);
+    
+    // Add new columns if they don't exist
+    db.run(`ALTER TABLE catering ADD COLUMN service_type TEXT DEFAULT 'Delivery'`, () => {});
+    db.run(`ALTER TABLE catering ADD COLUMN staff_count INTEGER DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE catering ADD COLUMN staff_cost REAL DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE catering ADD COLUMN location TEXT`, () => {});
+    db.run(`ALTER TABLE catering ADD COLUMN event_start_time TEXT`, () => {});
+    db.run(`ALTER TABLE catering ADD COLUMN event_end_time TEXT`, () => {});
 
     // Reviews table
     db.run(`CREATE TABLE IF NOT EXISTS reviews (
@@ -452,9 +460,9 @@ app.get('/api/catering', (req, res) => {
 });
 
 app.post('/api/catering', (req, res) => {
-    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes } = req.body;
-    db.run('INSERT INTO catering (client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes],
+    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time } = req.body;
+    db.run('INSERT INTO catering (client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
@@ -462,9 +470,9 @@ app.post('/api/catering', (req, res) => {
 });
 
 app.put('/api/catering/:id', (req, res) => {
-    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes } = req.body;
-    db.run('UPDATE catering SET client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, service_type = ?, staff_count = ?, staff_cost = ?, notes = ? WHERE id = ?',
-        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, req.params.id],
+    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time } = req.body;
+    db.run('UPDATE catering SET client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, service_type = ?, staff_count = ?, staff_cost = ?, notes = ?, location = ?, event_start_time = ?, event_end_time = ? WHERE id = ?',
+        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, req.params.id],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });

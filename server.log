@@ -1,1 +1,8 @@
+[dotenv@17.2.3] injecting env (4) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
 Food truck app running on http://localhost:3000
+Security features enabled:
+- Input validation
+- File upload restrictions
+- Security headers
+- Error handling
+- Environment variables

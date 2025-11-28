@@ -2929,29 +2929,21 @@
         }
         
         function loadFiles() {
-            // Get files from localStorage
             const storedFiles = JSON.parse(localStorage.getItem('uploadedFiles') || '[]');
+            const existingFiles = [
+                {
+                    id: 1,
+                    name: 'birria-fusion-logo.png',
+                    path: '/uploads/1763192867406_birria-fusion-logo.png',
+                    size: 0,
+                    type: 'image/png',
+                    category: 'Images',
+                    uploadDate: 'Previously uploaded'
+                }
+            ];
             
-            // Get actual files from server
-            fetch('/api/files')
-                .then(r => r.json())
-                .catch(() => {
-                    // If API doesn't exist, show localStorage files only
-                    const existingFiles = [
-                        {
-                            id: 1,
-                            name: 'birria-fusion-logo.png',
-                            path: '/uploads/1763192867406_birria-fusion-logo.png',
-                            size: 0,
-                            type: 'image/png',
-                            category: 'Images',
-                            uploadDate: 'Previously uploaded'
-                        }
-                    ];
-                    
-                    const allFiles = [...existingFiles, ...storedFiles];
-                    displayFiles(allFiles);
-                });
+            const allFiles = [...existingFiles, ...storedFiles];
+            displayFiles(allFiles);
         }
         
         function displayFiles(files) {
@@ -3125,28 +3117,57 @@
                         <div class="form">
                             <h4 style="margin-bottom: 10px;">Client Information</h4>
                             <div class="form-row">
-                                <input type="text" id="cateringClient" placeholder="Client Name">
-                                <input type="date" id="cateringDate">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Client Name:</label>
+                                    <input type="text" id="cateringClient" placeholder="Client Name">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event Date:</label>
+                                    <input type="date" id="cateringDate">
+                                </div>
                             </div>
                             <div class="form-row">
-                                <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1">
-                                <select id="cateringStatus">
-                                    <option value="Inquiry">Inquiry</option>
-                                    <option value="Quote Sent">Quote Sent</option>
-                                    <option value="Booked">Booked</option>
-                                    <option value="Completed">Completed</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                </select>
-                            </div>
-                            <div class="form-row">
-                                <input type="text" id="cateringLocation" placeholder="Event Location">
-                                <input type="time" id="cateringTime" placeholder="Event Time">
-                            </div>
-                            <div class="form-row">
-                                <input type="number" id="setupTime" placeholder="Setup Time (hours)" step="0.5" min="0">
-                                <input type="number" id="cateringDeposit" placeholder="Deposit ($)" step="0.01" min="0">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Number of Guests:</label>
+                                    <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Status:</label>
+                                    <select id="cateringStatus">
+                                        <option value="Inquiry">Inquiry</option>
+                                        <option value="Quote Sent">Quote Sent</option>
+                                        <option value="Booked">Booked</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-group">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event Location:</label>
+                                <input type="text" id="cateringLocation" placeholder="Event Location">
+                            </div>
+                            <div class="form-row">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Setup Time (hours):</label>
+                                    <input type="number" id="setupTime" placeholder="Setup Time (hours)" step="0.5" min="0">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event Start Time:</label>
+                                    <input type="time" id="eventStartTime" placeholder="Event Start Time">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event End Time:</label>
+                                    <input type="time" id="eventEndTime" placeholder="Event End Time">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Deposit ($):</label>
+                                    <input type="number" id="cateringDeposit" placeholder="Deposit ($)" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Notes:</label>
                                 <textarea id="cateringNotes" placeholder="Special requests, dietary restrictions, etc..." rows="2"></textarea>
                             </div>
                             
@@ -3248,8 +3269,9 @@
             const guests = parseInt(document.getElementById('cateringGuests')?.value) || 0;
             const status = document.getElementById('cateringStatus')?.value || 'Inquiry';
             const location = document.getElementById('cateringLocation')?.value || '';
-            const time = document.getElementById('cateringTime')?.value || '';
             const setupTime = parseFloat(document.getElementById('setupTime')?.value) || 0;
+            const eventStartTime = document.getElementById('eventStartTime')?.value || '';
+            const eventEndTime = document.getElementById('eventEndTime')?.value || '';
             const deposit = parseFloat(document.getElementById('cateringDeposit')?.value) || 0;
             const notes = document.getElementById('cateringNotes')?.value || '';
             const serviceType = document.getElementById('serviceType')?.value || 'Delivery';
@@ -3305,7 +3327,10 @@
                             service_type: serviceType,
                             staff_count: staffCount,
                             staff_cost: staffCost,
-                            notes
+                            notes,
+                            location,
+                            event_start_time: eventStartTime,
+                            event_end_time: eventEndTime
                         })
                     });
                 })
@@ -3453,28 +3478,57 @@
                         <div class="form">
                             <h4 style="margin-bottom: 10px;">Client Information</h4>
                             <div class="form-row">
-                                <input type="text" id="cateringClient" placeholder="Client Name" value="${order.client}">
-                                <input type="date" id="cateringDate" value="${order.date}">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Client Name:</label>
+                                    <input type="text" id="cateringClient" placeholder="Client Name" value="${order.client}">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event Date:</label>
+                                    <input type="date" id="cateringDate" value="${order.date}">
+                                </div>
                             </div>
                             <div class="form-row">
-                                <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1" value="${order.guests}">
-                                <select id="cateringStatus">
-                                    <option value="Inquiry" ${order.status === 'Inquiry' ? 'selected' : ''}>Inquiry</option>
-                                    <option value="Quote Sent" ${order.status === 'Quote Sent' ? 'selected' : ''}>Quote Sent</option>
-                                    <option value="Booked" ${order.status === 'Booked' ? 'selected' : ''}>Booked</option>
-                                    <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
-                                    <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-                                </select>
-                            </div>
-                            <div class="form-row">
-                                <input type="text" id="cateringLocation" placeholder="Event Location" value="${order.location || ''}">
-                                <input type="time" id="cateringTime" placeholder="Event Time" value="${order.time || ''}">
-                            </div>
-                            <div class="form-row">
-                                <input type="number" id="setupTime" placeholder="Setup Time (hours)" step="0.5" min="0" value="${order.setup_time || 0}">
-                                <input type="number" id="cateringDeposit" placeholder="Deposit ($)" step="0.01" min="0" value="${order.deposit || 0}">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Number of Guests:</label>
+                                    <input type="number" id="cateringGuests" placeholder="Number of Guests" min="1" value="${order.guests}">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Status:</label>
+                                    <select id="cateringStatus">
+                                        <option value="Inquiry" ${order.status === 'Inquiry' ? 'selected' : ''}>Inquiry</option>
+                                        <option value="Quote Sent" ${order.status === 'Quote Sent' ? 'selected' : ''}>Quote Sent</option>
+                                        <option value="Booked" ${order.status === 'Booked' ? 'selected' : ''}>Booked</option>
+                                        <option value="Completed" ${order.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                        <option value="Cancelled" ${order.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-group">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event Location:</label>
+                                <input type="text" id="cateringLocation" placeholder="Event Location" value="${order.location || ''}">
+                            </div>
+                            <div class="form-row">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Setup Time (hours):</label>
+                                    <input type="number" id="setupTime" placeholder="Setup Time (hours)" step="0.5" min="0" value="${order.setup_time || 0}">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event Start Time:</label>
+                                    <input type="time" id="eventStartTime" placeholder="Event Start Time" value="${order.event_start_time || ''}">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event End Time:</label>
+                                    <input type="time" id="eventEndTime" placeholder="Event End Time" value="${order.event_end_time || ''}">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Deposit ($):</label>
+                                    <input type="number" id="cateringDeposit" placeholder="Deposit ($)" step="0.01" min="0" value="${order.deposit || 0}">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Notes:</label>
                                 <textarea id="cateringNotes" placeholder="Special requests, dietary restrictions, etc..." rows="2">${order.notes || ''}</textarea>
                             </div>
                             
@@ -3562,8 +3616,9 @@
             const guests = parseInt(document.getElementById('cateringGuests')?.value) || 0;
             const status = document.getElementById('cateringStatus')?.value || 'Inquiry';
             const location = document.getElementById('cateringLocation')?.value || '';
-            const time = document.getElementById('cateringTime')?.value || '';
             const setupTime = parseFloat(document.getElementById('setupTime')?.value) || 0;
+            const eventStartTime = document.getElementById('eventStartTime')?.value || '';
+            const eventEndTime = document.getElementById('eventEndTime')?.value || '';
             const deposit = parseFloat(document.getElementById('cateringDeposit')?.value) || 0;
             const notes = document.getElementById('cateringNotes')?.value || '';
             const serviceType = document.getElementById('serviceType')?.value || 'Delivery';
@@ -3620,7 +3675,10 @@
                             service_type: serviceType,
                             staff_count: staffCount,
                             staff_cost: staffCost,
-                            notes
+                            notes,
+                            location,
+                            event_start_time: eventStartTime,
+                            event_end_time: eventEndTime
                         })
                     });
                 })
