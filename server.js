@@ -151,6 +151,7 @@ db.serialize(() => {
     db.run(`ALTER TABLE catering ADD COLUMN equipment_cost REAL DEFAULT 0`, () => {});
     db.run(`ALTER TABLE catering ADD COLUMN equipment_notes TEXT`, () => {});
     db.run(`ALTER TABLE catering ADD COLUMN payment_status TEXT DEFAULT 'Deposit Needed'`, () => {});
+    db.run(`ALTER TABLE catering ADD COLUMN personal_notes TEXT`, () => {});
 
     // Reviews table
     db.run(`CREATE TABLE IF NOT EXISTS reviews (
@@ -464,9 +465,9 @@ app.get('/api/catering', (req, res) => {
 });
 
 app.post('/api/catering', (req, res) => {
-    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status } = req.body;
-    db.run('INSERT INTO catering (client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status],
+    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes } = req.body;
+    db.run('INSERT INTO catering (client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
@@ -474,9 +475,9 @@ app.post('/api/catering', (req, res) => {
 });
 
 app.put('/api/catering/:id', (req, res) => {
-    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status } = req.body;
-    db.run('UPDATE catering SET client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, service_type = ?, staff_count = ?, staff_cost = ?, notes = ?, location = ?, event_start_time = ?, event_end_time = ?, equipment_provider = ?, equipment_cost = ?, equipment_notes = ?, payment_status = ? WHERE id = ?',
-        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, req.params.id],
+    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes } = req.body;
+    db.run('UPDATE catering SET client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, service_type = ?, staff_count = ?, staff_cost = ?, notes = ?, location = ?, event_start_time = ?, event_end_time = ?, equipment_provider = ?, equipment_cost = ?, equipment_notes = ?, payment_status = ?, personal_notes = ? WHERE id = ?',
+        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes, req.params.id],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });

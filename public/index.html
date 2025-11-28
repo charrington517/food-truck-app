@@ -1183,9 +1183,28 @@
                             <input type="text" id="truckName" placeholder="Food Truck Name" value="Birria Fusion">
                         </div>
                         <div class="form-group">
+                            <input type="text" id="businessPhone" placeholder="Phone Number">
+                        </div>
+                        <div class="form-group">
+                            <input type="email" id="businessEmail" placeholder="Email Address">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="businessAddress" placeholder="Business Address">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="businessWebsite" placeholder="Website URL">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="businessFacebook" placeholder="Facebook URL">
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="businessInstagram" placeholder="Instagram Handle">
+                        </div>
+                        <div class="form-group">
                             <label for="defaultMargin" style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Default Margin Percentage</label>
                             <input type="number" id="defaultMargin" placeholder="Default Margin %" min="0" max="100" step="0.1" onchange="saveDefaultMargin()">
                         </div>
+                        <button class="btn" onclick="saveBusinessInfo()" style="background: var(--orange); color: white;">Save Business Info</button>
                     </div>
                 </div>
             </div>
@@ -1741,7 +1760,7 @@
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadDefaultMargin(); hideSettingsSections(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadDefaultMargin(); loadBusinessInfo(); hideSettingsSections(); }
             
             // Hide add buttons for read-only access
             if (isReadOnly(pageId)) {
@@ -3176,8 +3195,12 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Notes:</label>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event Notes (shown on PDF):</label>
                                 <textarea id="cateringNotes" placeholder="Special requests, dietary restrictions, etc..." rows="2"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Personal Notes (internal only):</label>
+                                <textarea id="personalNotes" placeholder="Internal notes, reminders, etc..." rows="2"></textarea>
                             </div>
                             
                             <h4 style="margin: 20px 0 10px 0;">Menu Items</h4>
@@ -3314,6 +3337,7 @@
             const eventEndTime = document.getElementById('eventEndTime')?.value || '';
             const deposit = parseFloat(document.getElementById('cateringDeposit')?.value) || 0;
             const notes = document.getElementById('cateringNotes')?.value || '';
+            const personalNotes = document.getElementById('personalNotes')?.value || '';
             const serviceType = document.getElementById('serviceType')?.value || 'Delivery';
             const staffCount = parseInt(document.getElementById('staffCount')?.value) || 0;
             const staffCost = parseFloat(document.getElementById('staffCost')?.value) || 0;
@@ -3378,7 +3402,8 @@
                             equipment_provider: equipmentProvider,
                             equipment_cost: equipmentCost,
                             equipment_notes: equipmentNotes,
-                            payment_status: paymentStatus
+                            payment_status: paymentStatus,
+                            personal_notes: personalNotes
                         })
                     });
                 })
@@ -3395,6 +3420,7 @@
             const setupTime = parseFloat(document.getElementById('setupTime')?.value) || 0;
             const deposit = parseFloat(document.getElementById('cateringDeposit')?.value) || 0;
             const notes = document.getElementById('cateringNotes')?.value || '';
+            const personalNotes = document.getElementById('personalNotes')?.value || '';
             
             if (!client || !date || !guests) {
                 alert('Please fill in client name, date, and number of guests');
@@ -3404,7 +3430,7 @@
             fetch('/api/catering', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ client, date, guests, status, price: 0, deposit, setup_time: setupTime, notes })
+                body: JSON.stringify({ client, date, guests, status, price: 0, deposit, setup_time: setupTime, notes, personal_notes: personalNotes })
             }).then(() => loadCatering());
         }
         
@@ -3451,7 +3477,7 @@
                 };
                 
                 return `
-                    <div class="card">
+                    <div class="card" style="border-left: 4px solid ${order.service_type === 'On-Premise' ? '#17a2b8' : '#ff6b35'};">
                         <div class="card-header" onclick="toggleCateringDetails(${order.id})" style="cursor: pointer;">
                             <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
                                 <span>${order.client}</span>
@@ -3480,7 +3506,8 @@
                                 }
                                 return '';
                             })()}
-                            ${order.notes ? `<div class="card-meta" style="font-style: italic; margin-top: 8px;">Notes: ${order.notes}</div>` : ''}
+                            ${order.notes ? `<div class="card-meta" style="font-style: italic; margin-top: 8px;">Event Notes: ${order.notes}</div>` : ''}
+                            ${order.personal_notes ? `<div class="card-meta" style="font-style: italic; margin-top: 8px; color: #6c757d;">Personal Notes: ${order.personal_notes}</div>` : ''}
                             <div class="card-actions" style="margin-top: 10px;">
                                 <button class="btn" onclick="editCateringOrder(${order.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn" onclick="exportCateringPDF(${order.id})" style="background: var(--warning); color: white;">PDF</button>
@@ -3586,8 +3613,12 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Notes:</label>
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Event Notes (shown on PDF):</label>
                                 <textarea id="cateringNotes" placeholder="Special requests, dietary restrictions, etc..." rows="2">${order.notes || ''}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Personal Notes (internal only):</label>
+                                <textarea id="editPersonalNotes" placeholder="Internal notes, reminders, etc..." rows="2">${order.personal_notes || ''}</textarea>
                             </div>
                             
                             <h4 style="margin: 20px 0 10px 0;">Menu Items</h4>
@@ -3703,6 +3734,7 @@
             const eventEndTime = document.getElementById('eventEndTime')?.value || '';
             const deposit = parseFloat(document.getElementById('cateringDeposit')?.value) || 0;
             const notes = document.getElementById('cateringNotes')?.value || '';
+            const personalNotes = document.getElementById('editPersonalNotes')?.value || '';
             const serviceType = document.getElementById('serviceType')?.value || 'Delivery';
             const staffCount = parseInt(document.getElementById('staffCount')?.value) || 0;
             const staffCost = parseFloat(document.getElementById('staffCost')?.value) || 0;
@@ -3768,7 +3800,8 @@
                             equipment_provider: equipmentProvider,
                             equipment_cost: equipmentCost,
                             equipment_notes: equipmentNotes,
-                            payment_status: paymentStatus
+                            payment_status: paymentStatus,
+                            personal_notes: personalNotes
                         })
                     });
                 })
@@ -4051,8 +4084,11 @@
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(100, 100, 100);
-                doc.text('(555) 123-4567 | info@birriafusion.com', 50, 28);
-                doc.text('www.birriafusion.com', 50, 33);
+                const phone = localStorage.getItem('businessPhone') || '(555) 123-4567';
+                const email = localStorage.getItem('businessEmail') || 'info@birriafusion.com';
+                const website = localStorage.getItem('businessWebsite') || 'www.birriafusion.com';
+                doc.text(`${phone} | ${email}`, 50, 28);
+                doc.text(website, 50, 33);
                 
                 // Title
                 doc.setFontSize(18);
@@ -4145,9 +4181,16 @@
                     doc.text(`$${(order.staff_cost || 0).toFixed(2)}`, 185, yPos, { align: 'right' });
                 }
                 
+                if (order.equipment_cost > 0) {
+                    yPos += 8;
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('Equipment Rental:', 130, yPos);
+                    doc.text(`$${(order.equipment_cost || 0).toFixed(2)}`, 185, yPos, { align: 'right' });
+                }
+                
                 yPos += 8;
                 doc.setFont('helvetica', 'bold');
-                const totalPrice = order.price || subtotal + (order.staff_cost || 0);
+                const totalPrice = order.price || subtotal + (order.staff_cost || 0) + (order.equipment_cost || 0);
                 doc.text('TOTAL:', 130, yPos);
                 doc.text(`$${totalPrice.toFixed(2)}`, 185, yPos, { align: 'right' });
                 
@@ -5332,6 +5375,25 @@
         function loadDefaultMargin() {
             const margin = localStorage.getItem('defaultMargin') || '30';
             document.getElementById('defaultMargin').value = margin;
+        }
+        
+        function saveBusinessInfo() {
+            localStorage.setItem('businessPhone', document.getElementById('businessPhone').value);
+            localStorage.setItem('businessEmail', document.getElementById('businessEmail').value);
+            localStorage.setItem('businessAddress', document.getElementById('businessAddress').value);
+            localStorage.setItem('businessWebsite', document.getElementById('businessWebsite').value);
+            localStorage.setItem('businessFacebook', document.getElementById('businessFacebook').value);
+            localStorage.setItem('businessInstagram', document.getElementById('businessInstagram').value);
+            alert('Business information saved!');
+        }
+        
+        function loadBusinessInfo() {
+            document.getElementById('businessPhone').value = localStorage.getItem('businessPhone') || '';
+            document.getElementById('businessEmail').value = localStorage.getItem('businessEmail') || '';
+            document.getElementById('businessAddress').value = localStorage.getItem('businessAddress') || '';
+            document.getElementById('businessWebsite').value = localStorage.getItem('businessWebsite') || '';
+            document.getElementById('businessFacebook').value = localStorage.getItem('businessFacebook') || '';
+            document.getElementById('businessInstagram').value = localStorage.getItem('businessInstagram') || '';
         }
         
         function clearData() {

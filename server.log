@@ -1,4 +1,4 @@
-[dotenv@17.2.3] injecting env (4) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (4) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
 Food truck app running on http://localhost:3000
 Security features enabled:
 - Input validation
@@ -6,3 +6,5 @@ Security features enabled:
 - Security headers
 - Error handling
 - Environment variables
+SERVER received personal_notes: TEST PERSONAL NOTE!!!!!
+SERVER received personal_notes: Personal Note Test
