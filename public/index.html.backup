@@ -4039,24 +4039,26 @@
                 .then(() => loadCatering());
         }
         
-        async function exportCateringPDF(id) {
-            const response = await fetch('/api/catering');
-            const orders = await response.json();
-            const order = orders.find(o => o.id === id);
-            if (!order) return;
+        function exportCateringPDF(id) {
+            fetch('/api/catering')
+                .then(r => r.json())
+                .then(orders => {
+                    const order = orders.find(o => o.id === id);
+                    if (!order) return;
             
             // Load jsPDF library if not already loaded
             if (typeof window.jsPDF === 'undefined') {
                 const script = document.createElement('script');
                 script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-                script.onload = async () => await generateCateringPDF(order);
+                script.onload = () => generateCateringPDF(order);
                 document.head.appendChild(script);
             } else {
-                await generateCateringPDF(order);
+                generateCateringPDF(order);
             }
+                });
         }
         
-        async function generateCateringPDF(order) {
+        function generateCateringPDF(order) {
             const doc = new window.jspdf.jsPDF();
             
             // Parse selectedMenu if it's a string
@@ -4066,10 +4068,6 @@
             } else if (order.selectedMenu) {
                 selectedMenu = typeof order.selectedMenu === 'string' ? JSON.parse(order.selectedMenu) : order.selectedMenu;
             }
-            
-            // Fetch business info from database
-            const response = await fetch('/api/business-info');
-            const businessInfo = await response.json();
             
             // Add logo
             const logo = new Image();
@@ -4086,9 +4084,9 @@
                 doc.setFontSize(10);
                 doc.setFont('helvetica', 'normal');
                 doc.setTextColor(100, 100, 100);
-                const phone = businessInfo.phone || '(555) 123-4567';
-                const email = businessInfo.email || 'info@birriafusion.com';
-                const website = businessInfo.website || 'www.birriafusion.com';
+                const phone = localStorage.getItem('businessPhone') || '(555) 123-4567';
+                const email = localStorage.getItem('businessEmail') || 'info@birriafusion.com';
+                const website = localStorage.getItem('businessWebsite') || 'www.birriafusion.com';
                 doc.text(`${phone} | ${email}`, 50, 28);
                 doc.text(website, 50, 33);
                 
@@ -5379,34 +5377,23 @@
             document.getElementById('defaultMargin').value = margin;
         }
         
-        async function saveBusinessInfo() {
-            const data = {
-                name: 'Birria Fusion',
-                phone: document.getElementById('businessPhone').value,
-                email: document.getElementById('businessEmail').value,
-                address: document.getElementById('businessAddress').value,
-                website: document.getElementById('businessWebsite').value,
-                facebook: document.getElementById('businessFacebook').value,
-                instagram: document.getElementById('businessInstagram').value,
-                default_margin: parseFloat(document.getElementById('defaultMargin').value) || 30
-            };
-            await fetch('/api/business-info', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
+        function saveBusinessInfo() {
+            localStorage.setItem('businessPhone', document.getElementById('businessPhone').value);
+            localStorage.setItem('businessEmail', document.getElementById('businessEmail').value);
+            localStorage.setItem('businessAddress', document.getElementById('businessAddress').value);
+            localStorage.setItem('businessWebsite', document.getElementById('businessWebsite').value);
+            localStorage.setItem('businessFacebook', document.getElementById('businessFacebook').value);
+            localStorage.setItem('businessInstagram', document.getElementById('businessInstagram').value);
             alert('Business information saved!');
         }
         
-        async function loadBusinessInfo() {
-            const response = await fetch('/api/business-info');
-            const info = await response.json();
-            document.getElementById('businessPhone').value = info.phone || '';
-            document.getElementById('businessEmail').value = info.email || '';
-            document.getElementById('businessAddress').value = info.address || '';
-            document.getElementById('businessWebsite').value = info.website || '';
-            document.getElementById('businessFacebook').value = info.facebook || '';
-            document.getElementById('businessInstagram').value = info.instagram || '';
+        function loadBusinessInfo() {
+            document.getElementById('businessPhone').value = localStorage.getItem('businessPhone') || '';
+            document.getElementById('businessEmail').value = localStorage.getItem('businessEmail') || '';
+            document.getElementById('businessAddress').value = localStorage.getItem('businessAddress') || '';
+            document.getElementById('businessWebsite').value = localStorage.getItem('businessWebsite') || '';
+            document.getElementById('businessFacebook').value = localStorage.getItem('businessFacebook') || '';
+            document.getElementById('businessInstagram').value = localStorage.getItem('businessInstagram') || '';
         }
         
         function clearData() {

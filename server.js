@@ -198,8 +198,21 @@ db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS business_info (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT,
+        phone TEXT,
+        email TEXT,
+        address TEXT,
+        website TEXT,
+        facebook TEXT,
+        instagram TEXT,
         default_margin REAL DEFAULT 30
     )`);
+    
+    db.run(`ALTER TABLE business_info ADD COLUMN phone TEXT`, () => {});
+    db.run(`ALTER TABLE business_info ADD COLUMN email TEXT`, () => {});
+    db.run(`ALTER TABLE business_info ADD COLUMN address TEXT`, () => {});
+    db.run(`ALTER TABLE business_info ADD COLUMN website TEXT`, () => {});
+    db.run(`ALTER TABLE business_info ADD COLUMN facebook TEXT`, () => {});
+    db.run(`ALTER TABLE business_info ADD COLUMN instagram TEXT`, () => {});
 
     // Settings table
     db.run(`CREATE TABLE IF NOT EXISTS settings (
@@ -217,6 +230,31 @@ db.serialize(() => {
         total_hours REAL,
         date TEXT,
         FOREIGN KEY (employee_id) REFERENCES employees (id)
+    )`);
+    
+    // Recipes table
+    db.run(`CREATE TABLE IF NOT EXISTS recipes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        menu_id INTEGER,
+        ingredients TEXT,
+        FOREIGN KEY (menu_id) REFERENCES menu (id)
+    )`);
+    
+    // Licenses table
+    db.run(`CREATE TABLE IF NOT EXISTS licenses (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        expiry_date TEXT,
+        status TEXT DEFAULT 'Active'
+    )`);
+    
+    // Maintenance tasks table
+    db.run(`CREATE TABLE IF NOT EXISTS maintenance_tasks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        task TEXT NOT NULL,
+        due_date TEXT,
+        status TEXT DEFAULT 'Pending',
+        notes TEXT
     )`);
 });
 
@@ -616,6 +654,182 @@ app.post('/api/time-punches', (req, res) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
         });
+});
+
+// Recipes API endpoints
+app.get('/api/recipes/:menuId', (req, res) => {
+    db.get('SELECT * FROM recipes WHERE menu_id = ?', [req.params.menuId], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row ? JSON.parse(row.ingredients) : []);
+    });
+});
+
+app.post('/api/recipes', (req, res) => {
+    const { menu_id, ingredients } = req.body;
+    db.run('INSERT OR REPLACE INTO recipes (menu_id, ingredients) VALUES (?, ?)',
+        [menu_id, JSON.stringify(ingredients)],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+// Licenses API endpoints
+app.get('/api/licenses', (req, res) => {
+    db.all('SELECT * FROM licenses ORDER BY expiry_date', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/licenses', (req, res) => {
+    const { name, expiry_date, status } = req.body;
+    db.run('INSERT INTO licenses (name, expiry_date, status) VALUES (?, ?, ?)',
+        [name, expiry_date, status],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/licenses/:id', (req, res) => {
+    const { name, expiry_date, status } = req.body;
+    db.run('UPDATE licenses SET name = ?, expiry_date = ?, status = ? WHERE id = ?',
+        [name, expiry_date, status, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/licenses/:id', (req, res) => {
+    db.run('DELETE FROM licenses WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Maintenance tasks API endpoints
+app.get('/api/maintenance-tasks', (req, res) => {
+    db.all('SELECT * FROM maintenance_tasks ORDER BY due_date', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/maintenance-tasks', (req, res) => {
+    const { task, due_date, status, notes } = req.body;
+    db.run('INSERT INTO maintenance_tasks (task, due_date, status, notes) VALUES (?, ?, ?, ?)',
+        [task, due_date, status, notes],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/maintenance-tasks/:id', (req, res) => {
+    const { task, due_date, status, notes } = req.body;
+    db.run('UPDATE maintenance_tasks SET task = ?, due_date = ?, status = ?, notes = ? WHERE id = ?',
+        [task, due_date, status, notes, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/maintenance-tasks/:id', (req, res) => {
+    db.run('DELETE FROM maintenance_tasks WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Business info API endpoints
+app.get('/api/business-info', (req, res) => {
+    db.get('SELECT * FROM business_info WHERE id = 1', (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row || {});
+    });
+});
+
+app.post('/api/business-info', (req, res) => {
+    const { name, phone, email, address, website, facebook, instagram, default_margin } = req.body;
+    db.run('INSERT OR REPLACE INTO business_info (id, name, phone, email, address, website, facebook, instagram, default_margin) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [name, phone, email, address, website, facebook, instagram, default_margin],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+// Settings API endpoints
+app.get('/api/settings', (req, res) => {
+    db.all('SELECT * FROM settings', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        const settings = {};
+        rows.forEach(row => settings[row.key] = row.value);
+        res.json(settings);
+    });
+});
+
+app.post('/api/settings', (req, res) => {
+    const { key, value } = req.body;
+    db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)',
+        [key, value],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.post('/api/settings/bulk', (req, res) => {
+    const settings = req.body;
+    const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+    
+    db.serialize(() => {
+        for (const [key, value] of Object.entries(settings)) {
+            stmt.run(key, value);
+        }
+        stmt.finalize((err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+    });
+});
+
+// Files API endpoints
+app.get('/api/files', (req, res) => {
+    db.all('SELECT * FROM files ORDER BY upload_date DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/files', (req, res) => {
+    const { name, path, size, type, category, upload_date } = req.body;
+    db.run('INSERT INTO files (name, path, size, type, category, upload_date) VALUES (?, ?, ?, ?, ?, ?)',
+        [name, path, size, type, category, upload_date],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/files/:id', (req, res) => {
+    const { category } = req.body;
+    db.run('UPDATE files SET category = ? WHERE id = ?',
+        [category, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/files/:id', (req, res) => {
+    db.run('DELETE FROM files WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
 });
 
 // Error handling middleware

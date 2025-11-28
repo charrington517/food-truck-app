@@ -8,3 +8,5 @@ Security features enabled:
 - Environment variables
 SERVER received personal_notes: TEST PERSONAL NOTE!!!!!
 SERVER received personal_notes: Personal Note Test
+SERVER received personal_notes: null
+SERVER received personal_notes: null
