@@ -3167,6 +3167,15 @@
                                 </div>
                             </div>
                             <div class="form-group">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Payment Status:</label>
+                                <select id="paymentStatus">
+                                    <option value="Deposit Needed">Deposit Needed</option>
+                                    <option value="Deposit Paid">Deposit Paid</option>
+                                    <option value="Partial Payment">Partial Payment</option>
+                                    <option value="Paid in Full">Paid in Full</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Notes:</label>
                                 <textarea id="cateringNotes" placeholder="Special requests, dietary restrictions, etc..." rows="2"></textarea>
                             </div>
@@ -3217,6 +3226,24 @@
                                 <input type="number" id="staffCost" step="0.01" min="0" value="0" style="width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 6px;" onchange="updateNewQuoteTotal()">
                             </div>
                             
+                            <h4 style="margin: 20px 0 10px 0;">Equipment</h4>
+                            <div style="margin-bottom: 12px;">
+                                <label style="font-weight: 500; display: block; margin-bottom: 5px;">Equipment Provided By:</label>
+                                <select id="equipmentProvider" style="width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 6px;" onchange="toggleEquipmentCost()">
+                                    <option value="Birria Fusion">Birria Fusion</option>
+                                    <option value="Client Provides">Client Provides</option>
+                                    <option value="Third-Party Rental">Third-Party Rental</option>
+                                </select>
+                            </div>
+                            <div id="equipmentCostSection" style="margin-bottom: 12px;">
+                                <label style="font-weight: 500; display: block; margin-bottom: 5px;">Equipment Cost: $</label>
+                                <input type="number" id="equipmentCost" step="0.01" min="0" value="0" style="width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 6px;" onchange="updateNewQuoteTotal()">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="font-weight: 500; display: block; margin-bottom: 5px;">Equipment Notes (optional):</label>
+                                <textarea id="equipmentNotes" rows="2" placeholder="List specific equipment items..." style="width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 6px;"></textarea>
+                            </div>
+                            
                             <div style="text-align: right; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; border-top: 2px solid var(--orange); padding-top: 10px; margin-top: 10px;">
                                 Total: $<span id="newQuoteTotal">0.00</span>
                             </div>
@@ -3258,9 +3285,22 @@
                         }
                     });
                     const staffCost = parseFloat(document.getElementById('staffCost')?.value || 0);
-                    const grandTotal = total + staffCost;
+                    const equipmentCost = parseFloat(document.getElementById('equipmentCost')?.value || 0);
+                    const grandTotal = total + staffCost + equipmentCost;
                     document.getElementById('newQuoteTotal').textContent = grandTotal.toFixed(2);
                 });
+        }
+        
+        function toggleEquipmentCost() {
+            const provider = document.getElementById('equipmentProvider')?.value;
+            const costSection = document.getElementById('equipmentCostSection');
+            if (costSection) {
+                costSection.style.display = provider === 'Client Provides' ? 'none' : 'block';
+                if (provider === 'Client Provides') {
+                    document.getElementById('equipmentCost').value = 0;
+                    updateNewQuoteTotal();
+                }
+            }
         }
         
         function saveCateringOrderWithQuote() {
@@ -3277,6 +3317,10 @@
             const serviceType = document.getElementById('serviceType')?.value || 'Delivery';
             const staffCount = parseInt(document.getElementById('staffCount')?.value) || 0;
             const staffCost = parseFloat(document.getElementById('staffCost')?.value) || 0;
+            const equipmentProvider = document.getElementById('equipmentProvider')?.value || 'Birria Fusion';
+            const equipmentCost = parseFloat(document.getElementById('equipmentCost')?.value) || 0;
+            const equipmentNotes = document.getElementById('equipmentNotes')?.value || '';
+            const paymentStatus = document.getElementById('paymentStatus')?.value || 'Deposit Needed';
             
             if (!client || !date || !guests) {
                 alert('Please fill in client name, date, and number of guests');
@@ -3310,7 +3354,7 @@
                         }
                     });
                     
-                    const grandTotal = totalPrice + staffCost;
+                    const grandTotal = totalPrice + staffCost + equipmentCost;
                     
                     return fetch('/api/catering', {
                         method: 'POST',
@@ -3330,7 +3374,11 @@
                             notes,
                             location,
                             event_start_time: eventStartTime,
-                            event_end_time: eventEndTime
+                            event_end_time: eventEndTime,
+                            equipment_provider: equipmentProvider,
+                            equipment_cost: equipmentCost,
+                            equipment_notes: equipmentNotes,
+                            payment_status: paymentStatus
                         })
                     });
                 })
@@ -3407,18 +3455,19 @@
                         <div class="card-header" onclick="toggleCateringDetails(${order.id})" style="cursor: pointer;">
                             <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
                                 <span>${order.client}</span>
-                                <span style="color: ${statusColors[order.status]}; font-size: 0.8em; font-weight: bold;">${order.status}</span>
+                                <div style="display: flex; gap: 8px;">
+                                    ${order.status === 'Booked' || order.status === 'Completed' ? `<span style="background: ${order.payment_status === 'Paid in Full' ? '#28a745' : order.payment_status === 'Deposit Paid' ? '#ffc107' : order.payment_status === 'Partial Payment' ? '#17a2b8' : '#dc3545'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.75em; font-weight: bold;">${order.payment_status || 'Deposit Needed'}</span>` : ''}
+                                    <span style="color: ${statusColors[order.status]}; font-size: 0.8em; font-weight: bold;">${order.status}</span>
+                                </div>
                             </div>
-                            <div class="card-meta">${order.date} • ${order.guests} guests</div>
+                            <div class="card-meta">${order.date} • ${order.guests} guests${order.price > 0 ? ` • $${order.price.toFixed(2)}` : ''}</div>
                             ${order.location ? `<div class="card-meta">${order.location}</div>` : ''}
-                            ${order.price > 0 ? `<div class="card-meta">$${order.price.toFixed(2)}</div>` : ''}
                         </div>
                         <div class="card-details" id="catering-details-${order.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
-                            ${order.time ? `<div class="card-meta">Time: ${order.time}</div>` : ''}
-                            ${order.setup_time > 0 ? `<div class="card-meta">Setup: ${order.setup_time} hours</div>` : ''}
-                            ${order.service_type ? `<div class="card-meta">Service: ${order.service_type}</div>` : ''}
-                            ${order.staff_count > 0 ? `<div class="card-meta">Staff: ${order.staff_count} person${order.staff_count !== 1 ? 's' : ''} - $${order.staff_cost.toFixed(2)}</div>` : ''}
-                            ${order.deposit > 0 ? `<div class="card-meta">Deposit: $${order.deposit.toFixed(2)}</div>` : ''}
+                            ${order.event_start_time || order.event_end_time ? `<div class="card-meta">Event: ${order.event_start_time || 'TBD'} - ${order.event_end_time || 'TBD'}${order.setup_time > 0 ? ` (${order.setup_time}hr setup)` : ''}</div>` : order.setup_time > 0 ? `<div class="card-meta">Setup: ${order.setup_time} hours</div>` : ''}
+                            ${order.service_type || order.staff_count > 0 ? `<div class="card-meta">${order.service_type || ''}${order.service_type && order.staff_count > 0 ? ' • ' : ''}${order.staff_count > 0 ? `${order.staff_count} staff - $${order.staff_cost.toFixed(2)}` : ''}</div>` : ''}
+                            ${order.equipment_provider ? `<div class="card-meta">Equipment: ${order.equipment_provider}${order.equipment_cost > 0 ? ` - $${order.equipment_cost.toFixed(2)}` : ''}${order.equipment_notes ? ` (${order.equipment_notes})` : ''}</div>` : ''}
+                            ${order.deposit > 0 || (order.status === 'Booked' || order.status === 'Completed') ? `<div class="card-meta">Payment: ${order.payment_status || 'Deposit Needed'}${order.deposit > 0 ? ` - $${order.deposit.toFixed(2)} deposit` : ''}</div>` : ''}
                             ${(() => {
                                 let selectedMenu = [];
                                 if (order.selected_menu) {
@@ -3528,6 +3577,15 @@
                                 </div>
                             </div>
                             <div class="form-group">
+                                <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Payment Status:</label>
+                                <select id="paymentStatus">
+                                    <option value="Deposit Needed" ${(order.payment_status || 'Deposit Needed') === 'Deposit Needed' ? 'selected' : ''}>Deposit Needed</option>
+                                    <option value="Deposit Paid" ${order.payment_status === 'Deposit Paid' ? 'selected' : ''}>Deposit Paid</option>
+                                    <option value="Partial Payment" ${order.payment_status === 'Partial Payment' ? 'selected' : ''}>Partial Payment</option>
+                                    <option value="Paid in Full" ${order.payment_status === 'Paid in Full' ? 'selected' : ''}>Paid in Full</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label style="display: block; margin-bottom: 5px; font-weight: 500; color: var(--charcoal);">Notes:</label>
                                 <textarea id="cateringNotes" placeholder="Special requests, dietary restrictions, etc..." rows="2">${order.notes || ''}</textarea>
                             </div>
@@ -3578,10 +3636,28 @@
                                 <input type="number" id="staffCost" step="0.01" min="0" value="0" style="width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 6px;" onchange="updateNewQuoteTotal()">
                             </div>
                             
+                            <h4 style="margin: 20px 0 10px 0;">Equipment</h4>
+                            <div style="margin-bottom: 12px;">
+                                <label style="font-weight: 500; display: block; margin-bottom: 5px;">Equipment Provided By:</label>
+                                <select id="equipmentProvider" style="width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 6px;" onchange="toggleEquipmentCost()">
+                                    <option value="Birria Fusion">Birria Fusion</option>
+                                    <option value="Client Provides">Client Provides</option>
+                                    <option value="Third-Party Rental">Third-Party Rental</option>
+                                </select>
+                            </div>
+                            <div id="equipmentCostSection" style="margin-bottom: 12px;">
+                                <label style="font-weight: 500; display: block; margin-bottom: 5px;">Equipment Cost: $</label>
+                                <input type="number" id="equipmentCost" step="0.01" min="0" value="0" style="width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 6px;" onchange="updateNewQuoteTotal()">
+                            </div>
+                            <div style="margin-bottom: 12px;">
+                                <label style="font-weight: 500; display: block; margin-bottom: 5px;">Equipment Notes (optional):</label>
+                                <textarea id="equipmentNotes" rows="2" placeholder="List specific equipment items..." style="width: 100%; padding: 8px; border: 2px solid var(--border); border-radius: 6px;"></textarea>
+                            </div>
+                            
                             <div style="text-align: right; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; border-top: 2px solid var(--orange); padding-top: 10px; margin-top: 10px;">
                                 Total: $<span id="newQuoteTotal">0.00</span>
                             </div>
-                            <button class="btn" onclick="updateCateringOrderWithQuote(${id}); closeAddModal();">Update Catering Order</button>
+                            <button class="btn" onclick="updateCateringOrderWithQuote(${id});">Update Catering Order</button>
                         </div>
                     `;
                     
@@ -3605,6 +3681,12 @@
                     document.getElementById('staffCount').value = order.staff_count || 0;
                     document.getElementById('staffCost').value = order.staff_cost || 0;
                     
+                    // Load equipment details
+                    document.getElementById('equipmentProvider').value = order.equipment_provider || 'Birria Fusion';
+                    document.getElementById('equipmentCost').value = order.equipment_cost || 0;
+                    document.getElementById('equipmentNotes').value = order.equipment_notes || '';
+                    toggleEquipmentCost();
+                    
                     updateNewQuoteTotal();
                     modal.classList.add('show');
                 });
@@ -3624,6 +3706,10 @@
             const serviceType = document.getElementById('serviceType')?.value || 'Delivery';
             const staffCount = parseInt(document.getElementById('staffCount')?.value) || 0;
             const staffCost = parseFloat(document.getElementById('staffCost')?.value) || 0;
+            const equipmentProvider = document.getElementById('equipmentProvider')?.value || 'Birria Fusion';
+            const paymentStatus = document.getElementById('paymentStatus')?.value || 'Deposit Needed';
+            const equipmentCost = parseFloat(document.getElementById('equipmentCost')?.value) || 0;
+            const equipmentNotes = document.getElementById('equipmentNotes')?.value || '';
             
             if (!client || !date || !guests) {
                 alert('Please fill in client name, date, and number of guests');
@@ -3657,7 +3743,7 @@
                         }
                     });
                     
-                    const grandTotal = totalPrice + staffCost;
+                    const grandTotal = totalPrice + staffCost + equipmentCost;
                     
                     return fetch(`/api/catering/${id}`, {
                         method: 'PUT',
@@ -3678,11 +3764,15 @@
                             notes,
                             location,
                             event_start_time: eventStartTime,
-                            event_end_time: eventEndTime
+                            event_end_time: eventEndTime,
+                            equipment_provider: equipmentProvider,
+                            equipment_cost: equipmentCost,
+                            equipment_notes: equipmentNotes,
+                            payment_status: paymentStatus
                         })
                     });
                 })
-                .then(() => loadCatering());
+                .then(() => { document.getElementById('addModal').classList.remove('show'); loadCatering(); });
         }
         
         function updateCateringStatus(id) {

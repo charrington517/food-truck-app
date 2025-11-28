@@ -1,4 +1,4 @@
-[dotenv@17.2.3] injecting env (4) from .env -- tip: 🗂️ backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (4) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
 Food truck app running on http://localhost:3000
 Security features enabled:
 - Input validation
