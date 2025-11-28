@@ -954,9 +954,12 @@
                 <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
                     <h4 onclick="toggleTimePunches()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Time Punch History <span id="punch-icon">▼</span></h4>
                     <div id="timePunchHistoryContainer" style="display: none; margin-top: 15px;">
-                        <select id="punchFilter" onchange="loadTimePunchHistory()" style="width: 100%; padding: 8px; margin-bottom: 10px;">
-                            <option value="all">All Employees</option>
-                        </select>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                            <select id="punchFilter" onchange="loadTimePunchHistory()" style="width: 100%; padding: 8px;">
+                                <option value="all">All Employees</option>
+                            </select>
+                            <input type="date" id="punchDateFilter" onchange="loadTimePunchHistory()" style="width: 100%; padding: 8px;">
+                        </div>
                         <div id="timePunchHistory"></div>
                     </div>
                 </div>
@@ -1148,7 +1151,7 @@
                     <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="margin-right: 8px; vertical-align: middle;">
                         <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4m7 14l5-5-5-5m5 5H9"/>
                     </svg>
-                    Punch Out
+                    Sign Out
                 </button>
             </div>
             
@@ -6048,19 +6051,31 @@
             const punches = JSON.parse(localStorage.getItem('timePunches') || '[]');
             const history = document.getElementById('timePunchHistory');
             const filterValue = document.getElementById('punchFilter').value;
+            const dateFilter = document.getElementById('punchDateFilter').value;
             
             // Filter punches by selected employee
-            const filteredPunches = filterValue === 'all' ? punches : punches.filter(p => p.employeeName === filterValue);
+            let filteredPunches = filterValue === 'all' ? punches : punches.filter(p => p.employeeName === filterValue);
+            
+            // Filter by date if selected
+            if (dateFilter) {
+                const filterDate = new Date(dateFilter + 'T00:00:00');
+                filteredPunches = filteredPunches.filter(p => {
+                    const punchDate = new Date(p.timestamp);
+                    return punchDate.getFullYear() === filterDate.getFullYear() &&
+                           punchDate.getMonth() === filterDate.getMonth() &&
+                           punchDate.getDate() === filterDate.getDate();
+                });
+            }
             
             if (filteredPunches.length === 0) {
-                history.innerHTML = '<div style="color: var(--gray); font-style: italic;">No time punches recorded yet.</div>';
+                history.innerHTML = '<div style="color: var(--gray); font-style: italic;">No time punches found.</div>';
                 return;
             }
             
             const today = new Date().toDateString();
-            const recentPunches = filteredPunches.slice(-20).reverse();
+            const displayPunches = dateFilter ? filteredPunches.reverse() : filteredPunches.slice(-20).reverse();
             
-            history.innerHTML = recentPunches.map(punch => {
+            history.innerHTML = displayPunches.map(punch => {
                 const date = new Date(punch.timestamp);
                 const isToday = date.toDateString() === today;
                 const timeStr = date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});

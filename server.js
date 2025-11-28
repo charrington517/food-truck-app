@@ -881,22 +881,8 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
 });
 
-// Try HTTPS first, fallback to HTTP
-try {
-    const httpsOptions = {
-        key: fs.readFileSync(path.join(__dirname, 'server.key')),
-        cert: fs.readFileSync(path.join(__dirname, 'server.cert'))
-    };
-    
-    https.createServer(httpsOptions, app).listen(PORT, () => {
-        console.log(`🔒 HTTPS server running on https://localhost:${PORT}`);
-        console.log('✅ PDF downloads will be secure (no browser warning)');
-        console.log('⚠️  Browser will show certificate warning on first visit - click "Advanced" → "Proceed"');
-    });
-} catch (err) {
-    app.listen(PORT, () => {
-        console.log(`⚠️  HTTP server running on http://localhost:${PORT}`);
-        console.log('⚠️  PDF downloads will show browser security warning');
-        console.log('💡 To fix: Run "openssl req -nodes -new -x509 -keyout server.key -out server.cert -days 365" and restart');
-    });
-}
+// Start HTTP server (accessible by IP)
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`✅ HTTP server running on http://0.0.0.0:${PORT}`);
+    console.log('✅ Access via IP address or Cloudflare Tunnel');
+});
