@@ -1153,6 +1153,38 @@
             </div>
             
             <div class="section">
+                <h2 class="section-title" onclick="toggleSettingsSection('profile')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    User Profile
+                    <span id="profile-icon">▼</span>
+                </h2>
+                <div id="profile-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">Name</label>
+                            <input type="text" id="profileName" placeholder="Your Name">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">Username</label>
+                            <input type="text" id="profileUsername" disabled style="background: var(--gray-light);">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">Current Password</label>
+                            <input type="password" id="currentPassword" placeholder="Enter current password">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">New Password</label>
+                            <input type="password" id="newPassword" placeholder="Enter new password">
+                        </div>
+                        <div class="form-group">
+                            <label style="display: block; margin-bottom: 5px; font-weight: 500;">Confirm New Password</label>
+                            <input type="password" id="confirmPassword" placeholder="Confirm new password">
+                        </div>
+                        <button class="btn" onclick="updateUserProfile()">Save Changes</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
                 <h2 class="section-title" onclick="toggleSettingsSection('theme')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
                     Theme Settings
                     <span id="theme-icon">▼</span>
@@ -1760,7 +1792,7 @@
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadDefaultMargin(); loadBusinessInfo(); hideSettingsSections(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
             
             // Hide add buttons for read-only access
             if (isReadOnly(pageId)) {
@@ -5407,6 +5439,68 @@
             document.getElementById('businessWebsite').value = info.website || '';
             document.getElementById('businessFacebook').value = info.facebook || '';
             document.getElementById('businessInstagram').value = info.instagram || '';
+        }
+        
+        function loadUserProfile() {
+            if (!currentUser) return;
+            document.getElementById('profileName').value = currentUser.name || '';
+            document.getElementById('profileUsername').value = currentUser.username || '';
+        }
+        
+        function updateUserProfile() {
+            if (!currentUser) return;
+            
+            const name = document.getElementById('profileName').value.trim();
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (!name) {
+                alert('Name is required');
+                return;
+            }
+            
+            // Update name
+            currentUser.name = name;
+            
+            // Update password if provided
+            if (newPassword) {
+                if (!currentPassword) {
+                    alert('Please enter your current password');
+                    return;
+                }
+                
+                if (currentUser.password !== currentPassword) {
+                    alert('Current password is incorrect');
+                    return;
+                }
+                
+                if (newPassword.length < 8) {
+                    alert('New password must be at least 8 characters');
+                    return;
+                }
+                
+                if (newPassword !== confirmPassword) {
+                    alert('New passwords do not match');
+                    return;
+                }
+                
+                currentUser.password = newPassword;
+            }
+            
+            // Update in localStorage
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const userIndex = users.findIndex(u => u.id === currentUser.id);
+            if (userIndex !== -1) {
+                users[userIndex] = currentUser;
+                localStorage.setItem('users', JSON.stringify(users));
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+            
+            alert('Profile updated successfully!');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
         }
         
         function clearData() {

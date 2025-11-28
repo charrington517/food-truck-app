@@ -1,9 +1,11 @@
 require('dotenv').config();
 const express = require('express');
+const https = require('https');
 const sqlite3 = require('sqlite3').verbose();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const bcrypt = require('bcrypt');
 
 const app = express();
 const PORT = 3000;
@@ -622,14 +624,50 @@ app.get('/api/users', (req, res) => {
     });
 });
 
-app.post('/api/users', (req, res) => {
+// Login endpoint with password verification
+app.post('/api/login', async (req, res) => {
+    const { username, password } = req.body;
+    
+    if (!username || !password) {
+        return res.status(400).json({ error: 'Username and password required' });
+    }
+    
+    db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!user) return res.status(401).json({ error: 'Invalid credentials' });
+        
+        try {
+            const match = await bcrypt.compare(password, user.password);
+            if (match) {
+                // Don't send password back to client
+                const { password, ...userWithoutPassword } = user;
+                res.json({ success: true, user: userWithoutPassword });
+            } else {
+                res.status(401).json({ error: 'Invalid credentials' });
+            }
+        } catch (err) {
+            res.status(500).json({ error: 'Error verifying password' });
+        }
+    });
+});
+
+// Create user with hashed password
+app.post('/api/users', async (req, res) => {
     const { username, password, role, name, employee_id, permissions } = req.body;
-    db.run('INSERT INTO users (username, password, role, name, employee_id, permissions) VALUES (?, ?, ?, ?, ?, ?)',
-        [username, password, role, name, employee_id, JSON.stringify(permissions)],
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ id: this.lastID });
-        });
+    
+    try {
+        // Hash password before storing
+        const hashedPassword = await bcrypt.hash(password, 10);
+        
+        db.run('INSERT INTO users (username, password, role, name, employee_id, permissions) VALUES (?, ?, ?, ?, ?, ?)',
+            [username, hashedPassword, role, name, employee_id, JSON.stringify(permissions)],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ id: this.lastID });
+            });
+    } catch (err) {
+        res.status(500).json({ error: 'Error hashing password' });
+    }
 });
 
 // Time punches API endpoints
@@ -843,12 +881,22 @@ app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
 });
 
-app.listen(PORT, () => {
-    console.log(`Food truck app running on http://localhost:${PORT}`);
-    console.log('Security features enabled:');
-    console.log('- Input validation');
-    console.log('- File upload restrictions');
-    console.log('- Security headers');
-    console.log('- Error handling');
-    console.log('- Environment variables');
-});
+// Try HTTPS first, fallback to HTTP
+try {
+    const httpsOptions = {
+        key: fs.readFileSync(path.join(__dirname, 'server.key')),
+        cert: fs.readFileSync(path.join(__dirname, 'server.cert'))
+    };
+    
+    https.createServer(httpsOptions, app).listen(PORT, () => {
+        console.log(`🔒 HTTPS server running on https://localhost:${PORT}`);
+        console.log('✅ PDF downloads will be secure (no browser warning)');
+        console.log('⚠️  Browser will show certificate warning on first visit - click "Advanced" → "Proceed"');
+    });
+} catch (err) {
+    app.listen(PORT, () => {
+        console.log(`⚠️  HTTP server running on http://localhost:${PORT}`);
+        console.log('⚠️  PDF downloads will show browser security warning');
+        console.log('💡 To fix: Run "openssl req -nodes -new -x509 -keyout server.key -out server.cert -days 365" and restart');
+    });
+}

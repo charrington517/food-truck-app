@@ -1,12 +1,4 @@
-[dotenv@17.2.3] injecting env (4) from .env -- tip: 🔐 prevent committing .env to code: https://dotenvx.com/precommit
-Food truck app running on http://localhost:3000
-Security features enabled:
-- Input validation
-- File upload restrictions
-- Security headers
-- Error handling
-- Environment variables
-SERVER received personal_notes: TEST PERSONAL NOTE!!!!!
-SERVER received personal_notes: Personal Note Test
-SERVER received personal_notes: null
-SERVER received personal_notes: null
+[dotenv@17.2.3] injecting env (4) from .env -- tip: 🔑 add access controls to secrets: https://dotenvx.com/ops
+🔒 HTTPS server running on https://localhost:3000
+✅ PDF downloads will be secure (no browser warning)
+⚠️  Browser will show certificate warning on first visit - click "Advanced" → "Proceed"

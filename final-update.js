@@ -1,6 +1,29 @@
 const fs = require('fs');
 
-let html = fs.readFileSync('./public/index.html', 'utf8');
+// WARNING: This is a ONE-TIME migration script that has already been run.
+// Running it again will break the application by injecting duplicate await keywords.
+// If you need to re-run migrations, restore from backup first:
+//   cp public/index.html.backup public/index.html
+
+console.error('⚠️  WARNING: This migration script has already been executed.');
+console.error('⚠️  Running it again will break the application.');
+console.error('⚠️  If you need to re-migrate, first restore the backup:');
+console.error('⚠️    cp public/index.html.backup public/index.html');
+console.error('');
+console.error('Exiting to prevent damage...');
+process.exit(1);
+
+// ORIGINAL CODE BELOW - DO NOT EXECUTE
+// This code is preserved for reference only
+
+/*
+let html;
+try {
+    html = fs.readFileSync('./public/index.html', 'utf8');
+} catch (err) {
+    console.error('Error reading index.html:', err.message);
+    process.exit(1);
+}
 
 // Note: Keep currentUser and users in localStorage for authentication/session management
 // These are security-sensitive and should not be in the database in this way
@@ -84,7 +107,13 @@ asyncFunctions.forEach(funcName => {
     html = html.replace(regex, `$1async function ${funcName}(`);
 });
 
-fs.writeFileSync('./public/index.html', html, 'utf8');
+try {
+    fs.writeFileSync('./public/index.html', html, 'utf8');
+} catch (err) {
+    console.error('Error writing index.html:', err.message);
+    console.error('File may be corrupted. Restore from backup if needed.');
+    process.exit(1);
+}
 
 console.log('Final localStorage updates complete!');
 console.log('- Updated tools to use database');
@@ -96,3 +125,4 @@ console.log('- Updated employees and time punches to use database');
 console.log('- Made related functions async');
 console.log('');
 console.log('Note: currentUser and users remain in localStorage for session management');
+*/
