@@ -128,6 +128,14 @@ db.serialize(() => {
     )`);
 
     // Catering table
+    db.run(`ALTER TABLE catering ADD COLUMN contact_id INTEGER`, (err) => {
+        if (err && !err.message.includes('duplicate column')) console.error(err);
+    });
+    
+    db.run(`ALTER TABLE events ADD COLUMN contact_id INTEGER`, (err) => {
+        if (err && !err.message.includes('duplicate column')) console.error(err);
+    });
+    
     db.run(`CREATE TABLE IF NOT EXISTS catering (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         client TEXT NOT NULL,
@@ -569,9 +577,9 @@ app.get('/api/catering', (req, res) => {
 });
 
 app.post('/api/catering', (req, res) => {
-    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes } = req.body;
-    db.run('INSERT INTO catering (client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes],
+    const { contact_id, client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes } = req.body;
+    db.run('INSERT INTO catering (contact_id, client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [contact_id, client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
@@ -579,9 +587,9 @@ app.post('/api/catering', (req, res) => {
 });
 
 app.put('/api/catering/:id', (req, res) => {
-    const { client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes } = req.body;
-    db.run('UPDATE catering SET client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, service_type = ?, staff_count = ?, staff_cost = ?, notes = ?, location = ?, event_start_time = ?, event_end_time = ?, equipment_provider = ?, equipment_cost = ?, equipment_notes = ?, payment_status = ?, personal_notes = ? WHERE id = ?',
-        [client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes, req.params.id],
+    const { contact_id, client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes } = req.body;
+    db.run('UPDATE catering SET contact_id = ?, client = ?, date = ?, guests = ?, price = ?, status = ?, deposit = ?, setup_time = ?, selected_menu = ?, staff_assigned = ?, service_type = ?, staff_count = ?, staff_cost = ?, notes = ?, location = ?, event_start_time = ?, event_end_time = ?, equipment_provider = ?, equipment_cost = ?, equipment_notes = ?, payment_status = ?, personal_notes = ? WHERE id = ?',
+        [contact_id, client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, notes, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes, req.params.id],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
@@ -819,6 +827,13 @@ app.get('/api/contacts', (req, res) => {
     });
 });
 
+app.get('/api/contacts/:id', (req, res) => {
+    db.get('SELECT * FROM contacts WHERE id = ?', [req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row);
+    });
+});
+
 app.post('/api/contacts', (req, res) => {
     const { name, company, category, phone, email, address, notes, tags } = req.body;
     db.run('INSERT INTO contacts (name, company, category, phone, email, address, notes, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -843,6 +858,17 @@ app.delete('/api/contacts/:id', (req, res) => {
     db.run('DELETE FROM contacts WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
+    });
+});
+
+app.get('/api/contacts/:id/history', (req, res) => {
+    const contactId = req.params.id;
+    db.all('SELECT * FROM catering WHERE contact_id = ? ORDER BY date DESC', [contactId], (err, catering) => {
+        if (err) return res.status(500).json({ error: err.message });
+        db.all('SELECT * FROM events WHERE contact_id = ? ORDER BY date DESC', [contactId], (err2, events) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            res.json({ catering, events });
+        });
     });
 });
 
@@ -998,6 +1024,56 @@ app.delete('/api/schedules/:id', (req, res) => {
     db.run('DELETE FROM schedules WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
+    });
+});
+
+// Availability endpoints
+app.get('/api/availability/:employeeId', (req, res) => {
+    db.all('SELECT * FROM availability WHERE employee_id = ?', [req.params.employeeId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/availability', (req, res) => {
+    const { employee_id, day_of_week, available, start_time, end_time } = req.body;
+    db.run('DELETE FROM availability WHERE employee_id = ? AND day_of_week = ?', [employee_id, day_of_week], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (available) {
+            db.run('INSERT INTO availability (employee_id, day_of_week, available, start_time, end_time) VALUES (?, ?, ?, ?, ?)',
+                [employee_id, day_of_week, 1, start_time, end_time],
+                function(err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ id: this.lastID });
+                });
+        } else {
+            res.json({ success: true });
+        }
+    });
+});
+
+// Availability endpoints
+app.get('/api/availability/:employeeId', (req, res) => {
+    db.all('SELECT * FROM availability WHERE employee_id = ?', [req.params.employeeId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/availability', (req, res) => {
+    const { employee_id, day_of_week, available, start_time, end_time } = req.body;
+    db.run('DELETE FROM availability WHERE employee_id = ? AND day_of_week = ?', [employee_id, day_of_week], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (available) {
+            db.run('INSERT INTO availability (employee_id, day_of_week, available, start_time, end_time) VALUES (?, ?, ?, ?, ?)',
+                [employee_id, day_of_week, 1, start_time, end_time],
+                function(err) {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ id: this.lastID });
+                });
+        } else {
+            res.json({ success: true });
+        }
     });
 });
 
