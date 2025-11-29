@@ -283,6 +283,31 @@ db.serialize(() => {
         updated_at TEXT
     )`);
     
+    // Schedules table
+    db.run(`CREATE TABLE IF NOT EXISTS schedules (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        event_id INTEGER,
+        shift_date TEXT NOT NULL,
+        start_time TEXT NOT NULL,
+        end_time TEXT NOT NULL,
+        hours REAL,
+        notes TEXT,
+        FOREIGN KEY (employee_id) REFERENCES employees (id),
+        FOREIGN KEY (event_id) REFERENCES events (id)
+    )`);
+    
+    // Availability table
+    db.run(`CREATE TABLE IF NOT EXISTS availability (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        employee_id INTEGER NOT NULL,
+        day_of_week INTEGER NOT NULL,
+        available INTEGER DEFAULT 1,
+        start_time TEXT,
+        end_time TEXT,
+        FOREIGN KEY (employee_id) REFERENCES employees (id)
+    )`);
+    
     // Insert sample contacts
     db.get('SELECT COUNT(*) as count FROM contacts', (err, row) => {
         if (!err && row.count === 0) {
@@ -939,6 +964,38 @@ app.put('/api/files/:id', (req, res) => {
 
 app.delete('/api/files/:id', (req, res) => {
     db.run('DELETE FROM files WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Schedules API endpoints
+app.get('/api/schedules', (req, res) => {
+    const query = `
+        SELECT s.*, e.name as employee_name, ev.name as event_name
+        FROM schedules s
+        JOIN employees e ON s.employee_id = e.id
+        LEFT JOIN events ev ON s.event_id = ev.id
+        ORDER BY s.shift_date, s.start_time
+    `;
+    db.all(query, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/schedules', (req, res) => {
+    const { employee_id, event_id, shift_date, start_time, end_time, hours, notes } = req.body;
+    db.run('INSERT INTO schedules (employee_id, event_id, shift_date, start_time, end_time, hours, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [employee_id, event_id, shift_date, start_time, end_time, hours, notes],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.delete('/api/schedules/:id', (req, res) => {
+    db.run('DELETE FROM schedules WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });

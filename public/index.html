@@ -606,6 +606,30 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
+        @media print {
+            .nav, .fab, .btn, button, .modal, .page-header button {
+                display: none !important;
+            }
+            body {
+                background: white;
+                color: black;
+            }
+            .container {
+                padding: 20px;
+                max-width: 100%;
+            }
+            .card {
+                page-break-inside: avoid;
+                border: 1px solid #000;
+                margin-bottom: 20px;
+            }
+            .print-only {
+                display: block !important;
+            }
+        }
+        .print-only {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -732,9 +756,14 @@
                         <button class="btn" onclick="toggleEmployeeStatus()" id="clockBtn" style="width: 100%; padding: 10px;">Punch In</button>
                         <div id="currentStatus" style="margin-top: 10px; font-size: 0.9em;"></div>
                     </div>
-                    <div style="background: var(--gray-light); border-radius: 8px;">
-                        <h4 onclick="toggleAddEmployee()" style="margin: 0; padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Add Employee <span id="add-emp-icon">▼</span></h4>
-                        <div id="add-employee-form" style="display: none; padding: 0 15px 15px 15px;">
+                </div>
+                
+                <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px;">
+                    <h4 onclick="toggleEmployeeList()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Employee List <span id="emplist-icon">▼</span></h4>
+                    <div id="employeeListContainer" style="display: none; margin-top: 15px;">
+                        <button class="btn" onclick="toggleAddEmployeeInList()" style="width: 100%; margin-bottom: 15px; background: var(--orange); color: white;">+ Add Employee</button>
+                        <div id="add-employee-form" style="display: none; background: var(--gray-light); padding: 15px; border-radius: 8px; margin-bottom: 15px; position: relative;">
+                            <button onclick="toggleAddEmployeeInList()" style="position: absolute; top: 10px; right: 10px; background: none; border: none; font-size: 24px; cursor: pointer; color: var(--gray); line-height: 1;">&times;</button>
                             <input type="text" id="newEmployeeName" placeholder="Employee Name" style="width: 100%; margin-bottom: 8px;">
                             <select id="newEmployeeRole" style="width: 100%; margin-bottom: 8px;">
                                 <option value="">Select role...</option>
@@ -946,14 +975,19 @@
                             
                             <button class="btn" onclick="addEmployee()" style="width: 100%; padding: 8px;">Add Employee</button>
                         </div>
+                        <div id="employeeList"></div>
                     </div>
                 </div>
-                <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px;">
+                
+                <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
                     <h4 style="margin-bottom: 10px;">Current Status</h4>
                     <div id="employeeStatusList"></div>
                 </div>
                 <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
-                    <h4 onclick="toggleTimePunches()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Time Punch History <span id="punch-icon">▼</span></h4>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 onclick="toggleTimePunches()" style="margin: 0; cursor: pointer; flex: 1; display: flex; justify-content: space-between; align-items: center;">Time Punch History <span id="punch-icon">▼</span></h4>
+                        <button class="btn" onclick="printSchedule()" style="padding: 6px 12px; font-size: 0.85em; background: #666; color: white; margin-left: 10px;">Print</button>
+                    </div>
                     <div id="timePunchHistoryContainer" style="display: none; margin-top: 15px;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                             <select id="punchFilter" onchange="loadTimePunchHistory()" style="width: 100%; padding: 8px;">
@@ -962,6 +996,25 @@
                             <input type="date" id="punchDateFilter" onchange="loadTimePunchHistory()" style="width: 100%; padding: 8px;">
                         </div>
                         <div id="timePunchHistory"></div>
+                    </div>
+                </div>
+                
+                <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h4 onclick="toggleWeeklySchedule()" style="margin: 0; cursor: pointer; flex: 1; display: flex; justify-content: space-between; align-items: center;">Weekly Schedule <span id="schedule-icon">▼</span></h4>
+                        <button class="btn" onclick="printWeeklySchedule()" style="padding: 6px 12px; font-size: 0.85em; background: #666; color: white; margin-left: 10px;">Print</button>
+                    </div>
+                    <div id="weeklyScheduleContainer" style="display: none; margin-top: 15px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                            <button class="btn" onclick="previousWeek()" style="padding: 8px 12px;">◀ Prev</button>
+                            <input type="date" id="scheduleWeekStart" onchange="loadWeeklySchedule()" style="flex: 1; min-width: 150px; padding: 8px;">
+                            <button class="btn" onclick="nextWeek()" style="padding: 8px 12px;">Next ▶</button>
+                            <button class="btn" onclick="addShift()" style="padding: 8px 16px; background: var(--orange); color: white;">Add Shift</button>
+                        </div>
+                        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -15px; padding: 0 15px;">
+                            <div id="weeklySchedule"></div>
+                        </div>
+                        <div id="overtimeAlerts" style="margin-top: 15px;"></div>
                     </div>
                 </div>
             </div>
@@ -1105,7 +1158,10 @@
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Event Calendar</h2>
-                    <button class="btn" onclick="addEvent()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Event</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn" onclick="printEvents()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: #666; color: white;">Print</button>
+                        <button class="btn" onclick="addEvent()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Event</button>
+                    </div>
                 </div>
                 <div class="stats" id="eventStats"></div>
                 <div class="grid" id="eventList"></div>
@@ -1688,7 +1744,6 @@
         function initializeDefaultUsers() {
             const users = JSON.parse(localStorage.getItem('users') || '[]');
             if (users.length === 0) {
-                // Only create admin user if no users exist
                 const adminUser = {
                     id: 1,
                     username: 'admin',
@@ -1699,6 +1754,21 @@
                 localStorage.setItem('users', JSON.stringify([adminUser]));
                 console.log('Default admin created. Username: admin, Password:', adminUser.password);
                 alert(`Default admin created!\nUsername: admin\nPassword: ${adminUser.password}\n\nPlease save this password and change it immediately.`);
+            }
+            
+            let employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const hasMaria = employees.some(e => e.name === 'Maria Garcia');
+            const hasCarlos = employees.some(e => e.name === 'Carlos Rodriguez');
+            
+            if (!hasMaria) {
+                employees.push({ id: Date.now(), name: 'Maria Garcia', role: 'Cook', status: 'signed-out', signInTime: null, totalHours: 0 });
+            }
+            if (!hasCarlos) {
+                employees.push({ id: Date.now() + 1, name: 'Carlos Rodriguez', role: 'Cashier', status: 'signed-out', signInTime: null, totalHours: 0 });
+            }
+            
+            if (!hasMaria || !hasCarlos) {
+                localStorage.setItem('employees', JSON.stringify(employees));
             }
         }
         
@@ -3592,6 +3662,7 @@
                             ${order.personal_notes ? `<div class="card-meta" style="font-style: italic; margin-top: 8px; color: #6c757d;">Personal Notes: ${order.personal_notes}</div>` : ''}
                             <div class="card-actions" style="margin-top: 10px;">
                                 <button class="btn" onclick="editCateringOrder(${order.id})" style="background: var(--orange); color: white;">Edit</button>
+                                <button class="btn" onclick="printCateringDetails(${order.id})" style="background: #666; color: white;">Print</button>
                                 <button class="btn" onclick="exportCateringPDF(${order.id})" style="background: var(--warning); color: white;">PDF</button>
                                 <button class="btn" onclick="updateCateringStatus(${order.id})" style="background: var(--success); color: white;">Status</button>
                                 <button class="btn" onclick="openNotesModal('catering', ${order.id}, '${order.client.replace(/'/g, "\\'")}')" style="background: #666; color: white;">Notes</button>
@@ -4503,6 +4574,7 @@
                             ${event.notes ? `<div class="card-meta" style="font-style: italic;">Notes: ${event.notes}</div>` : ''}
                             <div class="card-actions" style="margin-top: 10px;">
                                 <button class="btn" onclick="editEvent(${event.id})" style="background: var(--orange); color: white;">Edit</button>
+                                <button class="btn" onclick="printEventDetails(${event.id})" style="background: #666; color: white;">Print</button>
                                 <button class="btn" onclick="updateEventStatus(${event.id})" style="background: var(--success); color: white;">Status</button>
                                 ${event.fee > 0 ? `<button class="btn" onclick="togglePayment(${event.id})" style="background: ${event.paid ? 'var(--danger)' : 'var(--success)'}; color: white;">${event.paid ? 'Mark Unpaid' : 'Mark Paid'}</button>` : ''}
                                 <button class="btn" onclick="openNotesModal('event', ${event.id}, '${event.name.replace(/'/g, "\\'")}')" style="background: #666; color: white;">Notes</button>
@@ -6090,6 +6162,54 @@
             loadEmployees();
         }
         
+        function toggleEmployeeList() {
+            const container = document.getElementById('employeeListContainer');
+            const icon = document.getElementById('emplist-icon');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                icon.textContent = '▲';
+                loadEmployeeList();
+            } else {
+                container.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function toggleAddEmployeeInList() {
+            const form = document.getElementById('add-employee-form');
+            if (form.style.display === 'none') {
+                form.style.display = 'block';
+            } else {
+                form.style.display = 'none';
+            }
+        }
+        
+        function loadEmployeeList() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const list = document.getElementById('employeeList');
+            
+            let html = '';
+            
+            if (employees.length === 0) {
+                html = '<div style="color: var(--gray); font-style: italic; text-align: center; padding: 20px;">No employees added yet</div>';
+            } else {
+                html = employees.map(emp => `
+                    <div style="background: var(--gray-light); padding: 12px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: 600;">${emp.name}</div>
+                            <div style="font-size: 0.85em; color: var(--gray);">${emp.role}</div>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn" onclick="editEmployee(${emp.id})" style="padding: 6px 12px; font-size: 0.85em; width: auto; background: var(--orange); color: white;">Edit</button>
+                            <button class="btn btn-danger" onclick="deleteEmployee(${emp.id})" style="padding: 6px 12px; font-size: 0.85em; width: auto;">Delete</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            list.innerHTML = html;
+        }
+        
         function loadEmployees() {
             const employees = JSON.parse(localStorage.getItem('employees') || '[]');
             
@@ -6097,6 +6217,8 @@
             const employeeSelect = document.getElementById('employeeSelect');
             employeeSelect.innerHTML = '<option value="">Select employee...</option>' +
                 employees.map(emp => `<option value="${emp.id}">${emp.name} (${emp.role})</option>`).join('');
+            
+            loadEmployeeList();
             
             // Update status list
             const statusList = document.getElementById('employeeStatusList');
@@ -6846,6 +6968,284 @@
                 loadEmployees();
             }
         }
+        // Weekly Schedule Functions
+        let currentWeekStart = new Date();
+        currentWeekStart.setDate(currentWeekStart.getDate() - currentWeekStart.getDay());
+
+        function toggleWeeklySchedule() {
+            const container = document.getElementById('weeklyScheduleContainer');
+            const icon = document.getElementById('schedule-icon');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                icon.textContent = '▲';
+                document.getElementById('scheduleWeekStart').valueAsDate = currentWeekStart;
+                loadWeeklySchedule();
+            } else {
+                container.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+
+        function previousWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() - 7);
+            document.getElementById('scheduleWeekStart').valueAsDate = currentWeekStart;
+            loadWeeklySchedule();
+        }
+
+        function nextWeek() {
+            currentWeekStart.setDate(currentWeekStart.getDate() + 7);
+            document.getElementById('scheduleWeekStart').valueAsDate = currentWeekStart;
+            loadWeeklySchedule();
+        }
+
+        async function loadWeeklySchedule() {
+            const weekStart = new Date(document.getElementById('scheduleWeekStart').value);
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekEnd.getDate() + 6);
+
+            const [schedules, employees] = await Promise.all([
+                fetch('/api/schedules').then(r => r.json()),
+                fetch('/api/employees').then(r => r.json())
+            ]);
+
+            const weekSchedules = schedules.filter(s => {
+                const shiftDate = new Date(s.shift_date);
+                return shiftDate >= weekStart && shiftDate <= weekEnd;
+            });
+
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            let html = '<div style="display: flex; gap: 12px; min-width: max-content;">';
+
+            for (let i = 0; i < 7; i++) {
+                const date = new Date(weekStart);
+                date.setDate(date.getDate() + i);
+                const dateStr = date.toISOString().split('T')[0];
+                const daySchedules = weekSchedules.filter(s => s.shift_date === dateStr);
+
+                html += `<div style="background: var(--gray-light); padding: 12px; border-radius: 8px; min-width: 180px; width: 180px; flex-shrink: 0;">`;
+                html += `<div style="font-weight: bold; font-size: 0.95em; margin-bottom: 6px; color: var(--charcoal);">${days[i]}</div>`;
+                html += `<div style="font-size: 0.8em; color: var(--gray); margin-bottom: 12px;">${date.toLocaleDateString()}</div>`;
+
+                if (daySchedules.length === 0) {
+                    html += `<div style="color: var(--gray); font-size: 0.85em; font-style: italic; text-align: center; padding: 20px 0;">No shifts</div>`;
+                } else {
+                    daySchedules.forEach(shift => {
+                        html += `<div style="background: var(--orange); color: white; padding: 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85em;">`;
+                        html += `<div style="font-weight: 600; margin-bottom: 4px;">${shift.employee_name}</div>`;
+                        html += `<div style="margin-bottom: 2px;">${shift.start_time} - ${shift.end_time}</div>`;
+                        html += `<div style="font-size: 0.75em; opacity: 0.9;">${shift.hours}hrs</div>`;
+                        if (shift.event_name) html += `<div style="font-size: 0.75em; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.3);">${shift.event_name}</div>`;
+                        html += `<button onclick="deleteShift(${shift.id}); event.stopPropagation();" style="background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; margin-top: 6px; cursor: pointer; width: 100%;">Delete</button>`;
+                        html += `</div>`;
+                    });
+                }
+
+                html += `</div>`;
+            }
+            html += '</div>';
+
+            document.getElementById('weeklySchedule').innerHTML = html;
+            calculateOvertime(weekSchedules, employees);
+        }
+
+        function calculateOvertime(schedules, employees) {
+            const employeeHours = {};
+            schedules.forEach(s => {
+                if (!employeeHours[s.employee_id]) {
+                    employeeHours[s.employee_id] = { name: s.employee_name, hours: 0 };
+                }
+                employeeHours[s.employee_id].hours += s.hours || 0;
+            });
+
+            let html = '';
+            Object.values(employeeHours).forEach(emp => {
+                if (emp.hours > 40) {
+                    html += `<div style="background: var(--warning); color: var(--charcoal); padding: 8px; border-radius: 4px; margin-bottom: 6px;">`;
+                    html += `<strong>${emp.name}:</strong> ${emp.hours.toFixed(1)} hours (${(emp.hours - 40).toFixed(1)} overtime)`;
+                    html += `</div>`;
+                }
+            });
+
+            document.getElementById('overtimeAlerts').innerHTML = html || '<div style="color: var(--text-secondary); font-size: 0.9em;">No overtime this week</div>';
+        }
+
+        async function addShift() {
+            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const events = await fetch('/api/events').then(r => r.json());
+
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+
+            modalTitle.textContent = 'Add Shift';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <label>Employee:</label>
+                        <select id="shiftEmployee" style="width: 100%; padding: 8px;">
+                            <option value="">Select employee...</option>
+                            ${employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date:</label>
+                        <input type="date" id="shiftDate" style="width: 100%; padding: 8px;">
+                    </div>
+                    <div class="form-row">
+                        <div style="flex: 1;">
+                            <label>Start Time:</label>
+                            <input type="time" id="shiftStart" style="width: 100%; padding: 8px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>End Time:</label>
+                            <input type="time" id="shiftEnd" style="width: 100%; padding: 8px;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Event (optional):</label>
+                        <select id="shiftEvent" style="width: 100%; padding: 8px;">
+                            <option value="">No event</option>
+                            ${events.map(e => `<option value="${e.id}">${e.name} - ${e.date}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes:</label>
+                        <textarea id="shiftNotes" style="width: 100%; padding: 8px;" rows="2"></textarea>
+                    </div>
+                    <button class="btn" onclick="saveShift()" style="background: var(--orange); color: white;">Save Shift</button>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+
+        async function saveShift() {
+            const employeeId = document.getElementById('shiftEmployee').value;
+            const date = document.getElementById('shiftDate').value;
+            const startTime = document.getElementById('shiftStart').value;
+            const endTime = document.getElementById('shiftEnd').value;
+            const eventId = document.getElementById('shiftEvent').value || null;
+            const notes = document.getElementById('shiftNotes').value;
+
+            const start = new Date(`2000-01-01T${startTime}`);
+            const end = new Date(`2000-01-01T${endTime}`);
+            const hours = (end - start) / (1000 * 60 * 60);
+
+            await fetch('/api/schedules', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    employee_id: employeeId,
+                    event_id: eventId,
+                    shift_date: date,
+                    start_time: startTime,
+                    end_time: endTime,
+                    hours: hours,
+                    notes: notes
+                })
+            });
+
+            closeAddModal();
+            loadWeeklySchedule();
+        }
+
+        async function deleteShift(id) {
+            if (!confirm('Delete this shift?')) return;
+            await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
+            loadWeeklySchedule();
+        }
+
+        function printWeeklySchedule() {
+            const printTitle = document.createElement('div');
+            printTitle.className = 'print-only';
+            printTitle.innerHTML = '<h1 style="text-align: center; margin-bottom: 20px;">Weekly Staff Schedule</h1><p style="text-align: center; margin-bottom: 30px;">Week of: ' + document.getElementById('scheduleWeekStart').value + '</p>';
+            document.body.insertBefore(printTitle, document.body.firstChild);
+            window.print();
+            setTimeout(() => printTitle.remove(), 100);
+        }
+
+        // Print Functions
+        function printEvents() {
+            const printTitle = document.createElement('div');
+            printTitle.className = 'print-only';
+            printTitle.innerHTML = '<h1 style="text-align: center; margin-bottom: 20px;">Event Schedule</h1><p style="text-align: center; margin-bottom: 30px;">Printed: ' + new Date().toLocaleDateString() + '</p>';
+            document.body.insertBefore(printTitle, document.body.firstChild);
+            window.print();
+            setTimeout(() => printTitle.remove(), 100);
+        }
+
+        function printSchedule() {
+            const printTitle = document.createElement('div');
+            printTitle.className = 'print-only';
+            printTitle.innerHTML = '<h1 style="text-align: center; margin-bottom: 20px;">Staff Schedule</h1><p style="text-align: center; margin-bottom: 30px;">Printed: ' + new Date().toLocaleDateString() + '</p>';
+            document.body.insertBefore(printTitle, document.body.firstChild);
+            window.print();
+            setTimeout(() => printTitle.remove(), 100);
+        }
+
+        async function printEventDetails(eventId) {
+            const response = await fetch('/api/events');
+            const events = await response.json();
+            const event = events.find(e => e.id === eventId);
+            if (!event) return;
+            
+            const printWindow = window.open('', '', 'width=800,height=600');
+            let html = '<html><head><title>Event Details - ' + event.name + '</title>';
+            html += '<style>body { font-family: Arial, sans-serif; padding: 40px; } h1 { color: #ff6b35; } .detail { margin: 10px 0; } .label { font-weight: bold; }</style>';
+            html += '</head><body><h1>' + event.name + '</h1>';
+            html += '<div class="detail"><span class="label">Type:</span> ' + event.type + '</div>';
+            html += '<div class="detail"><span class="label">Location:</span> ' + event.location + '</div>';
+            html += '<div class="detail"><span class="label">Date:</span> ' + event.date + (event.end_date ? ' - ' + event.end_date : '') + '</div>';
+            if (event.time) html += '<div class="detail"><span class="label">Time:</span> ' + event.time + '</div>';
+            if (event.fee > 0) html += '<div class="detail"><span class="label">Fee:</span> $' + event.fee.toFixed(2) + '</div>';
+            html += '<div class="detail"><span class="label">Status:</span> ' + event.status + '</div>';
+            if (event.notes) html += '<div class="detail"><span class="label">Notes:</span> ' + event.notes + '</div>';
+            html += '<script>window.print(); window.close();<\/script></body></html>';
+            printWindow.document.write(html);
+            printWindow.document.close();
+        }
+
+        async function printCateringDetails(orderId) {
+            const response = await fetch('/api/catering');
+            const orders = await response.json();
+            const order = orders.find(o => o.id === orderId);
+            if (!order) return;
+            
+            const printWindow = window.open('', '', 'width=800,height=600');
+            let html = '<html><head><title>Catering Order - ' + order.client + '</title>';
+            html += '<style>body { font-family: Arial, sans-serif; padding: 40px; } h1 { color: #ff6b35; } .detail { margin: 10px 0; } .label { font-weight: bold; } ul { margin: 5px 0 0 20px; }</style>';
+            html += '</head><body><h1>Catering Order - ' + order.client + '</h1>';
+            html += '<div class="detail"><span class="label">Date:</span> ' + order.date + '</div>';
+            html += '<div class="detail"><span class="label">Guests:</span> ' + order.guests + '</div>';
+            if (order.location) html += '<div class="detail"><span class="label">Location:</span> ' + order.location + '</div>';
+            if (order.event_start_time || order.event_end_time) html += '<div class="detail"><span class="label">Event Time:</span> ' + (order.event_start_time || 'TBD') + ' - ' + (order.event_end_time || 'TBD') + '</div>';
+            if (order.setup_time) html += '<div class="detail"><span class="label">Setup Time:</span> ' + order.setup_time + ' hours</div>';
+            if (order.service_type) html += '<div class="detail"><span class="label">Service Type:</span> ' + order.service_type + '</div>';
+            if (order.staff_count > 0) html += '<div class="detail"><span class="label">Staff:</span> ' + order.staff_count + ' staff - $' + order.staff_cost.toFixed(2) + '</div>';
+            if (order.equipment_provider) html += '<div class="detail"><span class="label">Equipment:</span> ' + order.equipment_provider + (order.equipment_cost > 0 ? ' - $' + order.equipment_cost.toFixed(2) : '') + '</div>';
+            if (order.equipment_notes) html += '<div class="detail"><span class="label">Equipment Notes:</span> ' + order.equipment_notes + '</div>';
+            if (order.price > 0) html += '<div class="detail"><span class="label">Price:</span> $' + order.price.toFixed(2) + '</div>';
+            if (order.deposit > 0) html += '<div class="detail"><span class="label">Deposit:</span> $' + order.deposit.toFixed(2) + '</div>';
+            if (order.payment_status) html += '<div class="detail"><span class="label">Payment Status:</span> ' + order.payment_status + '</div>';
+            html += '<div class="detail"><span class="label">Status:</span> ' + order.status + '</div>';
+            if (order.selected_menu) {
+                try {
+                    const menu = typeof order.selected_menu === 'string' ? JSON.parse(order.selected_menu) : order.selected_menu;
+                    if (menu && menu.length > 0) {
+                        html += '<div class="detail"><span class="label">Menu Items:</span><ul>';
+                        menu.forEach(item => {
+                            html += '<li>' + item.name + ' (' + item.quantity + ' servings) - $' + (item.total || item.totalPrice).toFixed(2) + '</li>';
+                        });
+                        html += '</ul></div>';
+                    }
+                } catch(e) {}
+            }
+            if (order.notes) html += '<div class="detail"><span class="label">Event Notes:</span> ' + order.notes + '</div>';
+            if (order.personal_notes) html += '<div class="detail"><span class="label">Personal Notes:</span> ' + order.personal_notes + '</div>';
+            html += '<script>window.print(); window.close();<\/script></body></html>';
+            printWindow.document.write(html);
+            printWindow.document.close();
+        }
+
         // Notes Functions
         let currentNotesItem = { type: '', id: 0, name: '' };
 
