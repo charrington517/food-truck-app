@@ -541,6 +541,13 @@ app.get('/api/events', (req, res) => {
     });
 });
 
+app.get('/api/events/:id', (req, res) => {
+    db.get('SELECT * FROM events WHERE id = ?', [req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row);
+    });
+});
+
 app.post('/api/events', (req, res) => {
     const { name, type, location, date, end_date, time, fee, status, notes } = req.body;
     db.run('INSERT INTO events (name, type, location, date, end_date, time, fee, status, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -573,6 +580,13 @@ app.get('/api/catering', (req, res) => {
     db.all('SELECT * FROM catering ORDER BY date', (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
+    });
+});
+
+app.get('/api/catering/:id', (req, res) => {
+    db.get('SELECT * FROM catering WHERE id = ?', [req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row);
     });
 });
 
@@ -873,6 +887,30 @@ app.get('/api/contacts/:id/history', (req, res) => {
 });
 
 // Maintenance tasks API endpoints
+app.get('/api/maintenance', (req, res) => {
+    db.all('SELECT id, task, due_date as date, status, notes FROM maintenance_tasks ORDER BY due_date', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/maintenance/:id', (req, res) => {
+    db.get('SELECT id, task, due_date as date, status, notes FROM maintenance_tasks WHERE id = ?', [req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row);
+    });
+});
+
+app.put('/api/maintenance/:id', (req, res) => {
+    const { task, date, status, notes } = req.body;
+    db.run('UPDATE maintenance_tasks SET task = ?, due_date = ?, status = ?, notes = ? WHERE id = ?',
+        [task, date, status, notes, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
 app.get('/api/maintenance-tasks', (req, res) => {
     db.all('SELECT * FROM maintenance_tasks ORDER BY due_date', (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
