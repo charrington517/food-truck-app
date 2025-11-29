@@ -1657,23 +1657,13 @@
         }
         
         async function loadCalendarData() {
-            const year = currentCalendarDate.getFullYear();
-            const month = currentCalendarDate.getMonth();
-            const firstDay = new Date(year, month, 1).toISOString().split('T')[0];
-            const lastDay = new Date(year, month + 1, 0).toISOString().split('T')[0];
-            
             const [events, catering, maintenance] = await Promise.all([
                 fetch('/api/events').then(r => r.json()),
                 fetch('/api/catering').then(r => r.json()),
                 fetch('/api/maintenance').then(r => r.json()).catch(() => [])
             ]);
             
-            calendarData = {
-                events: events.filter(e => e.date >= firstDay && e.date <= lastDay),
-                catering: catering.filter(c => c.date >= firstDay && c.date <= lastDay),
-                maintenance: maintenance.filter(m => m.date >= firstDay && m.date <= lastDay)
-            };
-            
+            calendarData = { events, catering, maintenance };
             renderCalendar();
         }
         
