@@ -258,6 +258,34 @@ db.serialize(() => {
         status TEXT DEFAULT 'Pending',
         notes TEXT
     )`);
+    
+    // Contacts table
+    db.run(`CREATE TABLE IF NOT EXISTS contacts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        company TEXT,
+        category TEXT DEFAULT 'General',
+        phone TEXT,
+        email TEXT,
+        address TEXT,
+        notes TEXT,
+        tags TEXT
+    )`);
+    
+    // Insert sample contacts
+    db.get('SELECT COUNT(*) as count FROM contacts', (err, row) => {
+        if (!err && row.count === 0) {
+            const samples = [
+                ['Sarah Johnson', 'ABC Corporation', 'Catering Client', '555-0101', 'sarah@abccorp.com', '123 Business St', 'Prefers vegetarian options', 'preferred,corporate'],
+                ['Mike Chen', 'Downtown Events LLC', 'Event Organizer', '555-0102', 'mike@downtownevents.com', '456 Event Ave', 'Organizes summer festivals', 'festivals,preferred'],
+                ['Party Rentals Plus', '', 'Vendor', '555-0103', 'info@partyrentals.com', '789 Supply Rd', 'Tables, chairs, tents', 'equipment,rental'],
+                ['Lisa Martinez', 'City Parks Dept', 'Event Organizer', '555-0104', 'lmartinez@cityparks.gov', '321 City Hall', 'Manages farmers markets', 'government,markets']
+            ];
+            samples.forEach(s => {
+                db.run('INSERT INTO contacts (name, company, category, phone, email, address, notes, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', s);
+            });
+        }
+    });
 });
 
 // API Routes
@@ -742,6 +770,41 @@ app.put('/api/licenses/:id', (req, res) => {
 
 app.delete('/api/licenses/:id', (req, res) => {
     db.run('DELETE FROM licenses WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Contacts API endpoints
+app.get('/api/contacts', (req, res) => {
+    db.all('SELECT * FROM contacts ORDER BY name', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/contacts', (req, res) => {
+    const { name, company, category, phone, email, address, notes, tags } = req.body;
+    db.run('INSERT INTO contacts (name, company, category, phone, email, address, notes, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [name, company, category, phone, email, address, notes, tags],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/contacts/:id', (req, res) => {
+    const { name, company, category, phone, email, address, notes, tags } = req.body;
+    db.run('UPDATE contacts SET name = ?, company = ?, category = ?, phone = ?, email = ?, address = ?, notes = ?, tags = ? WHERE id = ?',
+        [name, company, category, phone, email, address, notes, tags, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/contacts/:id', (req, res) => {
+    db.run('DELETE FROM contacts WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });

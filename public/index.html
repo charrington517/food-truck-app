@@ -1144,6 +1144,22 @@
             </div>
         </div>
 
+        <!-- Contacts Page -->
+        <div id="contacts" class="page">
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Contacts</h2>
+                    <button class="btn" onclick="addContact()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Contact</button>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <select id="contactCategoryFilter" onchange="loadContacts()" style="padding: 8px; border-radius: 6px;">
+                        <option value="all">All Categories</option>
+                    </select>
+                </div>
+                <div class="grid" id="contactsList"></div>
+            </div>
+        </div>
+
         <!-- Settings Page -->
         <div id="settings" class="page">
             <div class="section">
@@ -1340,6 +1356,21 @@
                 </div>
             </div>
             
+            <div class="section">
+                <h2 class="section-title" onclick="toggleSettingsSection('contactCategories')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    Contact Categories
+                    <span id="contactCategories-icon">▼</span>
+                </h2>
+                <div id="contactCategories-content" class="settings-content">
+                    <div class="form">
+                        <div class="form-row">
+                            <input type="text" id="newContactCategory" placeholder="Add new category (e.g., Venue, Photographer)">
+                            <button class="btn" onclick="addContactCategory()" style="width: auto; padding: 12px 20px;">Add Category</button>
+                        </div>
+                        <div id="contactCategoriesList" style="margin-top: 15px;"></div>
+                    </div>
+                </div>
+            </div>
 
             <div class="section">
                 <h2 class="section-title" onclick="toggleSettingsSection('data')" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
@@ -1438,6 +1469,7 @@
             <button onclick="showPage('tools')">Tools</button>
             <button onclick="showPage('catering')">Catering</button>
             <button onclick="showPage('events')">Events</button>
+            <button onclick="showPage('contacts')">Contacts</button>
             <button onclick="showPage('marketing')">Marketing</button>
             <button onclick="showPage('analytics')">Analytics</button>
         </div>
@@ -1742,7 +1774,7 @@
         // Page Navigation
         function showPage(pageId) {
             // Validate pageId to prevent XSS
-            const validPages = ['dashboard', 'menu', 'ingredients', 'inventory', 'suppliers', 'employee', 'tools', 'catering', 'events', 'marketing', 'analytics', 'settings'];
+            const validPages = ['dashboard', 'menu', 'ingredients', 'inventory', 'suppliers', 'employee', 'tools', 'catering', 'events', 'contacts', 'marketing', 'analytics', 'settings'];
             if (!validPages.includes(pageId)) {
                 console.error('Invalid page ID:', pageId);
                 return;
@@ -1768,7 +1800,7 @@
             
             // Show/hide FAB based on page and permissions
             const fabBtn = document.getElementById('fabBtn');
-            if (['dashboard', 'analytics', 'settings', 'marketing', 'events', 'catering', 'employee', 'tools'].includes(pageId) || isReadOnly(pageId)) {
+            if (['dashboard', 'analytics', 'settings', 'marketing', 'events', 'catering', 'employee', 'tools', 'contacts'].includes(pageId) || isReadOnly(pageId)) {
                 fabBtn.style.display = 'none';
             } else {
                 fabBtn.style.display = 'block';
@@ -1795,7 +1827,8 @@
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
+            if (pageId === 'contacts') loadContacts();
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
             
             // Hide add buttons for read-only access
             if (isReadOnly(pageId)) {
@@ -5159,6 +5192,14 @@
                     loadEmployeeRoles();
                     updateEmployeeRoleDropdown();
                 }
+            } else if (editType === 'contactCategory') {
+                const categories = JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('contactCategories', JSON.stringify(categories));
+                    loadContactCategories();
+                }
             }
             closeEditModal();
         }
@@ -5197,6 +5238,11 @@
                 localStorage.setItem('employeeRoles', JSON.stringify(filtered));
                 loadEmployeeRoles();
                 updateEmployeeRoleDropdown();
+            } else if (editType === 'contactCategory') {
+                const categories = JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('contactCategories', JSON.stringify(filtered));
+                loadContactCategories();
             }
             closeEditModal();
         }
@@ -5348,6 +5394,42 @@
         }
 
         // Data Management Functions
+        function loadContactCategories() {
+            const categories = JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+            
+            document.getElementById('contactCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editContactCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
+        }
+        
+        function editContactCategory(category) {
+            editType = 'contactCategory';
+            editOriginalValue = category;
+            document.getElementById('editModalTitle').textContent = 'Edit Contact Category';
+            document.getElementById('editInput').value = category;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function getAllContactCategories() {
+            return JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+        }
+        
+        function addContactCategory() {
+            const input = document.getElementById('newContactCategory');
+            const category = input.value.trim();
+            if (!category) return;
+            
+            const categories = JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('contactCategories', JSON.stringify(categories));
+                input.value = '';
+                loadContactCategories();
+            }
+        }
+
         function exportData() {
             const data = {
                 menu: [],
@@ -5386,6 +5468,169 @@
                 console.error('Export error:', error);
                 alert('Export failed');
             });
+        }
+
+        // Contacts Functions
+        function loadContacts() {
+            // Populate filter dropdown
+            const filterSelect = document.getElementById('contactCategoryFilter');
+            const currentFilter = filterSelect.value;
+            filterSelect.innerHTML = '<option value="all">All Categories</option>' + 
+                getAllContactCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            filterSelect.value = currentFilter;
+            
+            const filter = filterSelect.value;
+            fetch('/api/contacts')
+                .then(r => r.json())
+                .then(contacts => {
+                    const filtered = filter === 'all' ? contacts : contacts.filter(c => c.category === filter);
+                    document.getElementById('contactsList').innerHTML = filtered.map(contact => `
+                        <div class="card">
+                            <div class="card-title">${contact.name}</div>
+                            ${contact.company ? `<div class="card-meta">${contact.company}</div>` : ''}
+                            <div class="card-meta" style="color: var(--orange); font-weight: 600;">${contact.category}</div>
+                            ${contact.phone ? `<div class="card-meta"><a href="tel:${contact.phone}" style="color: var(--charcoal);">☎ ${contact.phone}</a></div>` : ''}
+                            ${contact.email ? `<div class="card-meta"><a href="mailto:${contact.email}" style="color: var(--charcoal);">✉ ${contact.email}</a></div>` : ''}
+                            ${contact.tags ? `<div class="card-meta" style="font-size: 0.8em;">${contact.tags.split(',').map(t => `<span style="background: var(--gray-light); padding: 2px 6px; border-radius: 4px; margin-right: 4px;">${t.trim()}</span>`).join('')}</div>` : ''}
+                            <div class="card-actions">
+                                <button class="btn" onclick="editContact(${contact.id})" style="background: var(--orange); color: white;">Edit</button>
+                                <button class="btn btn-danger" onclick="deleteContact(${contact.id})">Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+        
+        function addContact() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Contact';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="contactName" placeholder="Name *">
+                    </div>
+                    <div class="form-row">
+                        <input type="text" id="contactCompany" placeholder="Company/Organization">
+                        <select id="contactCategory">
+                            ${getAllContactCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="tel" id="contactPhone" placeholder="Phone">
+                        <input type="email" id="contactEmail" placeholder="Email">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="contactAddress" placeholder="Address">
+                    </div>
+                    <div class="form-group">
+                        <textarea id="contactNotes" placeholder="Notes" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="contactTags" placeholder="Tags (comma-separated, e.g. preferred, equipment)">
+                    </div>
+                    <button class="btn" onclick="saveContact(); closeAddModal();">Add Contact</button>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+        
+        function saveContact() {
+            const name = document.getElementById('contactName').value.trim();
+            if (!name) {
+                alert('Please enter a name');
+                return;
+            }
+            
+            fetch('/api/contacts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    company: document.getElementById('contactCompany').value.trim(),
+                    category: document.getElementById('contactCategory').value,
+                    phone: document.getElementById('contactPhone').value.trim(),
+                    email: document.getElementById('contactEmail').value.trim(),
+                    address: document.getElementById('contactAddress').value.trim(),
+                    notes: document.getElementById('contactNotes').value.trim(),
+                    tags: document.getElementById('contactTags').value.trim()
+                })
+            }).then(() => loadContacts());
+        }
+        
+        function editContact(id) {
+            fetch('/api/contacts')
+                .then(r => r.json())
+                .then(contacts => {
+                    const contact = contacts.find(c => c.id === id);
+                    if (!contact) return;
+                    
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = 'Edit Contact';
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <div class="form-group">
+                                <input type="text" id="contactName" placeholder="Name *" value="${contact.name}">
+                            </div>
+                            <div class="form-row">
+                                <input type="text" id="contactCompany" placeholder="Company/Organization" value="${contact.company || ''}">
+                                <select id="contactCategory">
+                                    ${getAllContactCategories().map(cat => `<option value="${cat}" ${contact.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <input type="tel" id="contactPhone" placeholder="Phone" value="${contact.phone || ''}">
+                                <input type="email" id="contactEmail" placeholder="Email" value="${contact.email || ''}">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="contactAddress" placeholder="Address" value="${contact.address || ''}">
+                            </div>
+                            <div class="form-group">
+                                <textarea id="contactNotes" placeholder="Notes" rows="2">${contact.notes || ''}</textarea>
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="contactTags" placeholder="Tags (comma-separated)" value="${contact.tags || ''}">
+                            </div>
+                            <button class="btn" onclick="updateContact(${id}); closeAddModal();">Update Contact</button>
+                        </div>
+                    `;
+                    modal.classList.add('show');
+                });
+        }
+        
+        function updateContact(id) {
+            const name = document.getElementById('contactName').value.trim();
+            if (!name) {
+                alert('Please enter a name');
+                return;
+            }
+            
+            fetch(`/api/contacts/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name,
+                    company: document.getElementById('contactCompany').value.trim(),
+                    category: document.getElementById('contactCategory').value,
+                    phone: document.getElementById('contactPhone').value.trim(),
+                    email: document.getElementById('contactEmail').value.trim(),
+                    address: document.getElementById('contactAddress').value.trim(),
+                    notes: document.getElementById('contactNotes').value.trim(),
+                    tags: document.getElementById('contactTags').value.trim()
+                })
+            }).then(() => loadContacts());
+        }
+        
+        function deleteContact(id) {
+            if (confirm('Delete this contact?')) {
+                fetch(`/api/contacts/${id}`, { method: 'DELETE' })
+                    .then(() => loadContacts());
+            }
         }
 
         // Settings Functions
