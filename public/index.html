@@ -1699,15 +1699,15 @@
                 html += `<div style="font-weight: bold; margin-bottom: 4px; color: ${isToday ? 'var(--orange)' : 'var(--charcoal)'}; font-size: 14px;">${day}</div>`;
                 
                 dayEvents.forEach(e => {
-                    html += `<div draggable="true" ondragstart="dragStart(event, 'event', ${e.id})" onclick="event.stopPropagation(); closeCalendar(); showPage('events'); setTimeout(() => editEvent(${e.id}), 300);" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name} - ${e.time || ''}">📅 ${e.name}</div>`;
+                    html += `<div draggable="true" ondragstart="dragStart(event, 'event', ${e.id})" onclick="event.stopPropagation(); closeCalendar(); showPage('events'); setTimeout(() => { const card = document.getElementById('event-details-${e.id}'); if(card) { card.style.display = 'block'; document.getElementById('event-icon-${e.id}').textContent = '▲'; card.scrollIntoView({behavior: 'smooth', block: 'center'}); } }, 300);" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name} - ${e.time || ''}">📅 ${e.name}</div>`;
                 });
                 
                 dayCatering.forEach(c => {
-                    html += `<div draggable="true" ondragstart="dragStart(event, 'catering', ${c.id})" onclick="event.stopPropagation(); closeCalendar(); showPage('catering'); setTimeout(() => editCateringOrder(${c.id}), 300);" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client} - ${c.guests} guests">🍽️ ${c.client}</div>`;
+                    html += `<div draggable="true" ondragstart="dragStart(event, 'catering', ${c.id})" onclick="event.stopPropagation(); closeCalendar(); showPage('catering'); setTimeout(() => { const card = document.getElementById('catering-details-${c.id}'); if(card) { card.style.display = 'block'; document.getElementById('catering-icon-${c.id}').textContent = '▲'; card.scrollIntoView({behavior: 'smooth', block: 'center'}); } }, 300);" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client} - ${c.guests} guests">🍽️ ${c.client}</div>`;
                 });
                 
                 dayMaintenance.forEach(m => {
-                    html += `<div draggable="true" ondragstart="dragStart(event, 'maintenance', ${m.id})" onclick="event.stopPropagation(); closeCalendar(); showPage('tools'); setTimeout(() => editMaintenanceTask(${m.id}), 300);" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}">🔧 ${m.task}</div>`;
+                    html += `<div draggable="true" ondragstart="dragStart(event, 'maintenance', ${m.id})" onclick="event.stopPropagation(); closeCalendar(); showPage('tools');" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}">🔧 ${m.task}</div>`;
                 });
                 
                 html += `</div>`;
@@ -1717,7 +1717,6 @@
         }
         
         function dragStart(event, type, id) {
-            event.stopPropagation();
             draggedItem = { type, id };
             event.dataTransfer.effectAllowed = 'move';
         }
