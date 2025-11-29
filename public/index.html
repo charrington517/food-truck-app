@@ -984,10 +984,7 @@
                     <div id="employeeStatusList"></div>
                 </div>
                 <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 onclick="toggleTimePunches()" style="margin: 0; cursor: pointer; flex: 1; display: flex; justify-content: space-between; align-items: center;">Time Punch History <span id="punch-icon">▼</span></h4>
-                        <button class="btn" onclick="printSchedule()" style="padding: 6px 12px; font-size: 0.85em; background: #666; color: white; margin-left: 10px;">Print</button>
-                    </div>
+                    <h4 onclick="toggleTimePunches()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Time Punch History <span id="punch-icon">▼</span></h4>
                     <div id="timePunchHistoryContainer" style="display: none; margin-top: 15px;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
                             <select id="punchFilter" onchange="loadTimePunchHistory()" style="width: 100%; padding: 8px;">
@@ -995,25 +992,22 @@
                             </select>
                             <input type="date" id="punchDateFilter" onchange="loadTimePunchHistory()" style="width: 100%; padding: 8px;">
                         </div>
+                        <button class="btn" onclick="printSchedule()" style="width: 100%; margin-bottom: 10px; background: #666; color: white;">Print</button>
                         <div id="timePunchHistory"></div>
                     </div>
                 </div>
                 
                 <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <h4 onclick="toggleWeeklySchedule()" style="margin: 0; cursor: pointer; flex: 1; display: flex; justify-content: space-between; align-items: center;">Weekly Schedule <span id="schedule-icon">▼</span></h4>
-                        <button class="btn" onclick="printWeeklySchedule()" style="padding: 6px 12px; font-size: 0.85em; background: #666; color: white; margin-left: 10px;">Print</button>
-                    </div>
+                    <h4 onclick="toggleWeeklySchedule()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Weekly Schedule <span id="schedule-icon">▼</span></h4>
                     <div id="weeklyScheduleContainer" style="display: none; margin-top: 15px;">
-                        <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                            <button class="btn" onclick="previousWeek()" style="padding: 8px 12px;">◀ Prev</button>
-                            <input type="date" id="scheduleWeekStart" onchange="loadWeeklySchedule()" style="flex: 1; min-width: 150px; padding: 8px;">
-                            <button class="btn" onclick="nextWeek()" style="padding: 8px 12px;">Next ▶</button>
-                            <button class="btn" onclick="addShift()" style="padding: 8px 16px; background: var(--orange); color: white;">Add Shift</button>
+                        <div style="display: flex; gap: 8px; margin-bottom: 10px; align-items: center;">
+                            <button class="btn" onclick="previousWeek()" style="padding: 8px 12px; width: auto;">◀</button>
+                            <input type="date" id="scheduleWeekStart" onchange="loadWeeklySchedule()" style="flex: 1; padding: 8px;">
+                            <button class="btn" onclick="nextWeek()" style="padding: 8px 12px; width: auto;">▶</button>
                         </div>
-                        <div style="overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -15px; padding: 0 15px;">
-                            <div id="weeklySchedule"></div>
-                        </div>
+                        <button class="btn" onclick="addShift()" style="width: 100%; margin-bottom: 10px; background: var(--orange); color: white;">+ Add Shift</button>
+                        <button class="btn" onclick="printWeeklySchedule()" style="width: 100%; margin-bottom: 15px; background: #666; color: white;">Print</button>
+                        <div id="weeklySchedule"></div>
                         <div id="overtimeAlerts" style="margin-top: 15px;"></div>
                     </div>
                 </div>
@@ -7032,35 +7026,40 @@
             });
 
             const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-            let html = '<div style="display: flex; gap: 12px; min-width: max-content;">';
+            const today = new Date().toISOString().split('T')[0];
+            let html = '';
 
             for (let i = 0; i < 7; i++) {
                 const date = new Date(weekStart);
                 date.setDate(date.getDate() + i);
                 const dateStr = date.toISOString().split('T')[0];
                 const daySchedules = weekSchedules.filter(s => s.shift_date === dateStr);
+                const isToday = dateStr === today;
 
-                html += `<div style="background: var(--gray-light); padding: 12px; border-radius: 8px; min-width: 180px; width: 180px; flex-shrink: 0;">`;
-                html += `<div style="font-weight: bold; font-size: 0.95em; margin-bottom: 6px; color: var(--charcoal);">${days[i]}</div>`;
-                html += `<div style="font-size: 0.8em; color: var(--gray); margin-bottom: 12px;">${date.toLocaleDateString()}</div>`;
+                html += `<div style="background: var(--gray-light); border-left: 4px solid ${isToday ? 'var(--orange)' : 'transparent'}; padding: 12px; border-radius: 6px; margin-bottom: 10px;">`;
+                html += `<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">`;
+                html += `<div><span style="font-weight: 700; font-size: 1em; color: ${isToday ? 'var(--orange)' : 'var(--charcoal)'};">${days[i]}</span> <span style="font-size: 0.85em; color: var(--gray);">${date.getMonth() + 1}/${date.getDate()}</span></div>`;
+                html += `</div>`;
 
                 if (daySchedules.length === 0) {
-                    html += `<div style="color: var(--gray); font-size: 0.85em; font-style: italic; text-align: center; padding: 20px 0;">No shifts</div>`;
+                    html += `<div style="color: var(--gray); font-size: 0.85em; font-style: italic;">No shifts scheduled</div>`;
                 } else {
+                    html += `<div style="display: flex; flex-wrap: wrap; gap: 8px;">`;
                     daySchedules.forEach(shift => {
-                        html += `<div style="background: var(--orange); color: white; padding: 8px; border-radius: 6px; margin-bottom: 8px; font-size: 0.85em;">`;
-                        html += `<div style="font-weight: 600; margin-bottom: 4px;">${shift.employee_name}</div>`;
-                        html += `<div style="margin-bottom: 2px;">${shift.start_time} - ${shift.end_time}</div>`;
-                        html += `<div style="font-size: 0.75em; opacity: 0.9;">${shift.hours}hrs</div>`;
-                        if (shift.event_name) html += `<div style="font-size: 0.75em; margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.3);">${shift.event_name}</div>`;
-                        html += `<button onclick="deleteShift(${shift.id}); event.stopPropagation();" style="background: var(--danger); color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 0.75em; margin-top: 6px; cursor: pointer; width: 100%;">Delete</button>`;
-                        html += `</div>`;
+                        html += `<div style="background: var(--orange); color: white; padding: 8px 12px; border-radius: 6px; font-size: 0.85em; display: inline-block;">`;
+                        html += `<div style="font-weight: 600;">${shift.employee_name}</div>`;
+                        html += `<div style="opacity: 0.9;">${shift.start_time} - ${shift.end_time}</div>`;
+                        if (shift.event_name) html += `<div style="font-size: 0.9em; margin-top: 2px; opacity: 0.8;">${shift.event_name}</div>`;
+                        html += `<div style="display: flex; gap: 4px; margin-top: 4px;">`;
+                        html += `<button onclick="editShift(${shift.id}); event.stopPropagation();" style="background: rgba(0,0,0,0.2); color: white; border: none; padding: 3px 8px; border-radius: 3px; font-size: 0.8em; cursor: pointer; flex: 1;">Edit</button>`;
+                        html += `<button onclick="deleteShift(${shift.id}); event.stopPropagation();" style="background: rgba(0,0,0,0.2); color: white; border: none; padding: 3px 8px; border-radius: 3px; font-size: 0.8em; cursor: pointer; flex: 1;">Remove</button>`;
+                        html += `</div></div>`;
                     });
+                    html += `</div>`;
                 }
 
                 html += `</div>`;
             }
-            html += '</div>';
 
             document.getElementById('weeklySchedule').innerHTML = html;
             calculateOvertime(weekSchedules, employees);
@@ -7180,6 +7179,93 @@
             }
         }
 
+        async function editShift(id) {
+            const schedules = await fetch('/api/schedules').then(r => r.json());
+            const shift = schedules.find(s => s.id === id);
+            if (!shift) return;
+            
+            const employees = await fetch('/api/employees').then(r => r.json());
+            const events = await fetch('/api/events').then(r => r.json());
+            
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Edit Shift';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <label>Employee:</label>
+                        <select id="shiftEmployee" style="width: 100%; padding: 8px;">
+                            ${employees.map(e => `<option value="${e.id}" ${e.id == shift.employee_id ? 'selected' : ''}>${e.name}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Date:</label>
+                        <input type="date" id="shiftDate" value="${shift.shift_date}" style="width: 100%; padding: 8px;">
+                    </div>
+                    <div class="form-row">
+                        <div style="flex: 1;">
+                            <label>Start Time:</label>
+                            <input type="time" id="shiftStart" value="${shift.start_time}" style="width: 100%; padding: 8px;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>End Time:</label>
+                            <input type="time" id="shiftEnd" value="${shift.end_time}" style="width: 100%; padding: 8px;">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Event (optional):</label>
+                        <select id="shiftEvent" style="width: 100%; padding: 8px;">
+                            <option value="">No event</option>
+                            ${events.map(e => `<option value="${e.id}" ${e.id == shift.event_id ? 'selected' : ''}>${e.name} - ${e.date}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes:</label>
+                        <textarea id="shiftNotes" style="width: 100%; padding: 8px;" rows="2">${shift.notes || ''}</textarea>
+                    </div>
+                    <button class="btn" onclick="updateShift(${id})" style="background: var(--orange); color: white;">Update Shift</button>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+        
+        async function updateShift(id) {
+            const employeeId = document.getElementById('shiftEmployee').value;
+            const date = document.getElementById('shiftDate').value;
+            const startTime = document.getElementById('shiftStart').value;
+            const endTime = document.getElementById('shiftEnd').value;
+            const eventId = document.getElementById('shiftEvent').value || null;
+            const notes = document.getElementById('shiftNotes').value;
+            
+            if (!employeeId || !date || !startTime || !endTime) {
+                alert('Please fill in employee, date, start time, and end time');
+                return;
+            }
+            
+            const start = new Date(`2000-01-01T${startTime}`);
+            const end = new Date(`2000-01-01T${endTime}`);
+            const hours = (end - start) / (1000 * 60 * 60);
+            
+            await fetch(`/api/schedules/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    employee_id: employeeId,
+                    event_id: eventId,
+                    shift_date: date,
+                    start_time: startTime,
+                    end_time: endTime,
+                    hours: hours,
+                    notes: notes
+                })
+            });
+            
+            closeAddModal();
+            loadWeeklySchedule();
+        }
+        
         async function deleteShift(id) {
             if (!confirm('Delete this shift?')) return;
             await fetch(`/api/schedules/${id}`, { method: 'DELETE' });
@@ -7187,12 +7273,18 @@
         }
 
         function printWeeklySchedule() {
-            const printTitle = document.createElement('div');
-            printTitle.className = 'print-only';
-            printTitle.innerHTML = '<h1 style="text-align: center; margin-bottom: 20px;">Weekly Staff Schedule</h1><p style="text-align: center; margin-bottom: 30px;">Week of: ' + document.getElementById('scheduleWeekStart').value + '</p>';
-            document.body.insertBefore(printTitle, document.body.firstChild);
-            window.print();
-            setTimeout(() => printTitle.remove(), 100);
+            const printWindow = window.open('', '', 'width=800,height=600');
+            const content = document.getElementById('weeklySchedule').innerHTML;
+            const weekStart = document.getElementById('scheduleWeekStart').value;
+            printWindow.document.write('<html><head><title>Weekly Staff Schedule</title>');
+            printWindow.document.write('<style>body{font-family:Arial,sans-serif;padding:20px;}h1{text-align:center;}p{text-align:center;color:#666;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write('<h1>Weekly Staff Schedule</h1>');
+            printWindow.document.write('<p>Week of: ' + weekStart + '</p>');
+            printWindow.document.write(content);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
         }
 
         // Print Functions
@@ -7206,12 +7298,17 @@
         }
 
         function printSchedule() {
-            const printTitle = document.createElement('div');
-            printTitle.className = 'print-only';
-            printTitle.innerHTML = '<h1 style="text-align: center; margin-bottom: 20px;">Staff Schedule</h1><p style="text-align: center; margin-bottom: 30px;">Printed: ' + new Date().toLocaleDateString() + '</p>';
-            document.body.insertBefore(printTitle, document.body.firstChild);
-            window.print();
-            setTimeout(() => printTitle.remove(), 100);
+            const printWindow = window.open('', '', 'width=800,height=600');
+            const content = document.getElementById('timePunchHistory').innerHTML;
+            printWindow.document.write('<html><head><title>Time Punch History</title>');
+            printWindow.document.write('<style>body{font-family:Arial,sans-serif;padding:20px;}table{width:100%;border-collapse:collapse;}th,td{border:1px solid #ddd;padding:8px;text-align:left;}th{background:#ff6b35;color:white;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write('<h1>Time Punch History</h1>');
+            printWindow.document.write('<p>Printed: ' + new Date().toLocaleDateString() + '</p>');
+            printWindow.document.write(content);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.print();
         }
 
         async function printEventDetails(eventId) {
