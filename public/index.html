@@ -335,6 +335,7 @@
 
         .card-actions {
             display: flex;
+            flex-wrap: wrap;
             gap: 8px;
             margin-top: 12px;
         }
@@ -1416,6 +1417,23 @@
             </div>
         </div>
 
+        </div>
+    </div>
+
+    <!-- Notes Modal -->
+    <div class="modal" id="notesModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="notesModalTitle">Notes</h3>
+                <button class="close-btn" onclick="closeNotesModal()">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <div class="form-group">
+                    <textarea id="newNoteText" placeholder="Add a note..." rows="3" style="width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 4px;"></textarea>
+                </div>
+                <button class="btn" onclick="addNote()" style="background: var(--orange); color: white; margin-bottom: 20px;">Add Note</button>
+                <div id="notesList" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
         </div>
     </div>
 
@@ -3553,7 +3571,7 @@
                             <div class="card-meta">${order.date} • ${order.guests} guests${order.price > 0 ? ` • $${order.price.toFixed(2)}` : ''}</div>
                             ${order.location ? `<div class="card-meta">${order.location}</div>` : ''}
                         </div>
-                        <div class="card-details" id="catering-details-${order.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                        <div class="card-details" id="catering-details-${order.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); overflow-wrap: break-word; word-wrap: break-word;">
                             ${order.event_start_time || order.event_end_time ? `<div class="card-meta">Event: ${order.event_start_time || 'TBD'} - ${order.event_end_time || 'TBD'}${order.setup_time > 0 ? ` (${order.setup_time}hr setup)` : ''}</div>` : order.setup_time > 0 ? `<div class="card-meta">Setup: ${order.setup_time} hours</div>` : ''}
                             ${order.service_type || order.staff_count > 0 ? `<div class="card-meta">${order.service_type || ''}${order.service_type && order.staff_count > 0 ? ' • ' : ''}${order.staff_count > 0 ? `${order.staff_count} staff - $${order.staff_cost.toFixed(2)}` : ''}</div>` : ''}
                             ${order.equipment_provider ? `<div class="card-meta">Equipment: ${order.equipment_provider}${order.equipment_cost > 0 ? ` - $${order.equipment_cost.toFixed(2)}` : ''}${order.equipment_notes ? ` (${order.equipment_notes})` : ''}</div>` : ''}
@@ -3576,6 +3594,7 @@
                                 <button class="btn" onclick="editCateringOrder(${order.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn" onclick="exportCateringPDF(${order.id})" style="background: var(--warning); color: white;">PDF</button>
                                 <button class="btn" onclick="updateCateringStatus(${order.id})" style="background: var(--success); color: white;">Status</button>
+                                <button class="btn" onclick="openNotesModal('catering', ${order.id}, '${order.client.replace(/'/g, "\\'")}')" style="background: #666; color: white;">Notes</button>
                                 <button class="btn btn-danger" onclick="deleteCateringOrder(${order.id})">Delete</button>
                             </div>
                         </div>
@@ -4478,7 +4497,7 @@
                                 <span>${event.end_date ? `${event.date} - ${event.end_date}` : event.date}</span>
                             </div>
                         </div>
-                        <div class="card-details" id="event-details-${event.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                        <div class="card-details" id="event-details-${event.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border); overflow-wrap: break-word; word-wrap: break-word;">
                             ${event.time ? `<div class="card-meta">Time: ${event.time}</div>` : ''}
                             ${event.fee > 0 ? `<div class="card-meta">Fee: $${event.fee.toFixed(2)}</div>` : ''}
                             ${event.notes ? `<div class="card-meta" style="font-style: italic;">Notes: ${event.notes}</div>` : ''}
@@ -4486,6 +4505,7 @@
                                 <button class="btn" onclick="editEvent(${event.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn" onclick="updateEventStatus(${event.id})" style="background: var(--success); color: white;">Status</button>
                                 ${event.fee > 0 ? `<button class="btn" onclick="togglePayment(${event.id})" style="background: ${event.paid ? 'var(--danger)' : 'var(--success)'}; color: white;">${event.paid ? 'Mark Unpaid' : 'Mark Paid'}</button>` : ''}
+                                <button class="btn" onclick="openNotesModal('event', ${event.id}, '${event.name.replace(/'/g, "\\'")}')" style="background: #666; color: white;">Notes</button>
                                 <button class="btn btn-danger" onclick="deleteEvent(${event.id})">Delete</button>
                             </div>
                         </div>
@@ -6826,6 +6846,79 @@
                 loadEmployees();
             }
         }
+        // Notes Functions
+        let currentNotesItem = { type: '', id: 0, name: '' };
+
+        async function openNotesModal(itemType, itemId, itemName) {
+            currentNotesItem = { type: itemType, id: itemId, name: itemName };
+            document.getElementById('notesModalTitle').textContent = `Notes - ${itemName}`;
+            document.getElementById('newNoteText').value = '';
+            await loadNotes();
+            document.getElementById('notesModal').style.display = 'flex';
+        }
+
+        function closeNotesModal() {
+            document.getElementById('notesModal').style.display = 'none';
+        }
+
+        async function loadNotes() {
+            const response = await fetch(`/api/notes/${currentNotesItem.type}/${currentNotesItem.id}`);
+            const notes = await response.json();
+            
+            const notesList = document.getElementById('notesList');
+            if (notes.length === 0) {
+                notesList.innerHTML = '<p style="color: var(--text-secondary); text-align: center;">No notes yet</p>';
+                return;
+            }
+            
+            notesList.innerHTML = notes.map(note => {
+                const date = new Date(note.created_at);
+                const dateStr = date.toLocaleString();
+                return `
+                    <div style="background: var(--card-bg); padding: 12px; margin-bottom: 10px; border-radius: 8px; border-left: 3px solid var(--orange);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                            <div>
+                                <strong style="color: var(--orange);">${note.created_by || 'User'}</strong>
+                                <span style="color: var(--text-secondary); font-size: 0.85em; margin-left: 10px;">${dateStr}</span>
+                            </div>
+                            <button onclick="deleteNote(${note.id})" style="background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1.2em;">&times;</button>
+                        </div>
+                        <div style="white-space: pre-wrap;">${note.note_text}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function addNote() {
+            const noteText = document.getElementById('newNoteText').value.trim();
+            if (!noteText) return;
+            
+            const response = await fetch('/api/notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    item_type: currentNotesItem.type,
+                    item_id: currentNotesItem.id,
+                    note_text: noteText,
+                    created_by: currentUser?.name || currentUser?.username || 'User'
+                })
+            });
+            
+            if (response.ok) {
+                document.getElementById('newNoteText').value = '';
+                await loadNotes();
+            }
+        }
+
+        async function deleteNote(noteId) {
+            if (!confirm('Delete this note?')) return;
+            
+            const response = await fetch(`/api/notes/${noteId}`, { method: 'DELETE' });
+            if (response.ok) {
+                await loadNotes();
+            }
+        }
+
     </script>
 </body>
 </html>

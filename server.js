@@ -272,6 +272,17 @@ db.serialize(() => {
         tags TEXT
     )`);
     
+    // Notes/Comments table
+    db.run(`CREATE TABLE IF NOT EXISTS notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        item_type TEXT NOT NULL,
+        item_id INTEGER NOT NULL,
+        note_text TEXT NOT NULL,
+        created_by TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT
+    )`);
+    
     // Insert sample contacts
     db.get('SELECT COUNT(*) as count FROM contacts', (err, row) => {
         if (!err && row.count === 0) {
@@ -928,6 +939,34 @@ app.put('/api/files/:id', (req, res) => {
 
 app.delete('/api/files/:id', (req, res) => {
     db.run('DELETE FROM files WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Notes API endpoints
+app.get('/api/notes/:itemType/:itemId', (req, res) => {
+    db.all('SELECT * FROM notes WHERE item_type = ? AND item_id = ? ORDER BY created_at DESC',
+        [req.params.itemType, req.params.itemId],
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows);
+        });
+});
+
+app.post('/api/notes', (req, res) => {
+    const { item_type, item_id, note_text, created_by } = req.body;
+    const created_at = new Date().toISOString();
+    db.run('INSERT INTO notes (item_type, item_id, note_text, created_by, created_at) VALUES (?, ?, ?, ?, ?)',
+        [item_type, item_id, note_text, created_by, created_at],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID, created_at });
+        });
+});
+
+app.delete('/api/notes/:id', (req, res) => {
+    db.run('DELETE FROM notes WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });
