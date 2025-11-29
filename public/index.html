@@ -1515,18 +1515,18 @@
 
     <!-- Calendar Modal -->
     <div class="modal" id="calendarModal">
-        <div class="modal-content" style="max-width: 1000px; max-height: 90vh;">
+        <div class="modal-content" style="max-width: 95vw; max-height: 90vh; overflow-y: auto;">
             <div class="modal-header">
                 <h3 class="modal-title">Calendar</h3>
                 <button class="close-btn" onclick="closeCalendar()">&times;</button>
             </div>
-            <div style="padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <button class="btn" onclick="previousMonth()" style="width: auto; padding: 8px 16px;">◀ Prev</button>
-                    <h3 id="calendarMonthYear" style="margin: 0;"></h3>
-                    <button class="btn" onclick="nextMonth()" style="width: auto; padding: 8px 16px;">Next ▶</button>
+            <div style="padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <button class="btn" onclick="previousMonth()" style="width: auto; padding: 8px 12px; font-size: 14px;">◀</button>
+                    <h3 id="calendarMonthYear" style="margin: 0; font-size: 18px;"></h3>
+                    <button class="btn" onclick="nextMonth()" style="width: auto; padding: 8px 12px; font-size: 14px;">▶</button>
                 </div>
-                <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;"></div>
+                <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
             </div>
         </div>
     </div>
@@ -1690,11 +1690,11 @@
             let html = '';
             const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             dayNames.forEach(day => {
-                html += `<div style="font-weight: bold; text-align: center; padding: 8px; background: var(--orange); color: white; border-radius: 4px;">${day}</div>`;
+                html += `<div style="font-weight: bold; text-align: center; padding: 6px; background: var(--orange); color: white; border-radius: 4px; font-size: 12px;">${day}</div>`;
             });
             
             for (let i = 0; i < firstDay; i++) {
-                html += `<div style="background: var(--gray-light); border-radius: 4px; min-height: 100px;"></div>`;
+                html += `<div style="background: var(--gray-light); border-radius: 4px; min-height: 80px;"></div>`;
             }
             
             for (let day = 1; day <= daysInMonth; day++) {
@@ -1705,19 +1705,19 @@
                 const dayCatering = calendarData.catering.filter(c => c.date === dateStr);
                 const dayMaintenance = calendarData.maintenance.filter(m => m.date === dateStr);
                 
-                html += `<div style="background: var(--white); border: 2px solid ${isToday ? 'var(--orange)' : 'var(--border)'}; border-radius: 4px; padding: 8px; min-height: 100px; position: relative;" ondrop="dropItem(event, '${dateStr}')" ondragover="allowDrop(event)">`;
-                html += `<div style="font-weight: bold; margin-bottom: 8px; color: ${isToday ? 'var(--orange)' : 'var(--charcoal)'}; font-size: 16px;">${day}</div>`;
+                html += `<div style="background: var(--white); border: 1px solid ${isToday ? 'var(--orange)' : 'var(--border)'}; border-radius: 4px; padding: 4px; min-height: 80px; position: relative; overflow: hidden;" ondrop="dropItem(event, '${dateStr}')" ondragover="allowDrop(event)">`;
+                html += `<div style="font-weight: bold; margin-bottom: 4px; color: ${isToday ? 'var(--orange)' : 'var(--charcoal)'}; font-size: 14px;">${day}</div>`;
                 
                 dayEvents.forEach(e => {
-                    html += `<div draggable="true" ondragstart="dragStart(event, 'event', ${e.id})" onclick="showPage('events')" style="background: #007bff; color: white; padding: 4px 6px; margin-bottom: 4px; border-radius: 4px; font-size: 11px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name} - ${e.time || ''}">📅 ${e.name}</div>`;
+                    html += `<div draggable="true" ondragstart="dragStart(event, 'event', ${e.id})" onclick="closeCalendar(); showPage('events');" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name} - ${e.time || ''}">📅 ${e.name}</div>`;
                 });
                 
                 dayCatering.forEach(c => {
-                    html += `<div draggable="true" ondragstart="dragStart(event, 'catering', ${c.id})" onclick="showPage('catering')" style="background: #28a745; color: white; padding: 4px 6px; margin-bottom: 4px; border-radius: 4px; font-size: 11px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client} - ${c.guests} guests">🍽️ ${c.client}</div>`;
+                    html += `<div draggable="true" ondragstart="dragStart(event, 'catering', ${c.id})" onclick="closeCalendar(); showPage('catering');" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client} - ${c.guests} guests">🍽️ ${c.client}</div>`;
                 });
                 
                 dayMaintenance.forEach(m => {
-                    html += `<div draggable="true" ondragstart="dragStart(event, 'maintenance', ${m.id})" onclick="showPage('tools')" style="background: #ff6b35; color: white; padding: 4px 6px; margin-bottom: 4px; border-radius: 4px; font-size: 11px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}">🔧 ${m.task}</div>`;
+                    html += `<div draggable="true" ondragstart="dragStart(event, 'maintenance', ${m.id})" onclick="closeCalendar(); showPage('tools');" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: move; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}">🔧 ${m.task}</div>`;
                 });
                 
                 html += `</div>`;
