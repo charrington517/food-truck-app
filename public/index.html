@@ -1572,20 +1572,38 @@
         document.addEventListener('scroll', extendSession);
 
         // Authentication Functions
-        function checkAuth() {
+        async function checkAuth() {
             const user = localStorage.getItem('currentUser');
             if (user) {
                 currentUser = JSON.parse(user);
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('mainApp').style.display = 'block';
                 document.querySelector('.nav').style.display = 'block';
-                resetSessionTimeout(); // Start session management
+                resetSessionTimeout();
+                await migrateEmployeesToDatabase();
                 loadDashboard();
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
                 document.getElementById('mainApp').style.display = 'none';
                 document.querySelector('.nav').style.display = 'none';
-                initializeDefaultUsers(); // Initialize users if none exist
+                initializeDefaultUsers();
+            }
+        }
+        
+        async function migrateEmployeesToDatabase() {
+            const localEmployees = JSON.parse(localStorage.getItem('employees') || '[]');
+            if (localEmployees.length > 0) {
+                const dbEmployees = await fetch('/api/employees').then(r => r.json());
+                for (const emp of localEmployees) {
+                    const exists = dbEmployees.find(e => e.name === emp.name);
+                    if (!exists) {
+                        await fetch('/api/employees', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(emp)
+                        });
+                    }
+                }
             }
         }
 
@@ -7070,7 +7088,7 @@
         }
 
         async function addShift() {
-            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+            const employees = await fetch('/api/employees').then(r => r.json());
             const events = await fetch('/api/events').then(r => r.json());
 
             const modal = document.getElementById('addModal');
@@ -7126,11 +7144,16 @@
             const eventId = document.getElementById('shiftEvent').value || null;
             const notes = document.getElementById('shiftNotes').value;
 
+            if (!employeeId || !date || !startTime || !endTime) {
+                alert('Please fill in employee, date, start time, and end time');
+                return;
+            }
+
             const start = new Date(`2000-01-01T${startTime}`);
             const end = new Date(`2000-01-01T${endTime}`);
             const hours = (end - start) / (1000 * 60 * 60);
 
-            await fetch('/api/schedules', {
+            const response = await fetch('/api/schedules', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -7144,8 +7167,17 @@
                 })
             });
 
-            closeAddModal();
-            loadWeeklySchedule();
+            if (response.ok) {
+                closeAddModal();
+                const shiftDate = new Date(date);
+                const weekStart = new Date(shiftDate);
+                weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+                currentWeekStart = weekStart;
+                document.getElementById('scheduleWeekStart').valueAsDate = weekStart;
+                loadWeeklySchedule();
+            } else {
+                alert('Failed to save shift');
+            }
         }
 
         async function deleteShift(id) {
