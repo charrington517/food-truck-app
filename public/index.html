@@ -1161,7 +1161,10 @@
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Catering Orders</h2>
-                    <button class="btn" onclick="addCateringOrder()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Order</button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn" onclick="printCatering()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: #666; color: white;">Print</button>
+                        <button class="btn" onclick="addCateringOrder()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Order</button>
+                    </div>
                 </div>
                 <div class="stats" id="cateringStats"></div>
                 <div class="grid" id="cateringList"></div>
@@ -7757,6 +7760,40 @@
                         printWindow.document.write(`<div class="event-detail"><strong>Status:</strong> ${e.status || 'N/A'}</div>`);
                         printWindow.document.write(`<div class="event-detail"><strong>Paid:</strong> ${e.paid ? 'Yes' : 'No'}</div>`);
                         if (e.notes) printWindow.document.write(`<div class="event-detail"><strong>Notes:</strong> ${e.notes}</div>`);
+                        printWindow.document.write(`</div>`);
+                    });
+                    printWindow.document.write('</body></html>');
+                    printWindow.document.close();
+                    printWindow.print();
+                });
+        }
+        
+        function printCatering() {
+            fetch('/api/catering')
+                .then(r => r.json())
+                .then(orders => {
+                    const printWindow = window.open('', '', 'width=800,height=600');
+                    printWindow.document.write('<html><head><title>Catering Orders</title>');
+                    printWindow.document.write('<style>body{font-family:Arial,sans-serif;padding:20px;}.event{border:1px solid #ddd;padding:15px;margin-bottom:15px;page-break-inside:avoid;}.event-title{font-size:18px;font-weight:bold;color:#ff6b35;margin-bottom:10px;}.event-detail{margin:5px 0;}</style>');
+                    printWindow.document.write('</head><body>');
+                    printWindow.document.write('<h1>Catering Orders</h1>');
+                    printWindow.document.write('<p>Printed: ' + new Date().toLocaleDateString() + '</p>');
+                    orders.forEach(c => {
+                        printWindow.document.write(`<div class="event">`);
+                        printWindow.document.write(`<div class="event-title">${c.client}</div>`);
+                        printWindow.document.write(`<div class="event-detail"><strong>Date:</strong> ${c.date || 'N/A'}</div>`);
+                        printWindow.document.write(`<div class="event-detail"><strong>Location:</strong> ${c.location || 'N/A'}</div>`);
+                        printWindow.document.write(`<div class="event-detail"><strong>Guests:</strong> ${c.guests || 0}</div>`);
+                        printWindow.document.write(`<div class="event-detail"><strong>Price:</strong> $${c.price || 0}</div>`);
+                        printWindow.document.write(`<div class="event-detail"><strong>Status:</strong> ${c.status || 'N/A'}</div>`);
+                        printWindow.document.write(`<div class="event-detail"><strong>Deposit:</strong> $${c.deposit || 0}</div>`);
+                        printWindow.document.write(`<div class="event-detail"><strong>Payment Status:</strong> ${c.payment_status || 'N/A'}</div>`);
+                        if (c.setup_time) printWindow.document.write(`<div class="event-detail"><strong>Setup Time:</strong> ${c.setup_time} hours</div>`);
+                        if (c.event_start_time) printWindow.document.write(`<div class="event-detail"><strong>Event Time:</strong> ${c.event_start_time} - ${c.event_end_time || ''}</div>`);
+                        if (c.service_type) printWindow.document.write(`<div class="event-detail"><strong>Service:</strong> ${c.service_type}</div>`);
+                        if (c.staff_count) printWindow.document.write(`<div class="event-detail"><strong>Staff:</strong> ${c.staff_count} ($${c.staff_cost || 0})</div>`);
+                        if (c.equipment_provider) printWindow.document.write(`<div class="event-detail"><strong>Equipment:</strong> ${c.equipment_provider} ($${c.equipment_cost || 0})</div>`);
+                        if (c.notes) printWindow.document.write(`<div class="event-detail"><strong>Notes:</strong> ${c.notes}</div>`);
                         printWindow.document.write(`</div>`);
                     });
                     printWindow.document.write('</body></html>');
