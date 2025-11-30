@@ -1,21 +1,3 @@
-[dotenv@17.2.3] injecting env (4) from .env -- tip: 🛠️  run anywhere with `dotenvx run -- yourcommand`
-node:events:495
-      throw er; // Unhandled 'error' event
-      ^
-
-Error: listen EADDRINUSE: address already in use 0.0.0.0:3000
-    at Server.setupListenHandle [as _listen2] (node:net:1811:16)
-    at listenInCluster (node:net:1859:12)
-    at doListen (node:net:2008:7)
-    at process.processTicksAndRejections (node:internal/process/task_queues:83:21)
-Emitted 'error' event on Server instance at:
-    at emitErrorNT (node:net:1838:8)
-    at process.processTicksAndRejections (node:internal/process/task_queues:82:21) {
-  code: 'EADDRINUSE',
-  errno: -98,
-  syscall: 'listen',
-  address: '0.0.0.0',
-  port: 3000
-}
-
-Node.js v18.20.4
+[dotenv@17.2.3] injecting env (4) from .env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+✅ HTTP server running on http://0.0.0.0:3000
+✅ Access via IP address or Cloudflare Tunnel

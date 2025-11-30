@@ -1189,6 +1189,45 @@ app.delete('/api/notes/:id', (req, res) => {
     });
 });
 
+// Backup endpoints
+app.get('/api/backup/download', (req, res) => {
+    const dbPath = path.join(__dirname, 'foodtruck.db');
+    const filename = `backup-${new Date().toISOString().split('T')[0]}.db`;
+    res.download(dbPath, filename);
+});
+
+app.post('/api/backup/restore', upload.single('backup'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No backup file uploaded' });
+    }
+    
+    const backupPath = req.file.path;
+    const dbPath = path.join(__dirname, 'foodtruck.db');
+    
+    // Close database connection
+    db.close((err) => {
+        if (err) {
+            return res.status(500).json({ error: 'Failed to close database' });
+        }
+        
+        // Replace database file
+        fs.copyFile(backupPath, dbPath, (err) => {
+            if (err) {
+                return res.status(500).json({ error: 'Failed to restore backup' });
+            }
+            
+            // Clean up uploaded file
+            fs.unlink(backupPath, () => {});
+            
+            // Restart will reconnect to database
+            res.json({ success: true });
+            
+            // Exit process to force restart (if using process manager)
+            setTimeout(() => process.exit(0), 1000);
+        });
+    });
+});
+
 // Archive endpoints
 app.post('/api/events/:id/archive', (req, res) => {
     db.get('SELECT * FROM events WHERE id = ?', [req.params.id], (err, event) => {
