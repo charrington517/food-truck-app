@@ -2196,8 +2196,16 @@
                 setTimeout(() => {
                     if (calendarClickedItem.type === 'event') {
                         toggleEventDetails(calendarClickedItem.id);
+                        setTimeout(() => {
+                            const details = document.getElementById(`event-details-${calendarClickedItem.id}`);
+                            if (details) details.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        }, 100);
                     } else if (calendarClickedItem.type === 'catering') {
                         toggleCateringDetails(calendarClickedItem.id);
+                        setTimeout(() => {
+                            const details = document.getElementById(`catering-details-${calendarClickedItem.id}`);
+                            if (details) details.scrollIntoView({behavior: 'smooth', block: 'center'});
+                        }, 100);
                     }
                     calendarClickedItem = null;
                 }, 500);
