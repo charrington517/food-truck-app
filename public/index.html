@@ -1635,6 +1635,7 @@
         // Calendar Functions
         let currentCalendarDate = new Date();
         let calendarData = { events: [], catering: [], maintenance: [] };
+        let calendarClickedItem = null;
         
         window.openCalendar = function() {
             document.getElementById('calendarModal').classList.add('show');
@@ -1698,15 +1699,15 @@
                 html += `<div style="font-weight: bold; margin-bottom: 4px; color: ${isToday ? 'var(--orange)' : 'var(--charcoal)'}; font-size: 14px;">${day}</div>`;
                 
                 dayEvents.forEach(e => {
-                    html += `<div onclick="window.closeCalendar(); window.showPage('events');" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name}\n${e.location || ''}\n${e.date} ${e.time || ''}">📅 ${e.name}</div>`;
+                    html += `<div onclick="calendarClickedItem={type:'event',id:${e.id}}; window.closeCalendar(); window.showPage('events');" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name}\n${e.location || ''}\n${e.date} ${e.time || ''}">📅 ${e.name}</div>`;
                 });
                 
                 dayCatering.forEach(c => {
-                    html += `<div onclick="window.closeCalendar(); window.showPage('catering');" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client}\n${c.guests} guests\n${c.date}\n$${c.price || 0}">🍽️ ${c.client}</div>`;
+                    html += `<div onclick="calendarClickedItem={type:'catering',id:${c.id}}; window.closeCalendar(); window.showPage('catering');" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client}\n${c.guests} guests\n${c.date}\n$${c.price || 0}">🍽️ ${c.client}</div>`;
                 });
                 
                 dayMaintenance.forEach(m => {
-                    html += `<div onclick="window.closeCalendar(); window.showPage('tools');" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}\n${m.date}">🔧 ${m.task}</div>`;
+                    html += `<div onclick="calendarClickedItem={type:'maintenance',id:${m.id}}; window.closeCalendar(); window.showPage('tools');" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}\n${m.date}">🔧 ${m.task}</div>`;
                 });
                 
                 html += `</div>`;
@@ -2189,6 +2190,20 @@
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
             if (pageId === 'contacts') loadContacts();
             if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
+            
+            // Expand calendar clicked item
+            if (calendarClickedItem) {
+                setTimeout(() => {
+                    const details = document.getElementById(`${calendarClickedItem.type}-details-${calendarClickedItem.id}`);
+                    const icon = document.getElementById(`${calendarClickedItem.type}-icon-${calendarClickedItem.id}`);
+                    if (details && icon) {
+                        details.style.display = 'block';
+                        icon.textContent = '▲';
+                        details.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    }
+                    calendarClickedItem = null;
+                }, 500);
+            }
             
             // Hide add buttons for read-only access
             if (isReadOnly(pageId)) {
