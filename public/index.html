@@ -1636,12 +1636,12 @@
         let currentCalendarDate = new Date();
         let calendarData = { events: [], catering: [], maintenance: [] };
         
-        function openCalendar() {
+        window.openCalendar = function() {
             document.getElementById('calendarModal').classList.add('show');
             loadCalendarData();
         }
         
-        function closeCalendar() {
+        window.closeCalendar = function() {
             document.getElementById('calendarModal').classList.remove('show');
         }
         
@@ -1698,15 +1698,15 @@
                 html += `<div style="font-weight: bold; margin-bottom: 4px; color: ${isToday ? 'var(--orange)' : 'var(--charcoal)'}; font-size: 14px;">${day}</div>`;
                 
                 dayEvents.forEach(e => {
-                    html += `<div onclick="closeCalendar(); showPage('events');" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name}\n${e.location || ''}\n${e.date} ${e.time || ''}">📅 ${e.name}</div>`;
+                    html += `<div onclick="window.closeCalendar(); window.showPage('events');" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name}\n${e.location || ''}\n${e.date} ${e.time || ''}">📅 ${e.name}</div>`;
                 });
                 
                 dayCatering.forEach(c => {
-                    html += `<div onclick="closeCalendar(); showPage('catering');" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client}\n${c.guests} guests\n${c.date}\n$${c.price || 0}">🍽️ ${c.client}</div>`;
+                    html += `<div onclick="window.closeCalendar(); window.showPage('catering');" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client}\n${c.guests} guests\n${c.date}\n$${c.price || 0}">🍽️ ${c.client}</div>`;
                 });
                 
                 dayMaintenance.forEach(m => {
-                    html += `<div onclick="closeCalendar(); showPage('tools');" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}\n${m.date}">🔧 ${m.task}</div>`;
+                    html += `<div onclick="window.closeCalendar(); window.showPage('tools');" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}\n${m.date}">🔧 ${m.task}</div>`;
                 });
                 
                 html += `</div>`;
