@@ -1224,6 +1224,18 @@
             </div>
         </div>
 
+        <!-- Archives Page -->
+        <div id="archives" class="page">
+            <div class="section">
+                <h2 class="section-title">Archived Events</h2>
+                <div class="grid" id="archivedEventsList"></div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">Archived Catering Orders</h2>
+                <div class="grid" id="archivedCateringList"></div>
+            </div>
+        </div>
+
         <!-- Contacts Page -->
         <div id="contacts" class="page">
             <div class="section">
@@ -1606,6 +1618,7 @@
             <button onclick="showPage('employee')">Employee</button>
             <button onclick="showPage('catering')">Catering</button>
             <button onclick="showPage('events')">Events</button>
+            <button onclick="showPage('archives')">Archives</button>
         </div>
     </nav>
 
@@ -1720,6 +1733,52 @@
         }
         
 
+
+        function loadArchives() {
+            fetch('/api/archived-events')
+                .then(r => r.json())
+                .then(events => {
+                    document.getElementById('archivedEventsList').innerHTML = events.map(e => `
+                        <div class="card">
+                            <div class="card-title">${e.name}</div>
+                            <div class="card-meta">${e.location || 'N/A'} • ${e.date}</div>
+                            <div class="card-meta">Archived: ${new Date(e.archived_date).toLocaleDateString()}</div>
+                            <div class="card-actions">
+                                <button class="btn" onclick="restoreEvent(${e.id})" style="background: var(--success); color: white;">Restore</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+            
+            fetch('/api/archived-catering')
+                .then(r => r.json())
+                .then(orders => {
+                    document.getElementById('archivedCateringList').innerHTML = orders.map(c => `
+                        <div class="card">
+                            <div class="card-title">${c.client}</div>
+                            <div class="card-meta">${c.guests} guests • ${c.date}</div>
+                            <div class="card-meta">Archived: ${new Date(c.archived_date).toLocaleDateString()}</div>
+                            <div class="card-actions">
+                                <button class="btn" onclick="restoreCateringOrder(${c.id})" style="background: var(--success); color: white;">Restore</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+        
+        function restoreEvent(id) {
+            if (confirm('Restore this event to active events?')) {
+                fetch(`/api/archived-events/${id}/restore`, { method: 'POST' })
+                    .then(() => loadArchives());
+            }
+        }
+        
+        function restoreCateringOrder(id) {
+            if (confirm('Restore this order to active catering?')) {
+                fetch(`/api/archived-catering/${id}/restore`, { method: 'POST' })
+                    .then(() => loadArchives());
+            }
+        }
 
         // Global Search Functions
         let searchData = { all: [] };
@@ -2192,6 +2251,7 @@
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
             if (pageId === 'contacts') loadContacts();
+            if (pageId === 'archives') loadArchives();
             if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
             
             // Expand calendar clicked item
@@ -3989,6 +4049,7 @@
                                 <button class="btn" onclick="exportCateringPDF(${order.id})" style="background: var(--warning); color: white;">PDF</button>
                                 <button class="btn" onclick="updateCateringStatus(${order.id})" style="background: var(--success); color: white;">Status</button>
                                 <button class="btn" onclick="openNotesModal('catering', ${order.id}, '${order.client.replace(/'/g, "\\'")}')" style="background: #666; color: white;">Notes</button>
+                                <button class="btn" onclick="archiveCateringOrder(${order.id})" style="background: #6c757d; color: white;">Archive</button>
                                 <button class="btn btn-danger" onclick="deleteCateringOrder(${order.id})">Delete</button>
                             </div>
                         </div>
@@ -4744,6 +4805,13 @@
             };
         }
 
+        function archiveCateringOrder(id) {
+            if (confirm('Archive this order? You can restore it later from Archives.')) {
+                fetch(`/api/catering/${id}/archive`, { method: 'POST' })
+                    .then(() => loadCatering());
+            }
+        }
+        
         function deleteCateringOrder(id) {
             if (confirm('Delete this catering order?')) {
                 const orders = JSON.parse(localStorage.getItem('catering') || '[]');
@@ -4908,6 +4976,7 @@
                                 <button class="btn" onclick="updateEventStatus(${event.id})" style="background: var(--success); color: white;">Status</button>
                                 ${event.fee > 0 ? `<button class="btn" onclick="togglePayment(${event.id})" style="background: ${event.paid ? 'var(--danger)' : 'var(--success)'}; color: white;">${event.paid ? 'Mark Unpaid' : 'Mark Paid'}</button>` : ''}
                                 <button class="btn" onclick="openNotesModal('event', ${event.id}, '${event.name.replace(/'/g, "\\'")}')" style="background: #666; color: white;">Notes</button>
+                                <button class="btn" onclick="archiveEvent(${event.id})" style="background: #6c757d; color: white;">Archive</button>
                                 <button class="btn btn-danger" onclick="deleteEvent(${event.id})">Delete</button>
                             </div>
                         </div>
@@ -5020,6 +5089,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name, type, location, date, end_date: endDate, time, fee, status, notes, paid: 0 })
             }).then(() => loadEvents());
+        }
+        
+        function archiveEvent(id) {
+            if (confirm('Archive this event? You can restore it later from Archives.')) {
+                fetch(`/api/events/${id}/archive`, { method: 'POST' })
+                    .then(() => loadEvents());
+            }
         }
         
         function deleteEvent(id) {

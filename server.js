@@ -280,6 +280,52 @@ db.serialize(() => {
         tags TEXT
     )`);
     
+    // Archived tables
+    db.run(`CREATE TABLE IF NOT EXISTS archived_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        original_id INTEGER,
+        name TEXT NOT NULL,
+        type TEXT,
+        location TEXT,
+        date TEXT,
+        end_date TEXT,
+        time TEXT,
+        fee REAL DEFAULT 0,
+        status TEXT DEFAULT 'Interested',
+        notes TEXT,
+        paid INTEGER DEFAULT 0,
+        contact_id INTEGER,
+        archived_date TEXT
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS archived_catering (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        original_id INTEGER,
+        contact_id INTEGER,
+        client TEXT NOT NULL,
+        date TEXT NOT NULL,
+        guests INTEGER,
+        price REAL,
+        status TEXT DEFAULT 'Inquiry',
+        deposit REAL DEFAULT 0,
+        setup_time TEXT,
+        selected_menu TEXT,
+        staff_assigned TEXT,
+        service_type TEXT DEFAULT 'Delivery',
+        staff_count INTEGER DEFAULT 0,
+        staff_cost REAL DEFAULT 0,
+        location TEXT,
+        event_start_time TEXT,
+        event_end_time TEXT,
+        equipment_provider TEXT DEFAULT 'Birria Fusion',
+        equipment_cost REAL DEFAULT 0,
+        equipment_notes TEXT,
+        payment_status TEXT DEFAULT 'Deposit Needed',
+        personal_notes TEXT,
+        notes TEXT,
+        archived_date TEXT
+    )`);
+    
     // Notes/Comments table
     db.run(`CREATE TABLE IF NOT EXISTS notes (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1140,6 +1186,89 @@ app.delete('/api/notes/:id', (req, res) => {
     db.run('DELETE FROM notes WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
+    });
+});
+
+// Archive endpoints
+app.post('/api/events/:id/archive', (req, res) => {
+    db.get('SELECT * FROM events WHERE id = ?', [req.params.id], (err, event) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!event) return res.status(404).json({ error: 'Event not found' });
+        
+        db.run('INSERT INTO archived_events (original_id, name, type, location, date, end_date, time, fee, status, notes, paid, contact_id, archived_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [event.id, event.name, event.type, event.location, event.date, event.end_date, event.time, event.fee, event.status, event.notes, event.paid, event.contact_id, new Date().toISOString()],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                db.run('DELETE FROM events WHERE id = ?', [req.params.id], (err) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true });
+                });
+            });
+    });
+});
+
+app.post('/api/catering/:id/archive', (req, res) => {
+    db.get('SELECT * FROM catering WHERE id = ?', [req.params.id], (err, order) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        
+        db.run('INSERT INTO archived_catering (original_id, contact_id, client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes, notes, archived_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [order.id, order.contact_id, order.client, order.date, order.guests, order.price, order.status, order.deposit, order.setup_time, order.selected_menu, order.staff_assigned, order.service_type, order.staff_count, order.staff_cost, order.location, order.event_start_time, order.event_end_time, order.equipment_provider, order.equipment_cost, order.equipment_notes, order.payment_status, order.personal_notes, order.notes, new Date().toISOString()],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                db.run('DELETE FROM catering WHERE id = ?', [req.params.id], (err) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true });
+                });
+            });
+    });
+});
+
+app.get('/api/archived-events', (req, res) => {
+    db.all('SELECT * FROM archived_events ORDER BY date DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/archived-catering', (req, res) => {
+    db.all('SELECT * FROM archived_catering ORDER BY date DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/archived-events/:id/restore', (req, res) => {
+    db.get('SELECT * FROM archived_events WHERE id = ?', [req.params.id], (err, event) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!event) return res.status(404).json({ error: 'Archived event not found' });
+        
+        db.run('INSERT INTO events (name, type, location, date, end_date, time, fee, status, notes, paid, contact_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [event.name, event.type, event.location, event.date, event.end_date, event.time, event.fee, event.status, event.notes, event.paid, event.contact_id],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                db.run('DELETE FROM archived_events WHERE id = ?', [req.params.id], (err) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true });
+                });
+            });
+    });
+});
+
+app.post('/api/archived-catering/:id/restore', (req, res) => {
+    db.get('SELECT * FROM archived_catering WHERE id = ?', [req.params.id], (err, order) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!order) return res.status(404).json({ error: 'Archived order not found' });
+        
+        db.run('INSERT INTO catering (contact_id, client, date, guests, price, status, deposit, setup_time, selected_menu, staff_assigned, service_type, staff_count, staff_cost, location, event_start_time, event_end_time, equipment_provider, equipment_cost, equipment_notes, payment_status, personal_notes, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [order.contact_id, order.client, order.date, order.guests, order.price, order.status, order.deposit, order.setup_time, order.selected_menu, order.staff_assigned, order.service_type, order.staff_count, order.staff_cost, order.location, order.event_start_time, order.event_end_time, order.equipment_provider, order.equipment_cost, order.equipment_notes, order.payment_status, order.personal_notes, order.notes],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                db.run('DELETE FROM archived_catering WHERE id = ?', [req.params.id], (err) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true });
+                });
+            });
     });
 });
 
