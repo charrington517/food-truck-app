@@ -7793,7 +7793,9 @@
                         if (c.service_type) printWindow.document.write(`<div class="event-detail"><strong>Service:</strong> ${c.service_type}</div>`);
                         if (c.staff_count) printWindow.document.write(`<div class="event-detail"><strong>Staff:</strong> ${c.staff_count} ($${c.staff_cost || 0})</div>`);
                         if (c.equipment_provider) printWindow.document.write(`<div class="event-detail"><strong>Equipment:</strong> ${c.equipment_provider} ($${c.equipment_cost || 0})</div>`);
+                        if (c.equipment_notes) printWindow.document.write(`<div class="event-detail"><strong>Equipment Details:</strong> ${c.equipment_notes}</div>`);
                         if (c.notes) printWindow.document.write(`<div class="event-detail"><strong>Notes:</strong> ${c.notes}</div>`);
+                        if (c.personal_notes) printWindow.document.write(`<div class="event-detail"><strong>Internal Notes:</strong> ${c.personal_notes}</div>`);
                         printWindow.document.write(`</div>`);
                     });
                     printWindow.document.write('</body></html>');
