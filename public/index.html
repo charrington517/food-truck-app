@@ -4866,11 +4866,17 @@
         
         function deleteCateringOrder(id) {
             if (confirm('Delete this catering order?')) {
-                const orders = JSON.parse(localStorage.getItem('catering') || '[]');
-                const filtered = orders.filter(o => o.id !== id);
-                localStorage.setItem('catering', JSON.stringify(filtered));
-                loadCatering();
+                fetch(`/api/catering/${id}`, { method: 'DELETE' })
+                    .then(() => loadCatering());
             }
+        }
+
+
+
+
+
+
+
         }
         
         // Event Functions
@@ -5152,11 +5158,17 @@
         
         function deleteEvent(id) {
             if (confirm('Delete this event?')) {
-                const events = JSON.parse(localStorage.getItem('events') || '[]');
-                const filtered = events.filter(e => e.id !== id);
-                localStorage.setItem('events', JSON.stringify(filtered));
-                loadEvents();
+                fetch(`/api/events/${id}`, { method: 'DELETE' })
+                    .then(() => loadEvents());
             }
+        }
+
+
+
+
+
+
+
         }
         
         function toggleEventDetails(id) {
@@ -6860,12 +6872,18 @@
         
         function deleteEmployee(id) {
             if (confirm('Delete this employee?')) {
-                const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-                const filtered = employees.filter(emp => emp.id !== id);
-                localStorage.setItem('employees', JSON.stringify(filtered));
-                loadEmployees();
+                fetch(`/api/employees/${id}`, { method: 'DELETE' })
+                    .then(() => loadEmployees());
             }
         }
+
+
+
+
+
+
+
+
         
         function toggleEmployeeStatus() {
             const selectedId = document.getElementById('employeeSelect').value;
@@ -7019,96 +7037,6 @@
         }
 
         // Employee Management Functions
-        function addEmployee() {
-            const name = document.getElementById('newEmployeeName').value.trim();
-            const role = document.getElementById('newEmployeeRole').value.trim();
-            const username = document.getElementById('newEmployeeUsername').value.trim();
-            const password = document.getElementById('newEmployeePassword').value.trim();
-            
-            if (!name || !role || !username || !password) {
-                alert('Please enter employee name, role, username, and password');
-                return;
-            }
-            
-            // Check if username already exists
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            if (users.find(u => u.username === username)) {
-                alert('Username already exists. Please choose a different username.');
-                return;
-            }
-            
-            const email = document.getElementById('newEmployeeEmail').value.trim();
-            const phone = document.getElementById('newEmployeePhone').value.trim();
-            const address = document.getElementById('newEmployeeAddress').value.trim();
-            const notes = document.getElementById('newEmployeeNotes').value.trim();
-            
-            // Collect permissions
-            const permissions = {
-                dashboard: { read: true, write: true },
-                menu: { read: document.getElementById('perm-menu-read').checked, write: document.getElementById('perm-menu-write').checked },
-                ingredients: { read: document.getElementById('perm-ingredients-read').checked, write: document.getElementById('perm-ingredients-write').checked },
-                inventory: { read: document.getElementById('perm-inventory-read').checked, write: document.getElementById('perm-inventory-write').checked },
-                suppliers: { read: document.getElementById('perm-suppliers-read').checked, write: document.getElementById('perm-suppliers-write').checked },
-                employee: { read: true, write: false },
-                tools: { read: document.getElementById('perm-tools-read').checked, write: document.getElementById('perm-tools-write').checked },
-                catering: { read: document.getElementById('perm-catering-read').checked, write: document.getElementById('perm-catering-write').checked },
-                events: { read: document.getElementById('perm-events-read').checked, write: document.getElementById('perm-events-write').checked },
-                marketing: { read: document.getElementById('perm-marketing-read').checked, write: document.getElementById('perm-marketing-write').checked },
-                analytics: { read: document.getElementById('perm-analytics-read').checked, write: document.getElementById('perm-analytics-write').checked },
-                settings: { read: document.getElementById('perm-settings-read').checked, write: document.getElementById('perm-settings-write').checked },
-                settingsSections: {
-                    theme: { read: document.getElementById('perm-theme-read').checked, write: document.getElementById('perm-theme-write').checked },
-                    business: { read: document.getElementById('perm-business-read').checked, write: document.getElementById('perm-business-write').checked },
-                    categories: { read: document.getElementById('perm-categories-read').checked, write: document.getElementById('perm-categories-write').checked },
-                    roles: { read: document.getElementById('perm-roles-read').checked, write: document.getElementById('perm-roles-write').checked },
-                    permissions: { read: document.getElementById('perm-permissions-read').checked, write: document.getElementById('perm-permissions-write').checked },
-                    data: { read: document.getElementById('perm-data-read').checked, write: document.getElementById('perm-data-write').checked }
-                }
-            };
-            
-            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-            const newEmployee = {
-                id: Date.now(),
-                name,
-                role,
-                username,
-                email,
-                phone,
-                address,
-                notes,
-                permissions,
-                status: 'signed-out',
-                signInTime: null,
-                totalHours: 0
-            };
-            
-            employees.push(newEmployee);
-            localStorage.setItem('employees', JSON.stringify(employees));
-            
-            // Add to users list for login
-            users.push({
-                id: newEmployee.id,
-                username,
-                password,
-                role: 'Employee',
-                name,
-                employeeId: newEmployee.id,
-                permissions
-            });
-            localStorage.setItem('users', JSON.stringify(users));
-            
-            // Clear form
-            document.getElementById('newEmployeeName').value = '';
-            document.getElementById('newEmployeeRole').value = '';
-            document.getElementById('newEmployeeUsername').value = '';
-            document.getElementById('newEmployeePassword').value = '';
-            document.querySelectorAll('[id^="perm-"]').forEach(cb => { if (!cb.disabled) cb.checked = false; });
-            document.getElementById('newEmployeeEmail').value = '';
-            document.getElementById('newEmployeePhone').value = '';
-            document.getElementById('newEmployeeAddress').value = '';
-            document.getElementById('newEmployeeNotes').value = '';
-            loadEmployees();
-        }
         
 
         
@@ -7486,13 +7414,6 @@
             }
         }
         
-        function deleteEmployee(id) {
-            if (confirm('Delete this employee? This will remove all their time records.')) {
-                const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-                const filtered = employees.filter(emp => emp.id !== id);
-                localStorage.setItem('employees', JSON.stringify(filtered));
-                loadEmployees();
-            }
         }
         // Weekly Schedule Functions
         let currentWeekStart = new Date();
