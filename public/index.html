@@ -2193,21 +2193,23 @@
             
             // Expand calendar clicked item
             if (calendarClickedItem) {
+                const itemType = calendarClickedItem.type;
+                const itemId = calendarClickedItem.id;
+                calendarClickedItem = null;
                 setTimeout(() => {
-                    if (calendarClickedItem.type === 'event') {
-                        toggleEventDetails(calendarClickedItem.id);
+                    if (itemType === 'event') {
+                        toggleEventDetails(itemId);
                         setTimeout(() => {
-                            const details = document.getElementById(`event-details-${calendarClickedItem.id}`);
+                            const details = document.getElementById(`event-details-${itemId}`);
                             if (details) details.scrollIntoView({behavior: 'smooth', block: 'center'});
                         }, 100);
-                    } else if (calendarClickedItem.type === 'catering') {
-                        toggleCateringDetails(calendarClickedItem.id);
+                    } else if (itemType === 'catering') {
+                        toggleCateringDetails(itemId);
                         setTimeout(() => {
-                            const details = document.getElementById(`catering-details-${calendarClickedItem.id}`);
+                            const details = document.getElementById(`catering-details-${itemId}`);
                             if (details) details.scrollIntoView({behavior: 'smooth', block: 'center'});
                         }, 100);
                     }
-                    calendarClickedItem = null;
                 }, 500);
             }
             
