@@ -475,12 +475,9 @@ app.put('/api/ingredients/:id', (req, res) => {
 });
 
 app.delete('/api/ingredients/:id', (req, res) => {
-    db.run('DELETE FROM inventory WHERE ingredient_id = ?', [req.params.id], (err) => {
+    db.run('DELETE FROM ingredients WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        db.run('DELETE FROM ingredients WHERE id = ?', [req.params.id], (err) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true });
-        });
+        res.json({ success: true });
     });
 });
 
@@ -497,24 +494,51 @@ app.get('/api/inventory', (req, res) => {
 });
 
 app.post('/api/inventory', (req, res) => {
-    const { current_stock, min_stock, max_stock, name, unit, barcode, category } = req.body;
+    const { ingredient_id, current_stock, min_stock, max_stock, name, unit, barcode, category } = req.body;
     
-    db.run('INSERT INTO inventory (name, unit, category, current_stock, min_stock, max_stock, barcode) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [name, unit, category || 'Other', current_stock, min_stock, max_stock, barcode],
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true, id: this.lastID });
-        });
+    if (ingredient_id) {
+        db.run('INSERT INTO inventory (ingredient_id, category, current_stock, min_stock, max_stock, barcode) VALUES (?, ?, ?, ?, ?, ?)',
+            [ingredient_id, category || 'Food', current_stock, min_stock, max_stock, barcode],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ success: true, id: this.lastID });
+            });
+    } else {
+        db.run('INSERT INTO inventory (name, unit, category, current_stock, min_stock, max_stock, barcode) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [name, unit, category || 'Other', current_stock, min_stock, max_stock, barcode],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ success: true, id: this.lastID });
+            });
+    }
 });
 
 app.put('/api/inventory/:id', (req, res) => {
-    const { current_stock, min_stock, max_stock, barcode, category } = req.body;
-    db.run('UPDATE inventory SET current_stock = ?, min_stock = ?, max_stock = ?, barcode = ?, category = ? WHERE id = ?',
-        [current_stock, min_stock, max_stock, barcode, category, req.params.id],
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true });
-        });
+    const { ingredient_id, name, unit, current_stock, min_stock, max_stock, barcode, category } = req.body;
+    
+    let sql = 'UPDATE inventory SET current_stock = ?, min_stock = ?, max_stock = ?, barcode = ?, category = ?';
+    let params = [current_stock, min_stock, max_stock, barcode, category];
+    
+    if (ingredient_id !== undefined) {
+        sql += ', ingredient_id = ?';
+        params.push(ingredient_id);
+    }
+    if (name !== undefined) {
+        sql += ', name = ?';
+        params.push(name);
+    }
+    if (unit !== undefined) {
+        sql += ', unit = ?';
+        params.push(unit);
+    }
+    
+    sql += ' WHERE id = ?';
+    params.push(req.params.id);
+    
+    db.run(sql, params, function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
 });
 
 app.delete('/api/inventory/:id', (req, res) => {

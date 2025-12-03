@@ -1370,12 +1370,28 @@
                             <span>Menu Categories</span>
                             <span id="menuCategories-arrow">▶</span>
                         </div>
-                        <div id="menuCategories-section" style="display: none; margin-top: 15px;">
+                        <div id="menuCategories-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
                             <div class="form-row">
-                                <input type="text" id="newCategory" placeholder="Add new category (e.g., Appetizers, Mains)">
+                                <input type="text" id="newCategory" placeholder="Add new category (e.g., Appetizers, Mains)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addMenuCategory()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('menuCategories', JSON.stringify(['Entree','Appetizer','Dessert','Sauce','Side','Beverage'])); loadMenuCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="categoriesList" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: var(--card-bg); border-radius: 8px; cursor: pointer;" onclick="toggleCategorySection('inventoryCategories')">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500;">
+                            <span>Inventory Categories</span>
+                            <span id="inventoryCategories-arrow">▶</span>
+                        </div>
+                        <div id="inventoryCategories-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
+                            <div class="form-row">
+                                <input type="text" id="newInventoryCategory" placeholder="Add new inventory category" onclick="event.stopPropagation()">
+                                <button class="btn" onclick="event.stopPropagation(); addInventoryCategory()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('inventoryCategories', JSON.stringify(['Food','Cleaning Supplies','To Go Supplies','Equipment','Other'])); loadInventoryCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                            </div>
+                            <div id="inventoryCategoriesList" style="margin-top: 15px;"></div>
                         </div>
                     </div>
                     
@@ -1384,10 +1400,11 @@
                             <span>Supplier Categories</span>
                             <span id="supplierCategories-arrow">▶</span>
                         </div>
-                        <div id="supplierCategories-section" style="display: none; margin-top: 15px;">
+                        <div id="supplierCategories-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
                             <div class="form-row">
-                                <input type="text" id="newSupplierCategory" placeholder="Add new supplier category (e.g., Produce, Equipment)">
+                                <input type="text" id="newSupplierCategory" placeholder="Add new supplier category (e.g., Produce, Equipment)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addSupplierCategory()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('supplierCategories', JSON.stringify(['Food','Equipment','Supplies','Other'])); loadSupplierCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="supplierCategoriesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1398,10 +1415,11 @@
                             <span>Event Status Categories</span>
                             <span id="eventStatuses-arrow">▶</span>
                         </div>
-                        <div id="eventStatuses-section" style="display: none; margin-top: 15px;">
+                        <div id="eventStatuses-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
                             <div class="form-row">
-                                <input type="text" id="newEventStatus" placeholder="Add new status (e.g., Waitlisted, Confirmed)">
+                                <input type="text" id="newEventStatus" placeholder="Add new status (e.g., Waitlisted, Confirmed)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addEventStatus()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('eventStatuses', JSON.stringify(['Interested','Applied','Accepted','Accepted & Paid','Rejected','Completed'])); loadEventStatuses(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="eventStatusesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1412,10 +1430,11 @@
                             <span>File Categories</span>
                             <span id="fileCategories-arrow">▶</span>
                         </div>
-                        <div id="fileCategories-section" style="display: none; margin-top: 15px;">
+                        <div id="fileCategories-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
                             <div class="form-row">
-                                <input type="text" id="newFileCategory" placeholder="Add new category (e.g., Invoices, Photos)">
+                                <input type="text" id="newFileCategory" placeholder="Add new category (e.g., Invoices, Photos)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addFileCategory()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('fileCategories', JSON.stringify(['General','Event Contracts','Catering Contracts','Permits','Insurance','Marketing','Images','Receipts','Other'])); loadFileCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="fileCategoriesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1426,10 +1445,11 @@
                             <span>Employee Roles</span>
                             <span id="employeeRoles-arrow">▶</span>
                         </div>
-                        <div id="employeeRoles-section" style="display: none; margin-top: 15px;">
+                        <div id="employeeRoles-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
                             <div class="form-row">
-                                <input type="text" id="newEmployeeRoleInput" placeholder="Add new role (e.g., Assistant Manager, Dishwasher)">
+                                <input type="text" id="newEmployeeRoleInput" placeholder="Add new role (e.g., Assistant Manager, Dishwasher)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addEmployeeRole()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('employeeRoles', JSON.stringify(['Cook','Cashier','Manager','Prep Cook','Server','Driver','Cleaner'])); loadEmployeeRoles(); updateEmployeeRoleDropdown(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="employeeRolesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1440,10 +1460,11 @@
                             <span>Contact Categories</span>
                             <span id="contactCategories-arrow">▶</span>
                         </div>
-                        <div id="contactCategories-section" style="display: none; margin-top: 15px;">
+                        <div id="contactCategories-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
                             <div class="form-row">
-                                <input type="text" id="newContactCategory" placeholder="Add new category (e.g., Venue, Photographer)">
+                                <input type="text" id="newContactCategory" placeholder="Add new category (e.g., Venue, Photographer)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addContactCategory()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('contactCategories', JSON.stringify(['General','Catering Client','Event Organizer','Vendor'])); loadContactCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="contactCategoriesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1454,10 +1475,11 @@
                             <span>Measurement Units</span>
                             <span id="units-arrow">▶</span>
                         </div>
-                        <div id="units-section" style="display: none; margin-top: 15px;">
+                        <div id="units-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
                             <div class="form-row">
-                                <input type="text" id="newUnit" placeholder="Add new unit (e.g., cups, tbsp)">
+                                <input type="text" id="newUnit" placeholder="Add new unit (e.g., cups, tbsp)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addMeasurementUnit()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('measurementUnits', JSON.stringify(['lb','oz','kg','g','cups','tbsp','tsp','liters','ml','pieces','pack'])); loadMeasurementUnits(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="unitsList" style="margin-top: 15px;"></div>
                         </div>
@@ -2326,7 +2348,7 @@
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
             if (pageId === 'contacts') loadContacts();
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadInventoryCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
             
             // Expand calendar clicked item
             if (calendarClickedItem) {
@@ -2427,12 +2449,8 @@
                                 <input type="text" id="inventoryItemName" placeholder="Item Name (e.g., Paper Towels, Ground Beef)">
                             </div>
                             <div class="form-row">
-                                <select id="inventoryCategory">
-                                    <option value="Food">Food</option>
-                                    <option value="Cleaning Supplies">Cleaning Supplies</option>
-                                    <option value="To Go Supplies">To Go Supplies</option>
-                                    <option value="Equipment">Equipment</option>
-                                    <option value="Other">Other</option>
+                                <select id="inventoryCategory" onchange="document.getElementById('addToIngredients').checked = (this.value === 'Food')">
+                                    ${getAllInventoryCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
                                 </select>
                                 <select id="inventoryUnit">
                                     <option value="">Select unit...</option>
@@ -2442,6 +2460,12 @@
                             <div class="form-row">
                                 <input type="number" id="currentStock" placeholder="Current Stock" step="0.1">
                                 <input type="number" id="minStock" placeholder="Min Stock" step="0.1">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                                <label style="margin: 0; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="addToIngredients" checked style="width: auto; cursor: pointer;">
+                                    <span>Add to Ingredients (for recipes)</span>
+                                </label>
                             </div>
                             <button class="btn" onclick="addInventoryItem(); closeAddModal();">Add to Inventory</button>
                         </div>
@@ -3280,11 +3304,7 @@
                     </div>
                     <div class="form-row">
                         <select id="inventoryCategory">
-                            <option value="Food">Food</option>
-                            <option value="Cleaning Supplies">Cleaning Supplies</option>
-                            <option value="To Go Supplies">To Go Supplies</option>
-                            <option value="Equipment">Equipment</option>
-                            <option value="Other">Other</option>
+                            ${getAllInventoryCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
                         </select>
                         <select id="inventoryUnit">
                             <option value="">Select unit...</option>
@@ -3335,23 +3355,37 @@
             const unit = document.getElementById('inventoryUnit').value.trim();
             const currentStock = parseFloat(document.getElementById('currentStock').value) || 0;
             const minStock = parseFloat(document.getElementById('minStock').value) || 0;
+            const addToIngredients = document.getElementById('addToIngredients')?.checked || false;
 
             if (!itemName || !unit) {
                 alert('Please enter item name and unit');
                 return;
             }
 
-            fetch('/api/inventory', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: itemName, unit: unit, category: category, current_stock: currentStock, min_stock: minStock, max_stock: 100, barcode: null })
-            }).then(() => {
-                document.getElementById('inventoryItemName').value = '';
-                document.getElementById('inventoryUnit').value = '';
-                document.getElementById('currentStock').value = '';
-                document.getElementById('minStock').value = '';
-                loadInventory();
-            });
+            if (addToIngredients) {
+                fetch('/api/ingredients', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: itemName, cost: 0, unit: unit, servings: 1 })
+                }).then(r => r.json()).then(data => {
+                    fetch('/api/inventory', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ingredient_id: data.id, current_stock: currentStock, min_stock: minStock, max_stock: 100, barcode: null, category: category })
+                    }).then(() => {
+                        loadInventory();
+                        loadIngredients();
+                    });
+                });
+            } else {
+                fetch('/api/inventory', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name: itemName, unit: unit, category: category, current_stock: currentStock, min_stock: minStock, max_stock: 100, barcode: null })
+                }).then(() => {
+                    loadInventory();
+                });
+            }
         }
 
         function loadInventory() {
@@ -3391,15 +3425,13 @@
                     modalForm.innerHTML = `
                         <div class="form">
                             <div class="form-group">
+                                <label>Item Name</label>
                                 <input type="text" value="${item.name}" disabled style="background: var(--gray-light);">
                             </div>
                             <div class="form-group">
+                                <label>Category</label>
                                 <select id="inventoryCategory">
-                                    <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>Food</option>
-                                    <option value="Cleaning Supplies" ${item.category === 'Cleaning Supplies' ? 'selected' : ''}>Cleaning Supplies</option>
-                                    <option value="To Go Supplies" ${item.category === 'To Go Supplies' ? 'selected' : ''}>To Go Supplies</option>
-                                    <option value="Equipment" ${item.category === 'Equipment' ? 'selected' : ''}>Equipment</option>
-                                    <option value="Other" ${item.category === 'Other' ? 'selected' : ''}>Other</option>
+                                    ${getAllInventoryCategories().map(cat => `<option value="${cat}" ${item.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
                                 </select>
                             </div>
                             <div class="form-row">
@@ -3411,6 +3443,12 @@
                             </div>
                             <div class="form-group">
                                 <input type="text" id="inventoryBarcode" placeholder="Barcode (optional)" value="${item.barcode || ''}">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                                <label style="margin: 0; display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" id="isIngredient" ${item.ingredient_id ? 'checked' : ''} style="width: auto; cursor: pointer;">
+                                    <span>Available in Ingredients (for recipes)</span>
+                                </label>
                             </div>
                             <button class="btn" onclick="updateInventoryItem(${id}); closeAddModal();">Update Inventory</button>
                         </div>
@@ -3426,15 +3464,55 @@
             const maxStock = parseFloat(document.getElementById('maxStock').value) || 100;
             const barcode = document.getElementById('inventoryBarcode')?.value.trim() || null;
             const category = document.getElementById('inventoryCategory')?.value || 'Food';
+            const isIngredient = document.getElementById('isIngredient')?.checked || false;
 
-            fetch(`/api/inventory/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ current_stock: currentStock, min_stock: minStock, max_stock: maxStock, barcode: barcode, category: category })
-            }).then(() => {
-                loadInventory();
-                loadIngredients();
-            });
+            fetch('/api/inventory')
+                .then(r => r.json())
+                .then(items => {
+                    const item = items.find(inv => inv.id === id);
+                    if (!item) return;
+
+                    if (isIngredient && !item.ingredient_id) {
+                        // Add to ingredients
+                        fetch('/api/ingredients', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: item.name, cost: 0, unit: item.unit, servings: 1 })
+                        }).then(r => r.json()).then(data => {
+                            fetch(`/api/inventory/${id}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ ingredient_id: data.id, current_stock: currentStock, min_stock: minStock, max_stock: maxStock, barcode: barcode, category: category })
+                            }).then(() => {
+                                loadInventory();
+                                loadIngredients();
+                            });
+                        });
+                    } else if (!isIngredient && item.ingredient_id) {
+                        // Remove from ingredients
+                        fetch(`/api/inventory/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: item.name, unit: item.unit, ingredient_id: null, current_stock: currentStock, min_stock: minStock, max_stock: maxStock, barcode: barcode, category: category })
+                        }).then(() => {
+                            fetch(`/api/ingredients/${item.ingredient_id}`, { method: 'DELETE' })
+                                .then(() => {
+                                    loadInventory();
+                                    loadIngredients();
+                                });
+                        });
+                    } else {
+                        // Just update inventory
+                        fetch(`/api/inventory/${id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ current_stock: currentStock, min_stock: minStock, max_stock: maxStock, barcode: barcode, category: category })
+                        }).then(() => {
+                            loadInventory();
+                            loadIngredients();
+                        });
+                    }
+                });
         }
 
         function deleteInventoryItem(id) {
@@ -5823,6 +5901,46 @@
         }
 
         // Supplier Categories Functions
+        function addInventoryCategory() {
+            const category = document.getElementById('newInventoryCategory').value.trim();
+            if (!category) {
+                alert('Please enter a category name');
+                return;
+            }
+            
+            const categories = JSON.parse(localStorage.getItem('inventoryCategories') || '[]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('inventoryCategories', JSON.stringify(categories));
+                document.getElementById('newInventoryCategory').value = '';
+                loadInventoryCategories();
+            } else {
+                alert('Category already exists');
+            }
+        }
+        
+        function loadInventoryCategories() {
+            const categories = JSON.parse(localStorage.getItem('inventoryCategories') || '["Food","Cleaning Supplies","To Go Supplies","Equipment","Other"]');
+            
+            document.getElementById('inventoryCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editInventoryCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
+        }
+        
+        function editInventoryCategory(category) {
+            editType = 'inventoryCategory';
+            editOriginalValue = category;
+            document.getElementById('editModalTitle').textContent = 'Edit Inventory Category';
+            document.getElementById('editInput').value = category;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function getAllInventoryCategories() {
+            return JSON.parse(localStorage.getItem('inventoryCategories') || '["Food","Cleaning Supplies","To Go Supplies","Equipment","Other"]');
+        }
+
         function addSupplierCategory() {
             const category = document.getElementById('newSupplierCategory').value.trim();
             if (!category) {
@@ -5924,6 +6042,14 @@
                     localStorage.setItem('measurementUnits', JSON.stringify(units));
                     loadMeasurementUnits();
                 }
+            } else if (editType === 'inventoryCategory') {
+                const categories = JSON.parse(localStorage.getItem('inventoryCategories') || '["Food","Cleaning Supplies","To Go Supplies","Equipment","Other"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('inventoryCategories', JSON.stringify(categories));
+                    loadInventoryCategories();
+                }
             } else if (editType === 'supplierCategory') {
                 const categories = JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
                 const index = categories.indexOf(editOriginalValue);
@@ -5982,6 +6108,11 @@
                 const filtered = units.filter(u => u !== editOriginalValue);
                 localStorage.setItem('measurementUnits', JSON.stringify(filtered));
                 loadMeasurementUnits();
+            } else if (editType === 'inventoryCategory') {
+                const categories = JSON.parse(localStorage.getItem('inventoryCategories') || '["Food","Cleaning Supplies","To Go Supplies","Equipment","Other"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('inventoryCategories', JSON.stringify(filtered));
+                loadInventoryCategories();
             } else if (editType === 'supplierCategory') {
                 const categories = JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
                 const filtered = categories.filter(c => c !== editOriginalValue);
