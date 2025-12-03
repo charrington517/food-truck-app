@@ -62,12 +62,42 @@ db.serialize(() => {
     });
 
     db.run(`CREATE TABLE IF NOT EXISTS inventory (
-        ingredient_id INTEGER PRIMARY KEY,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ingredient_id INTEGER,
+        name TEXT,
+        unit TEXT,
+        category TEXT DEFAULT 'Food',
         current_stock REAL NOT NULL,
         min_stock REAL NOT NULL,
         max_stock REAL NOT NULL,
+        barcode TEXT,
         FOREIGN KEY (ingredient_id) REFERENCES ingredients (id)
     )`);
+    
+    // Migrate old table structure to new one with id column
+    db.get(`SELECT sql FROM sqlite_master WHERE type='table' AND name='inventory'`, (err, row) => {
+        if (row && !row.sql.includes('id INTEGER PRIMARY KEY')) {
+            db.run(`ALTER TABLE inventory RENAME TO inventory_old`, () => {
+                db.run(`CREATE TABLE inventory (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    ingredient_id INTEGER,
+                    name TEXT,
+                    unit TEXT,
+                    category TEXT DEFAULT 'Food',
+                    current_stock REAL NOT NULL,
+                    min_stock REAL NOT NULL,
+                    max_stock REAL NOT NULL,
+                    barcode TEXT,
+                    FOREIGN KEY (ingredient_id) REFERENCES ingredients (id)
+                )`, () => {
+                    db.run(`INSERT INTO inventory (ingredient_id, name, unit, category, current_stock, min_stock, max_stock, barcode)
+                            SELECT ingredient_id, name, unit, category, current_stock, min_stock, max_stock, barcode FROM inventory_old`, () => {
+                        db.run(`DROP TABLE inventory_old`);
+                    });
+                });
+            });
+        }
+    });
 
     db.run(`CREATE TABLE IF NOT EXISTS suppliers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -414,7 +444,11 @@ app.delete('/api/menu/:id', (req, res) => {
 });
 
 app.get('/api/ingredients', (req, res) => {
-    db.all('SELECT * FROM ingredients ORDER BY name', (err, rows) => {
+    db.all(`SELECT ing.* 
+            FROM ingredients ing
+            INNER JOIN inventory inv ON ing.id = inv.ingredient_id
+            WHERE inv.category = 'Food'
+            ORDER BY ing.name`, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
@@ -441,52 +475,42 @@ app.put('/api/ingredients/:id', (req, res) => {
 });
 
 app.delete('/api/ingredients/:id', (req, res) => {
-    db.run('DELETE FROM ingredients WHERE id = ?', [req.params.id], (err) => {
+    db.run('DELETE FROM inventory WHERE ingredient_id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true });
+        db.run('DELETE FROM ingredients WHERE id = ?', [req.params.id], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
     });
 });
 
 app.get('/api/inventory', (req, res) => {
-    db.all(`SELECT i.*, ing.name, ing.unit 
+    db.all(`SELECT i.*, 
+            COALESCE(i.name, ing.name) as name, 
+            COALESCE(i.unit, ing.unit) as unit
             FROM inventory i 
-            JOIN ingredients ing ON i.ingredient_id = ing.id 
-            ORDER BY ing.name`, (err, rows) => {
+            LEFT JOIN ingredients ing ON i.ingredient_id = ing.id 
+            ORDER BY name`, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
 
 app.post('/api/inventory', (req, res) => {
-    const { ingredient_id, current_stock, min_stock, max_stock, name, unit } = req.body;
+    const { current_stock, min_stock, max_stock, name, unit, barcode, category } = req.body;
     
-    if (ingredient_id) {
-        db.run('INSERT OR REPLACE INTO inventory (ingredient_id, current_stock, min_stock, max_stock) VALUES (?, ?, ?, ?)',
-            [ingredient_id, current_stock, min_stock, max_stock],
-            function(err) {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ success: true });
-            });
-    } else if (name && unit) {
-        db.run('INSERT INTO ingredients (name, cost, unit) VALUES (?, ?, ?)',
-            [name, 0, unit],
-            function(err) {
-                if (err) return res.status(500).json({ error: err.message });
-                const ingredientId = this.lastID;
-                db.run('INSERT INTO inventory (ingredient_id, current_stock, min_stock, max_stock) VALUES (?, ?, ?, ?)',
-                    [ingredientId, current_stock, min_stock, max_stock],
-                    (err) => {
-                        if (err) return res.status(500).json({ error: err.message });
-                        res.json({ success: true });
-                    });
-            });
-    }
+    db.run('INSERT INTO inventory (name, unit, category, current_stock, min_stock, max_stock, barcode) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [name, unit, category || 'Other', current_stock, min_stock, max_stock, barcode],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true, id: this.lastID });
+        });
 });
 
 app.put('/api/inventory/:id', (req, res) => {
-    const { current_stock, min_stock, max_stock } = req.body;
-    db.run('UPDATE inventory SET current_stock = ?, min_stock = ?, max_stock = ? WHERE ingredient_id = ?',
-        [current_stock, min_stock, max_stock, req.params.id],
+    const { current_stock, min_stock, max_stock, barcode, category } = req.body;
+    db.run('UPDATE inventory SET current_stock = ?, min_stock = ?, max_stock = ?, barcode = ?, category = ? WHERE id = ?',
+        [current_stock, min_stock, max_stock, barcode, category, req.params.id],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ success: true });
@@ -494,7 +518,7 @@ app.put('/api/inventory/:id', (req, res) => {
 });
 
 app.delete('/api/inventory/:id', (req, res) => {
-    db.run('DELETE FROM inventory WHERE ingredient_id = ?', [req.params.id], (err) => {
+    db.run('DELETE FROM inventory WHERE id = ?', [req.params.id], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });

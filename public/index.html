@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Birria Fusion - Food Truck Manager</title>
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -739,10 +740,16 @@
 
         <!-- Inventory Page -->
         <div id="inventory" class="page">
-
-
             <div class="section">
-                <h2 class="section-title">Current Inventory</h2>
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Current Inventory</h2>
+                    <button class="btn" onclick="openBarcodeScanner()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--success);">
+                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 5px;">
+                            <path d="M2 6h2v12H2V6zm4 0h1v12H6V6zm2 0h2v12H8V6zm3 0h1v12h-1V6zm2 0h3v12h-3V6zm4 0h1v12h-1V6zm2 0h2v12h-2V6z"/>
+                        </svg>
+                        Scan Barcode
+                    </button>
+                </div>
                 <div class="grid" id="inventoryList"></div>
             </div>
         </div>
@@ -1562,6 +1569,21 @@
                     <button class="btn" onclick="nextMonth()" style="width: auto; padding: 8px 12px; font-size: 14px;">▶</button>
                 </div>
                 <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Barcode Scanner Modal -->
+    <div class="modal" id="barcodeScannerModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Barcode Scanner</h3>
+                <button class="close-btn" onclick="closeBarcodeScanner()">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <div id="barcodeScannerReader" style="width: 100%; margin-bottom: 15px;"></div>
+                <div id="barcodeScanResult" style="margin-top: 15px;"></div>
+                <button class="btn" onclick="closeBarcodeScanner()" style="width: 100%; background: var(--gray); margin-top: 10px;">Cancel</button>
             </div>
         </div>
     </div>
@@ -3060,12 +3082,12 @@
                         </div>
                     `).join('');
                     
-                    // Update inventory dropdown if it exists
+                    // Update inventory dropdown if it exists - show all ingredients
                     const inventorySelect = document.getElementById('inventoryIngredient');
                     if (inventorySelect) {
                         inventorySelect.innerHTML = 
                             '<option value="">Select ingredient...</option>' +
-                            items.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
+                            realIngredients.map(ing => `<option value="${ing.id}">${ing.name} (${ing.unit})</option>`).join('');
                     }
                 });
         }
@@ -3129,10 +3151,181 @@
         }
 
         function deleteIngredient(id) {
-            if (confirm('Delete this ingredient?')) {
+            if (confirm('Delete this ingredient? This will also remove it from inventory.')) {
                 fetch(`/api/ingredients/${id}`, { method: 'DELETE' })
-                    .then(() => loadIngredients());
+                    .then(() => {
+                        loadIngredients();
+                        loadInventory();
+                    });
             }
+        }
+
+        // Barcode Scanner Functions
+        let html5QrCode = null;
+        
+        function openBarcodeScanner() {
+            document.getElementById('barcodeScannerModal').classList.add('show');
+            document.getElementById('barcodeScanResult').innerHTML = '<div style="text-align: center; color: var(--gray);">Position barcode in camera view...</div>';
+            
+            html5QrCode = new Html5Qrcode("barcodeScannerReader");
+            
+            Html5Qrcode.getCameras().then(cameras => {
+                if (cameras && cameras.length) {
+                    const cameraId = cameras[cameras.length - 1].id;
+                    html5QrCode.start(
+                        cameraId,
+                        { fps: 10, qrbox: { width: 250, height: 250 } },
+                        onScanSuccess,
+                        onScanFailure
+                    ).catch(err => {
+                        console.error('Camera start error:', err);
+                        document.getElementById('barcodeScanResult').innerHTML = '<div style="color: var(--danger);">Camera access denied or not available</div>';
+                    });
+                }
+            }).catch(err => {
+                console.error('Camera error:', err);
+                document.getElementById('barcodeScanResult').innerHTML = '<div style="color: var(--danger);">No camera found</div>';
+            });
+        }
+        
+        function closeBarcodeScanner() {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    html5QrCode = null;
+                    document.getElementById('barcodeScannerModal').classList.remove('show');
+                }).catch(err => {
+                    console.error('Stop error:', err);
+                    html5QrCode = null;
+                    document.getElementById('barcodeScannerModal').classList.remove('show');
+                });
+            } else {
+                document.getElementById('barcodeScannerModal').classList.remove('show');
+            }
+        }
+        
+        function onScanSuccess(decodedText, decodedResult) {
+            html5QrCode.pause(true);
+            
+            fetch('/api/inventory')
+                .then(r => r.json())
+                .then(items => {
+                    console.log('Scanned:', decodedText);
+                    console.log('Inventory items:', items.map(i => ({name: i.name, barcode: i.barcode})));
+                    const item = items.find(i => i.barcode && i.barcode.trim() === decodedText.trim());
+                    
+                    if (item) {
+                        document.getElementById('barcodeScanResult').innerHTML = `
+                            <div style="background: var(--success); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <h3 style="margin: 0 0 10px 0;">✓ Item Found</h3>
+                                <div style="font-size: 1.2em; font-weight: bold;">${item.name}</div>
+                                <div style="margin-top: 10px;">Current Stock: ${item.current_stock} ${item.unit}</div>
+                                <div>Min Stock: ${item.min_stock} ${item.unit}</div>
+                                <div style="margin-top: 10px; font-weight: bold;">${item.current_stock <= item.min_stock ? '🔴 LOW STOCK' : '🟢 Stock OK'}</div>
+                            </div>
+                            <button class="btn" onclick="editInventoryFromScan(${item.id})" style="width: 100%; margin-bottom: 10px;">Update Stock</button>
+                            <button class="btn" onclick="closeBarcodeScanner()" style="width: 100%; background: var(--gray);">Close</button>
+                        `;
+                    } else {
+                        document.getElementById('barcodeScanResult').innerHTML = `
+                            <div style="background: var(--warning); color: var(--charcoal); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <h3 style="margin: 0 0 10px 0;">⚠ Item Not Found</h3>
+                                <div>Barcode: ${decodedText}</div>
+                                <div style="margin-top: 10px;">This barcode is not in your inventory.</div>
+                            </div>
+                            <button class="btn" onclick="addInventoryWithBarcode('${decodedText}')" style="width: 100%; margin-bottom: 10px; background: var(--success);">Add New Item</button>
+                            <button class="btn" onclick="closeBarcodeScanner()" style="width: 100%; background: var(--gray);">Close</button>
+                        `;
+                    }
+                });
+        }
+        
+        function onScanFailure(error) {
+            // Ignore scan failures (happens continuously while scanning)
+        }
+        
+        function editInventoryFromScan(id) {
+            closeBarcodeScanner();
+            editInventoryItem(id);
+        }
+        
+        function addInventoryWithBarcode(barcode) {
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    html5QrCode.clear();
+                    html5QrCode = null;
+                    document.getElementById('barcodeScannerModal').classList.remove('show');
+                    openAddInventoryModal(barcode);
+                }).catch(err => {
+                    console.error(err);
+                    document.getElementById('barcodeScannerModal').classList.remove('show');
+                    openAddInventoryModal(barcode);
+                });
+            } else {
+                document.getElementById('barcodeScannerModal').classList.remove('show');
+                openAddInventoryModal(barcode);
+            }
+        }
+        
+        function openAddInventoryModal(barcode) {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Inventory Item';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="inventoryItemName" placeholder="Item Name">
+                    </div>
+                    <div class="form-row">
+                        <select id="inventoryCategory">
+                            <option value="Food">Food</option>
+                            <option value="Cleaning Supplies">Cleaning Supplies</option>
+                            <option value="To Go Supplies">To Go Supplies</option>
+                            <option value="Equipment">Equipment</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        <select id="inventoryUnit">
+                            <option value="">Select unit...</option>
+                            ${getAllMeasurementUnits().map(unit => `<option value="${unit}">${unit}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <input type="number" id="currentStock" placeholder="Current Stock" step="0.1">
+                        <input type="number" id="minStock" placeholder="Min Stock" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="inventoryBarcode" placeholder="Barcode" value="${barcode}" readonly style="background: var(--gray-light);">
+                    </div>
+                    <button class="btn" onclick="addInventoryItemWithBarcode(); closeAddModal();">Add to Inventory</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function addInventoryItemWithBarcode() {
+            const itemName = document.getElementById('inventoryItemName').value.trim();
+            const category = document.getElementById('inventoryCategory').value;
+            const unit = document.getElementById('inventoryUnit').value.trim();
+            const currentStock = parseFloat(document.getElementById('currentStock').value) || 0;
+            const minStock = parseFloat(document.getElementById('minStock').value) || 0;
+            const barcode = document.getElementById('inventoryBarcode').value.trim();
+
+            if (!itemName || !unit) {
+                alert('Please enter item name and unit');
+                return;
+            }
+
+            fetch('/api/inventory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: itemName, unit: unit, category: category, current_stock: currentStock, min_stock: minStock, max_stock: 100, barcode: barcode || null })
+            }).then(r => r.json()).then(data => {
+                console.log('Item added:', data);
+                setTimeout(() => loadInventory(), 500);
+            });
         }
 
         // Inventory Functions
@@ -3151,7 +3344,7 @@
             fetch('/api/inventory', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name: itemName, unit: unit, category: category, current_stock: currentStock, min_stock: minStock, max_stock: 100 })
+                body: JSON.stringify({ name: itemName, unit: unit, category: category, current_stock: currentStock, min_stock: minStock, max_stock: 100, barcode: null })
             }).then(() => {
                 document.getElementById('inventoryItemName').value = '';
                 document.getElementById('inventoryUnit').value = '';
@@ -3172,9 +3365,10 @@
                                 <div class="card-title">${item.name}</div>
                                 <div class="card-meta">${status}</div>
                                 <div class="card-meta">Stock: ${item.current_stock} / ${item.min_stock} min ${item.unit}</div>
+                                ${item.barcode ? `<div class="card-meta" style="font-family: monospace; font-size: 0.85em;">📊 ${item.barcode}</div>` : ''}
                                 <div class="card-actions">
-                                    <button class="btn" onclick="editInventoryItem(${item.ingredient_id})" style="background: var(--orange); color: white;">Edit</button>
-                                    <button class="btn btn-danger" onclick="deleteInventoryItem(${item.ingredient_id})">Delete</button>
+                                    <button class="btn" onclick="editInventoryItem(${item.id})" style="background: var(--orange); color: white;">Edit</button>
+                                    <button class="btn btn-danger" onclick="deleteInventoryItem(${item.id})">Delete</button>
                                 </div>
                             </div>
                         `;
@@ -3186,7 +3380,7 @@
             fetch('/api/inventory')
                 .then(r => r.json())
                 .then(items => {
-                    const item = items.find(inv => inv.ingredient_id === id);
+                    const item = items.find(inv => inv.id === id);
                     if (!item) return;
                     
                     const modal = document.getElementById('addModal');
@@ -3199,12 +3393,24 @@
                             <div class="form-group">
                                 <input type="text" value="${item.name}" disabled style="background: var(--gray-light);">
                             </div>
+                            <div class="form-group">
+                                <select id="inventoryCategory">
+                                    <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>Food</option>
+                                    <option value="Cleaning Supplies" ${item.category === 'Cleaning Supplies' ? 'selected' : ''}>Cleaning Supplies</option>
+                                    <option value="To Go Supplies" ${item.category === 'To Go Supplies' ? 'selected' : ''}>To Go Supplies</option>
+                                    <option value="Equipment" ${item.category === 'Equipment' ? 'selected' : ''}>Equipment</option>
+                                    <option value="Other" ${item.category === 'Other' ? 'selected' : ''}>Other</option>
+                                </select>
+                            </div>
                             <div class="form-row">
                                 <input type="number" id="currentStock" placeholder="Current Stock" step="0.1" value="${item.current_stock}">
                                 <input type="number" id="minStock" placeholder="Min Stock" step="0.1" value="${item.min_stock}">
                             </div>
                             <div class="form-group">
                                 <input type="number" id="maxStock" placeholder="Max Stock" step="0.1" value="${item.max_stock}">
+                            </div>
+                            <div class="form-group">
+                                <input type="text" id="inventoryBarcode" placeholder="Barcode (optional)" value="${item.barcode || ''}">
                             </div>
                             <button class="btn" onclick="updateInventoryItem(${id}); closeAddModal();">Update Inventory</button>
                         </div>
@@ -3218,13 +3424,16 @@
             const currentStock = parseFloat(document.getElementById('currentStock').value) || 0;
             const minStock = parseFloat(document.getElementById('minStock').value) || 5;
             const maxStock = parseFloat(document.getElementById('maxStock').value) || 100;
+            const barcode = document.getElementById('inventoryBarcode')?.value.trim() || null;
+            const category = document.getElementById('inventoryCategory')?.value || 'Food';
 
             fetch(`/api/inventory/${id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ current_stock: currentStock, min_stock: minStock, max_stock: maxStock })
+                body: JSON.stringify({ current_stock: currentStock, min_stock: minStock, max_stock: maxStock, barcode: barcode, category: category })
             }).then(() => {
                 loadInventory();
+                loadIngredients();
             });
         }
 
