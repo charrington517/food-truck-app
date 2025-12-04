@@ -2402,17 +2402,30 @@
                     form = `
                         <div class="form">
                             <div class="form-group">
-                                <input type="text" id="recipeName" placeholder="Recipe Name (e.g., Birria Tacos)">
+                                <label>Recipe Name</label>
+                                <input type="text" id="recipeName" placeholder="e.g., Birria Tacos">
                             </div>
                             <div class="form-row">
-                                <select id="recipeType">
-                                    ${getAllMenuCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-                                </select>
-                                <input type="number" id="portions" placeholder="Portions" min="1" value="1">
+                                <div style="flex: 1;">
+                                    <label>Category</label>
+                                    <select id="recipeType">
+                                        ${getAllMenuCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Portions</label>
+                                    <input type="number" id="portions" placeholder="1" min="1" value="1">
+                                </div>
                             </div>
                             <div class="form-row">
-                                <input type="number" id="price" placeholder="Menu Price ($)" step="0.01">
-                                <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01">
+                                <div style="flex: 1;">
+                                    <label>Menu Price ($)</label>
+                                    <input type="number" id="price" placeholder="0.00" step="0.01">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Recipe Cost ($)</label>
+                                    <input type="number" id="cost" placeholder="0.00" step="0.01">
+                                </div>
                             </div>
                             <button class="btn" onclick="addRecipe(); closeAddModal();">Add Recipe</button>
                         </div>
@@ -2425,17 +2438,25 @@
                     form = `
                         <div class="form">
                             <div class="form-group">
-                                <input type="text" id="ingredientName" placeholder="Ingredient Name (e.g., Ground Beef)">
+                                <label>Ingredient Name</label>
+                                <input type="text" id="ingredientName" placeholder="e.g., Ground Beef">
                             </div>
                             <div class="form-row">
-                                <input type="number" id="ingredientCost" placeholder="Cost per Unit ($)" step="0.01">
-                                <select id="ingredientUnit">
-                                    <option value="">Select unit...</option>
-                                    ${unitOptions}
-                                </select>
+                                <div style="flex: 1;">
+                                    <label>Cost per Unit ($)</label>
+                                    <input type="number" id="ingredientCost" placeholder="0.00" step="0.01">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Unit</label>
+                                    <select id="ingredientUnit">
+                                        <option value="">Select unit...</option>
+                                        ${unitOptions}
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <input type="number" id="ingredientServings" placeholder="Servings" min="1">
+                                <label>Servings per Unit</label>
+                                <input type="number" id="ingredientServings" placeholder="1" min="1">
                             </div>
                             <button class="btn" onclick="addIngredient(); closeAddModal();">Add Ingredient</button>
                         </div>
@@ -2446,20 +2467,33 @@
                     form = `
                         <div class="form">
                             <div class="form-group">
-                                <input type="text" id="inventoryItemName" placeholder="Item Name (e.g., Paper Towels, Ground Beef)">
+                                <label>Item Name</label>
+                                <input type="text" id="inventoryItemName" placeholder="e.g., Paper Towels, Ground Beef">
                             </div>
                             <div class="form-row">
-                                <select id="inventoryCategory" onchange="document.getElementById('addToIngredients').checked = (this.value === 'Food')">
-                                    ${getAllInventoryCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
-                                </select>
-                                <select id="inventoryUnit">
-                                    <option value="">Select unit...</option>
-                                    ${getAllMeasurementUnits().map(unit => `<option value="${unit}">${unit}</option>`).join('')}
-                                </select>
+                                <div style="flex: 1;">
+                                    <label>Category</label>
+                                    <select id="inventoryCategory" onchange="document.getElementById('addToIngredients').checked = (this.value === 'Food')">
+                                        ${getAllInventoryCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Unit</label>
+                                    <select id="inventoryUnit">
+                                        <option value="">Select unit...</option>
+                                        ${getAllMeasurementUnits().map(unit => `<option value="${unit}">${unit}</option>`).join('')}
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-row">
-                                <input type="number" id="currentStock" placeholder="Current Stock" step="0.1">
-                                <input type="number" id="minStock" placeholder="Min Stock" step="0.1">
+                                <div style="flex: 1;">
+                                    <label>Current Stock</label>
+                                    <input type="number" id="currentStock" placeholder="0" step="0.1">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Min Stock</label>
+                                    <input type="number" id="minStock" placeholder="0" step="0.1">
+                                </div>
                             </div>
                             <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
                                 <label style="margin: 0; display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -2847,17 +2881,30 @@
                     modalForm.innerHTML = `
                         <div class="form">
                             <div class="form-group">
+                                <label>Recipe Name</label>
                                 <input type="text" id="recipeName" placeholder="Recipe Name" value="${recipe.name}">
                             </div>
                             <div class="form-row">
-                                <select id="recipeType">
-                                    ${getAllMenuCategories().map(cat => `<option value="${cat}" ${recipe.recipe_type === cat ? 'selected' : ''}>${cat}</option>`).join('')}
-                                </select>
-                                <input type="number" id="portions" placeholder="Portions" min="1" value="${recipe.portions}">
+                                <div style="flex: 1;">
+                                    <label>Category</label>
+                                    <select id="recipeType">
+                                        ${getAllMenuCategories().map(cat => `<option value="${cat}" ${recipe.recipe_type === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                                    </select>
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Portions</label>
+                                    <input type="number" id="portions" placeholder="Portions" min="1" value="${recipe.portions}">
+                                </div>
                             </div>
                             <div class="form-row">
-                                <input type="number" id="price" placeholder="Menu Price ($)" step="0.01" value="${recipe.price}">
-                                <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01" value="${ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0).toFixed(2)}" readonly style="background: var(--gray-light);">
+                                <div style="flex: 1;">
+                                    <label>Menu Price ($)</label>
+                                    <input type="number" id="price" placeholder="Menu Price ($)" step="0.01" value="${recipe.price}">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Recipe Cost ($)</label>
+                                    <input type="number" id="cost" placeholder="Recipe Cost ($)" step="0.01" value="${ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0).toFixed(2)}" readonly style="background: var(--gray-light);">
+                                </div>
                             </div>
                             
                             <h4 style="margin: 20px 0 10px 0;">Ingredients</h4>
@@ -3001,6 +3048,7 @@
                                 editIngredients[index].unit = ingredient.unit;
                                 editIngredients[index].unitCost = ingredient.cost;
                                 editIngredients[index].servings = ingredient.servings || 1;
+                                calculateIngredientCost(index);
                                 refreshEditIngredients();
                             }
                         });
@@ -3134,16 +3182,24 @@
                     modalForm.innerHTML = `
                         <div class="form">
                             <div class="form-group">
+                                <label>Ingredient Name</label>
                                 <input type="text" id="ingredientName" placeholder="Ingredient Name" value="${ingredient.name}">
                             </div>
                             <div class="form-row">
-                                <input type="number" id="ingredientCost" placeholder="Cost per Unit ($)" step="0.01" value="${ingredient.cost}">
-                                <select id="ingredientUnit">
-                                    <option value="">Select unit...</option>
-                                    ${unitOptions}
-                                </select>
+                                <div style="flex: 1;">
+                                    <label>Cost per Unit ($)</label>
+                                    <input type="number" id="ingredientCost" placeholder="Cost per Unit ($)" step="0.01" value="${ingredient.cost}">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Unit</label>
+                                    <select id="ingredientUnit">
+                                        <option value="">Select unit...</option>
+                                        ${unitOptions}
+                                    </select>
+                                </div>
                             </div>
                             <div class="form-group">
+                                <label>Servings per Unit</label>
                                 <input type="number" id="ingredientServings" placeholder="Servings" min="1" value="${ingredient.servings || 1}">
                             </div>
                             <button class="btn" onclick="updateIngredient(${id}); closeAddModal();">Update Ingredient</button>
@@ -3435,14 +3491,22 @@
                                 </select>
                             </div>
                             <div class="form-row">
-                                <input type="number" id="currentStock" placeholder="Current Stock" step="0.1" value="${item.current_stock}">
-                                <input type="number" id="minStock" placeholder="Min Stock" step="0.1" value="${item.min_stock}">
+                                <div style="flex: 1;">
+                                    <label>Current Stock</label>
+                                    <input type="number" id="currentStock" placeholder="Current Stock" step="0.1" value="${item.current_stock}">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Min Stock</label>
+                                    <input type="number" id="minStock" placeholder="Min Stock" step="0.1" value="${item.min_stock}">
+                                </div>
                             </div>
                             <div class="form-group">
+                                <label>Max Stock</label>
                                 <input type="number" id="maxStock" placeholder="Max Stock" step="0.1" value="${item.max_stock}">
                             </div>
                             <div class="form-group">
-                                <input type="text" id="inventoryBarcode" placeholder="Barcode (optional)" value="${item.barcode || ''}">
+                                <label>Barcode (optional)</label>
+                                <input type="text" id="inventoryBarcode" placeholder="Barcode" value="${item.barcode || ''}">
                             </div>
                             <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
                                 <label style="margin: 0; display: flex; align-items: center; gap: 8px; cursor: pointer;">
@@ -3482,7 +3546,7 @@
                             fetch(`/api/inventory/${id}`, {
                                 method: 'PUT',
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ ingredient_id: data.id, current_stock: currentStock, min_stock: minStock, max_stock: maxStock, barcode: barcode, category: category })
+                                body: JSON.stringify({ ingredient_id: data.id, current_stock: currentStock, min_stock: minStock, max_stock: maxStock, barcode: barcode, category: 'Food' })
                             }).then(() => {
                                 loadInventory();
                                 loadIngredients();
