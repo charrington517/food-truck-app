@@ -273,6 +273,20 @@ db.serialize(() => {
         PRIMARY KEY (type, item_id)
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS shift_swaps (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        requester_id INTEGER NOT NULL,
+        requester_name TEXT NOT NULL,
+        shift_date TEXT NOT NULL,
+        shift_time TEXT NOT NULL,
+        reason TEXT,
+        status TEXT DEFAULT 'pending',
+        responder_id INTEGER,
+        responder_name TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (requester_id) REFERENCES employees (id)
+    )`);
+
     // Time punches table
     db.run(`CREATE TABLE IF NOT EXISTS time_punches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1596,6 +1610,42 @@ app.get('/api/waste-report', (req, res) => {
     db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
+    });
+});
+
+// Shift swap endpoints
+app.get('/api/shift-swaps', (req, res) => {
+    db.all('SELECT * FROM shift_swaps ORDER BY created_at DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/shift-swaps', (req, res) => {
+    const { requester_id, requester_name, shift_date, shift_time, reason } = req.body;
+    const created_at = new Date().toISOString();
+    db.run('INSERT INTO shift_swaps (requester_id, requester_name, shift_date, shift_time, reason, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+        [requester_id, requester_name, shift_date, shift_time, reason, created_at],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/shift-swaps/:id', (req, res) => {
+    const { status, responder_id, responder_name } = req.body;
+    db.run('UPDATE shift_swaps SET status = ?, responder_id = ?, responder_name = ? WHERE id = ?',
+        [status, responder_id, responder_name, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/shift-swaps/:id', (req, res) => {
+    db.run('DELETE FROM shift_swaps WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
     });
 });
 

@@ -1057,6 +1057,14 @@
                         <div id="overtimeAlerts" style="margin-top: 15px;"></div>
                     </div>
                 </div>
+                
+                <div class="section" style="margin-top: 20px;">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0; font-size: 1.2em;">Shift Swap Board</h3>
+                        <button class="btn" onclick="openShiftSwapModal()" style="background: var(--orange); color: white;">Request Swap</button>
+                    </div>
+                    <div id="shiftSwapsList"></div>
+                </div>
             </div>
         </div>
 
@@ -2523,6 +2531,7 @@ function exportInventoryReport() {
             if (pageId === 'suppliers') loadSuppliers();
             if (pageId === 'employee') { 
                 loadEmployees(); 
+                loadShiftSwaps();
                 updateEmployeeRoleDropdown();
                 setTimeout(() => {
                     const employeeSelect = document.getElementById('employeeSelect');
@@ -7280,10 +7289,10 @@ function exportInventoryReport() {
             return fetch('/api/settings/employeeRoles').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
         }
         
-        function updateEmployeeRoleDropdown() {
+        async function updateEmployeeRoleDropdown() {
             const roleSelect = document.getElementById('newEmployeeRole');
             if (roleSelect) {
-                const roles = getAllEmployeeRoles();
+                const roles = await getAllEmployeeRoles();
                 roleSelect.innerHTML = '<option value="">Select role...</option>' + 
                     roles.map(role => `<option value="${role}">${role}</option>`).join('');
             }
@@ -8196,6 +8205,115 @@ function exportInventoryReport() {
             list.innerHTML = html;
         }
         
+        // Shift Swap Functions
+        async function loadShiftSwaps() {
+            const swaps = await fetch('/api/shift-swaps').then(r => r.json());
+            const employees = await fetch('/api/employees').then(r => r.json());
+            
+            if (swaps.length === 0) {
+                document.getElementById('shiftSwapsList').innerHTML = '<div class="card" style="text-align: center; color: var(--gray);">No shift swap requests</div>';
+                return;
+            }
+            
+            document.getElementById('shiftSwapsList').innerHTML = swaps.map(swap => {
+                const statusColor = swap.status === 'pending' ? 'var(--warning)' : swap.status === 'accepted' ? 'var(--success)' : 'var(--danger)';
+                const canRespond = swap.status === 'pending' && currentUser.id !== swap.requester_id;
+                
+                return `
+                    <div class="card" style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px;">
+                            <div>
+                                <div style="font-weight: bold;">${swap.requester_name}</div>
+                                <div style="color: var(--gray); font-size: 0.9em;">${swap.shift_date} at ${swap.shift_time}</div>
+                                ${swap.reason ? `<div style="margin-top: 5px; font-style: italic;">${swap.reason}</div>` : ''}
+                            </div>
+                            <span style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 0.8em; text-transform: uppercase;">${swap.status}</span>
+                        </div>
+                        ${swap.responder_name ? `<div style="color: var(--success); font-size: 0.9em; margin-top: 10px;">Accepted by: ${swap.responder_name}</div>` : ''}
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            ${canRespond ? `<button class="btn" onclick="acceptShiftSwap(${swap.id})" style="background: var(--success); color: white;">Accept</button>` : ''}
+                            ${currentUser.id === swap.requester_id || currentUser.role === 'Manager' ? `<button class="btn btn-danger" onclick="deleteShiftSwap(${swap.id})">Delete</button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function openShiftSwapModal() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Request Shift Swap';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <label>Shift Date</label>
+                        <input type="date" id="swapDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Shift Time</label>
+                        <input type="time" id="swapTime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Reason (optional)</label>
+                        <textarea id="swapReason" rows="3" placeholder="Why do you need to swap this shift?"></textarea>
+                    </div>
+                    <button class="btn" onclick="submitShiftSwap()" style="width: 100%; background: var(--orange); color: white;">Submit Request</button>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+        
+        async function submitShiftSwap() {
+            const shift_date = document.getElementById('swapDate').value;
+            const shift_time = document.getElementById('swapTime').value;
+            const reason = document.getElementById('swapReason').value;
+            
+            if (!shift_date || !shift_time) return alert('Please fill in date and time');
+            
+            await fetch('/api/shift-swaps', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    requester_id: currentUser.id,
+                    requester_name: currentUser.name,
+                    shift_date,
+                    shift_time,
+                    reason
+                })
+            }).catch(err => console.error('Failed to create shift swap:', err));
+            
+            document.getElementById('addModal').classList.remove('show');
+            loadShiftSwaps();
+        }
+        
+        async function acceptShiftSwap(id) {
+            if (!confirm('Accept this shift swap?')) return;
+            
+            await fetch(`/api/shift-swaps/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    status: 'accepted',
+                    responder_id: currentUser.id,
+                    responder_name: currentUser.name
+                })
+            }).catch(err => console.error('Failed to accept shift swap:', err));
+            
+            loadShiftSwaps();
+        }
+        
+        async function deleteShiftSwap(id) {
+            if (!confirm('Delete this shift swap request?')) return;
+            
+            await fetch(`/api/shift-swaps/${id}`, {
+                method: 'DELETE'
+            }).catch(err => console.error('Failed to delete shift swap:', err));
+            
+            loadShiftSwaps();
+        }
+
         function loadEmployees() {
             const employees = JSON.parse(localStorage.getItem('employees') || '[]');
             
