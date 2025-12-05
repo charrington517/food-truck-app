@@ -475,6 +475,8 @@ db.serialize(() => {
     
     db.run(`ALTER TABLE equipment_tracking ADD COLUMN quantity_total INTEGER DEFAULT 1`, () => {});
     db.run(`ALTER TABLE equipment_tracking ADD COLUMN quantity_available INTEGER DEFAULT 1`, () => {});
+    db.run(`ALTER TABLE equipment_tracking ADD COLUMN catering_id INTEGER`, () => {});
+    db.run(`ALTER TABLE equipment_tracking ADD COLUMN contact_id INTEGER`, () => {});
     
     // Insert sample contacts
     db.get('SELECT COUNT(*) as count FROM contacts', (err, row) => {
@@ -1722,12 +1724,12 @@ app.get('/api/equipment-tracking/:qrCode', (req, res) => {
 });
 
 app.post('/api/equipment-tracking', (req, res) => {
-    const { equipment_name, qr_code, location, status, notes, quantity_total, quantity_available } = req.body;
+    const { equipment_name, qr_code, location, status, notes, quantity_total, quantity_available, catering_id, contact_id } = req.body;
     const last_updated = new Date().toISOString();
     const qty_total = quantity_total || 1;
     const qty_available = quantity_available !== undefined ? quantity_available : qty_total;
-    db.run('INSERT INTO equipment_tracking (equipment_name, qr_code, location, status, last_updated, notes, quantity_total, quantity_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-        [equipment_name, qr_code, location, status || 'Available', last_updated, notes, qty_total, qty_available],
+    db.run('INSERT INTO equipment_tracking (equipment_name, qr_code, location, status, last_updated, notes, quantity_total, quantity_available, catering_id, contact_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [equipment_name, qr_code, location, status || 'Available', last_updated, notes, qty_total, qty_available, catering_id || null, contact_id || null],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });

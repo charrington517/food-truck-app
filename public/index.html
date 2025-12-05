@@ -4548,16 +4548,19 @@ function exportInventoryReport() {
         }
         
         function addRentalEquipment() {
-            fetch('/api/equipment-tracking')
-                .then(r => r.json())
-                .then(equipment => {
-                    const available = equipment.filter(e => e.status !== 'Rented');
-                    
-                    const modal = document.getElementById('addModal');
-                    const modalTitle = document.getElementById('modalTitle');
-                    const modalForm = document.getElementById('modalForm');
-                    
-                    modalTitle.textContent = 'Rent Equipment';
+            Promise.all([
+                fetch('/api/equipment-tracking').then(r => r.json()),
+                fetch('/api/catering').then(r => r.json()),
+                fetch('/api/contacts').then(r => r.json())
+            ]).then(([equipment, catering, contacts]) => {
+                const available = equipment.filter(e => e.status !== 'Rented');
+                const upcomingCatering = catering.filter(c => new Date(c.date) >= new Date()).sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                const modal = document.getElementById('addModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalForm = document.getElementById('modalForm');
+                
+                modalTitle.textContent = 'Rent Equipment';
                     modalForm.innerHTML = `
                         <div class="form">
                             <div class="form-group">
@@ -4572,7 +4575,19 @@ function exportInventoryReport() {
                                 <input type="number" id="rentalQuantity" min="1" max="1" value="1">
                             </div>
                             <div class="form-group">
-                                <label>Rented To</label>
+                                <label>Link to Client</label>
+                                <select id="rentalClientSelect" onchange="updateRentalClientInfo()">
+                                    <option value="">-- Select or Enter New Client --</option>
+                                    <optgroup label="Catering Events">
+                                        ${upcomingCatering.map(c => `<option value="catering-${c.id}" data-client="${c.client}" data-purpose="${c.location || ''}" data-date="${c.date}">${c.client} - ${c.date} (${c.guests} guests)</option>`).join('')}
+                                    </optgroup>
+                                    <optgroup label="Contacts">
+                                        ${contacts.map(c => `<option value="contact-${c.id}" data-client="${c.name}" data-company="${c.company || ''}">${c.name}${c.company ? ' - ' + c.company : ''}</option>`).join('')}
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Client Name</label>
                                 <input type="text" id="rentalClient" placeholder="Client name">
                             </div>
                             <div class="form-group">
@@ -4597,7 +4612,26 @@ function exportInventoryReport() {
                         </div>
                     `;
                     modal.classList.add('show');
-                });
+            });
+        }
+        
+        function updateRentalClientInfo() {
+            const select = document.getElementById('rentalClientSelect');
+            const option = select.options[select.selectedIndex];
+            const clientInput = document.getElementById('rentalClient');
+            const purposeInput = document.getElementById('rentalPurpose');
+            const dateInput = document.getElementById('rentalDate');
+            
+            if (option.value) {
+                clientInput.value = option.getAttribute('data-client') || '';
+                purposeInput.value = option.getAttribute('data-purpose') || option.getAttribute('data-company') || '';
+                if (option.getAttribute('data-date')) {
+                    dateInput.value = option.getAttribute('data-date');
+                }
+            } else {
+                clientInput.value = '';
+                purposeInput.value = '';
+            }
         }
         
         function updateRentalQuantityMax() {
@@ -4611,6 +4645,7 @@ function exportInventoryReport() {
         
         function saveRentalEquipment() {
             const equipmentId = document.getElementById('rentalEquipmentId').value;
+            const clientSelect = document.getElementById('rentalClientSelect').value;
             const client = document.getElementById('rentalClient').value.trim();
             const purpose = document.getElementById('rentalPurpose').value.trim();
             const rentalDate = document.getElementById('rentalDate').value;
@@ -4621,6 +4656,14 @@ function exportInventoryReport() {
             if (!equipmentId || !client) {
                 alert('Please select equipment and enter client name');
                 return;
+            }
+            
+            let catering_id = null;
+            let contact_id = null;
+            if (clientSelect.startsWith('catering-')) {
+                catering_id = parseInt(clientSelect.replace('catering-', ''));
+            } else if (clientSelect.startsWith('contact-')) {
+                contact_id = parseInt(clientSelect.replace('contact-', ''));
             }
             
             fetch('/api/equipment-tracking')
@@ -4653,7 +4696,9 @@ function exportInventoryReport() {
                                 status: 'Rented',
                                 notes: rentalNotes,
                                 quantity_total: rentalQty,
-                                quantity_available: 0
+                                quantity_available: 0,
+                                catering_id: catering_id,
+                                contact_id: contact_id
                             })
                         }).then(() => loadTools());
                     });
@@ -8252,17 +8297,21 @@ function exportInventoryReport() {
 
         // Contacts Functions
         function loadContacts() {
-            // Populate filter dropdown
             const filterSelect = document.getElementById('contactCategoryFilter');
             const currentFilter = filterSelect.value;
-            filterSelect.innerHTML = '<option value="all">All Categories</option>' + 
-                getAllContactCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('');
-            filterSelect.value = currentFilter;
             
-            const filter = filterSelect.value;
-            fetch('/api/contacts')
+            fetch('/api/settings/contactCategories')
+                .then(r => r.json())
+                .then(data => {
+                    const categories = data.value ? JSON.parse(data.value) : ['Client','Supplier','Vendor','Partner','Other'];
+                    filterSelect.innerHTML = '<option value="all">All Categories</option>' + 
+                        categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+                    filterSelect.value = currentFilter;
+                    return fetch('/api/contacts');
+                })
                 .then(r => r.json())
                 .then(contacts => {
+                    const filter = filterSelect.value;
                     const filtered = filter === 'all' ? contacts : contacts.filter(c => c.category === filter);
                     document.getElementById('contactsList').innerHTML = filtered.map(contact => `
                         <div class="card">
