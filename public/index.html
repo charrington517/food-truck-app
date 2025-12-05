@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Birria Fusion - Food Truck Manager</title>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -1073,23 +1074,26 @@
                     </div>
                     <div id="shiftSwapsList"></div>
                 </div>
+                
+                <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
+                    <h4 onclick="togglePerformanceReviews()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Performance Reviews <span id="reviews-icon">▼</span></h4>
+                    <div id="performanceReviewsContainer" style="display: none; margin-top: 15px;">
+                        <select id="reviewEmployee" onchange="loadEmployeeReviews()" style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                            <option value="">Select employee...</option>
+                        </select>
+                        <div style="display: flex; gap: 8px; margin-bottom: 15px;">
+                            <button class="btn" onclick="showCurrentReviews()" id="currentReviewsBtn" style="flex: 1; background: var(--orange); color: white;">Current (90 days)</button>
+                            <button class="btn" onclick="showArchivedReviews()" id="archivedReviewsBtn" style="flex: 1; background: var(--gray); color: white;">Archived</button>
+                        </div>
+                        <button class="btn" onclick="addPerformanceReview()" style="width: 100%; margin-bottom: 15px; background: var(--success); color: white;">+ Add Review</button>
+                        <div id="reviewsList"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Tools Page -->
         <div id="tools" class="page">
-            <div class="section">
-                <h2 class="section-title">Archives</h2>
-                <div style="margin-bottom: 20px;">
-                    <h3 style="font-size: 1.1em; margin-bottom: 10px;">Archived Events</h3>
-                    <div class="grid" id="archivedEventsList"></div>
-                </div>
-                <div>
-                    <h3 style="font-size: 1.1em; margin-bottom: 10px;">Archived Catering Orders</h3>
-                    <div class="grid" id="archivedCateringList"></div>
-                </div>
-            </div>
-            
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">License Renewals</h3>
@@ -1104,6 +1108,48 @@
                     <button class="btn" onclick="addMaintenanceTask()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Task</button>
                 </div>
                 <div class="files-grid" id="maintenanceList"></div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">Unit Converter</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">Amount</label>
+                        <input type="number" id="convertAmount" placeholder="Amount" step="0.01" style="width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">From</label>
+                        <select id="convertFrom" style="width: 100%;">
+                            <option value="cups">Cups</option>
+                            <option value="oz">Ounces (oz)</option>
+                            <option value="lb">Pounds (lb)</option>
+                            <option value="g">Grams (g)</option>
+                            <option value="kg">Kilograms (kg)</option>
+                            <option value="ml">Milliliters (ml)</option>
+                            <option value="liters">Liters</option>
+                            <option value="tbsp">Tablespoons</option>
+                            <option value="tsp">Teaspoons</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 500;">To</label>
+                        <select id="convertTo" style="width: 100%;">
+                            <option value="oz">Ounces (oz)</option>
+                            <option value="cups">Cups</option>
+                            <option value="lb">Pounds (lb)</option>
+                            <option value="g">Grams (g)</option>
+                            <option value="kg">Kilograms (kg)</option>
+                            <option value="ml">Milliliters (ml)</option>
+                            <option value="liters">Liters</option>
+                            <option value="tbsp">Tablespoons</option>
+                            <option value="tsp">Teaspoons</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn" onclick="convertUnits()" style="width: auto; padding: 12px 24px; margin-bottom: 10px;">Convert</button>
+                <div id="conversionResult" style="font-size: 1.2em; font-weight: bold; color: var(--orange);"></div>
             </div>
             
             <div class="section">
@@ -1145,16 +1191,22 @@
             
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">Equipment Tracking</h3>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn" onclick="scanEquipmentQR()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--success);">Scan QR</button>
+                        <button class="btn" onclick="addEquipment()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">+ Add Equipment</button>
+                    </div>
+                </div>
+                <div class="grid" id="equipmentList"></div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">QR Code Generator</h3>
                 </div>
                 <div class="form" style="max-width: 500px;">
                     <div class="form-group">
                         <select id="qrType" onchange="updateQRPlaceholder()">
-                            <option value="url">Website/Menu Link</option>
-                            <option value="text">Text Message</option>
-                            <option value="phone">Phone Number</option>
-                            <option value="email">Email Address</option>
-                            <option value="wifi">WiFi Network</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -1169,6 +1221,18 @@
                     <button class="btn" onclick="generateQR()" style="width: auto; padding: 12px 24px;">Generate QR Code</button>
                 </div>
                 <div id="qrResult" style="text-align: center; margin-top: 20px;"></div>
+            </div>
+            
+            <div class="section">
+                <h2 class="section-title">Archives</h2>
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 1.1em; margin-bottom: 10px;">Archived Events</h3>
+                    <div class="grid" id="archivedEventsList"></div>
+                </div>
+                <div>
+                    <h3 style="font-size: 1.1em; margin-bottom: 10px;">Archived Catering Orders</h3>
+                    <div class="grid" id="archivedCateringList"></div>
+                </div>
             </div>
             
             <div class="section">
@@ -1218,7 +1282,10 @@
             </div>
             
             <div class="section">
-                <h2 class="section-title">Equipment & Rentals</h2>
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Equipment & Rentals</h2>
+                    <button class="btn" onclick="addRentalEquipment()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">+ Add Rental</button>
+                </div>
                 <div class="grid" id="toolsList"></div>
             </div>
         </div>
@@ -1669,6 +1736,36 @@ function exportInventoryReport() {
                                 <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/measurementUnits', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['lb','oz','kg','g','cups','tbsp','tsp','liters','ml','pieces','pack'])})}); loadMeasurementUnits(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="unitsList" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: var(--card-bg); border-radius: 8px; cursor: pointer;" onclick="toggleCategorySection('qrCategories')">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500;">
+                            <span>QR Code Categories</span>
+                            <span id="qrCategories-arrow">▶</span>
+                        </div>
+                        <div id="qrCategories-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
+                            <div class="form-row">
+                                <input type="text" id="newQRCategory" placeholder="Add new category (e.g., Equipment, Inventory)" onclick="event.stopPropagation()">
+                                <button class="btn" onclick="event.stopPropagation(); addQRCategory()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/qrCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Website/Menu Link','Text Message','Phone Number','Email Address','WiFi Network'])})}); loadQRCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                            </div>
+                            <div id="qrCategoriesList" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: var(--card-bg); border-radius: 8px; cursor: pointer;" onclick="toggleCategorySection('equipmentStatuses')">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500;">
+                            <span>Equipment Status Categories</span>
+                            <span id="equipmentStatuses-arrow">▶</span>
+                        </div>
+                        <div id="equipmentStatuses-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
+                            <div class="form-row">
+                                <input type="text" id="newEquipmentStatus" placeholder="Add new status (e.g., Checked Out, Broken)" onclick="event.stopPropagation()">
+                                <button class="btn" onclick="event.stopPropagation(); addEquipmentStatus()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/equipmentStatuses', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Available','In Use','Maintenance','Out of Service'])})}); loadEquipmentStatuses(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                            </div>
+                            <div id="equipmentStatusesList" style="margin-top: 15px;"></div>
                         </div>
                     </div>
                     
@@ -2548,13 +2645,13 @@ function exportInventoryReport() {
                     }
                 }, 100);
             }
-            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); loadArchives(); }
+            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); loadArchives(); loadQRTypeDropdown(); loadEquipmentTracking(); }
             if (pageId === 'catering') { loadCatering(); loadTools(); }
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
             if (pageId === 'contacts') loadContacts();
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadInventoryCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadExpenseCategories(); loadSpecialCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadInventoryCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadExpenseCategories(); loadSpecialCategories(); loadQRCategories(); loadEquipmentStatuses(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
             
             // Expand calendar clicked item
             if (calendarClickedItem) {
@@ -4424,24 +4521,177 @@ function exportInventoryReport() {
         }
         
         function loadTools() {
-            const tools = JSON.parse(localStorage.getItem('tools') || '[]');
-            document.getElementById('toolsList').innerHTML = tools.map(tool => `
-                <div class="card">
-                    <div class="card-title">${tool.name}</div>
-                    <div class="card-meta">${tool.category} • ${tool.status}</div>
-                    <div class="card-actions">
-                        <button class="btn btn-danger" onclick="deleteTool(${tool.id})">Delete</button>
-                    </div>
-                </div>
-            `).join('');
+            fetch('/api/equipment-tracking')
+                .then(r => r.json())
+                .then(equipment => {
+                    const rentals = equipment.filter(e => e.status === 'Rented');
+                    if (rentals.length === 0) {
+                        document.getElementById('toolsList').innerHTML = '<div class="card" style="text-align: center; color: var(--gray);"><div class="card-title">No rental equipment</div><div class="card-meta">Add equipment with "Rented" status to track rentals</div></div>';
+                        return;
+                    }
+                    document.getElementById('toolsList').innerHTML = rentals.map(tool => `
+                        <div class="card">
+                            <div class="card-title">${tool.equipment_name}</div>
+                            <div class="card-meta">${tool.location || 'No location'}</div>
+                            <div class="card-meta">Last updated: ${new Date(tool.last_updated).toLocaleDateString()}</div>
+                            ${tool.notes ? `<div class="card-meta" style="font-style: italic; white-space: pre-line;">${tool.notes}</div>` : ''}
+                            <div class="card-actions">
+                                <button class="btn" onclick="editRentalEquipment(${tool.id})" style="background: var(--orange); color: white;">Update</button>
+                                <button class="btn" onclick="returnRentalEquipment(${tool.id})" style="background: var(--success); color: white;">Return</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
         }
         
-        function deleteTool(id) {
-            if (confirm('Delete this tool?')) {
-                const tools = JSON.parse(localStorage.getItem('tools') || '[]');
-                const filtered = tools.filter(t => t.id !== id);
-                localStorage.setItem('tools', JSON.stringify(filtered));
-                loadTools();
+        function addRentalEquipment() {
+            fetch('/api/equipment-tracking')
+                .then(r => r.json())
+                .then(equipment => {
+                    const available = equipment.filter(e => e.status !== 'Rented');
+                    
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = 'Rent Equipment';
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <div class="form-group">
+                                <label>Select Equipment</label>
+                                <select id="rentalEquipmentId">
+                                    <option value="">Choose equipment...</option>
+                                    ${available.map(e => `<option value="${e.id}">${e.equipment_name} (${e.status})</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Rented To</label>
+                                <input type="text" id="rentalClient" placeholder="Client name">
+                            </div>
+                            <div class="form-group">
+                                <label>Event/Purpose</label>
+                                <input type="text" id="rentalPurpose" placeholder="e.g., Wedding, Festival">
+                            </div>
+                            <div class="form-row">
+                                <div style="flex: 1;">
+                                    <label>Rental Date</label>
+                                    <input type="date" id="rentalDate">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Return Date</label>
+                                    <input type="date" id="returnDate">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Additional Notes</label>
+                                <textarea id="rentalNotes" placeholder="Cost, deposit, condition..." rows="2"></textarea>
+                            </div>
+                            <button class="btn" onclick="saveRentalEquipment(); closeAddModal();">Rent Out</button>
+                        </div>
+                    `;
+                    modal.classList.add('show');
+                });
+        }
+        
+        function saveRentalEquipment() {
+            const equipmentId = document.getElementById('rentalEquipmentId').value;
+            const client = document.getElementById('rentalClient').value.trim();
+            const purpose = document.getElementById('rentalPurpose').value.trim();
+            const rentalDate = document.getElementById('rentalDate').value;
+            const returnDate = document.getElementById('returnDate').value;
+            const notes = document.getElementById('rentalNotes').value.trim();
+            
+            if (!equipmentId || !client) {
+                alert('Please select equipment and enter client name');
+                return;
+            }
+            
+            const location = `Rented to: ${client}`;
+            const fullNotes = `Event: ${purpose || 'N/A'}\nRental: ${rentalDate || 'N/A'} to ${returnDate || 'N/A'}\n${notes}`;
+            
+            fetch(`/api/equipment-tracking/${equipmentId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    location: location,
+                    status: 'Rented',
+                    notes: fullNotes
+                })
+            }).then(() => { loadTools(); if (currentPage === 'catering') loadCatering(); });
+        }
+        
+        function editRentalEquipment(equipmentId) {
+            fetch('/api/equipment-tracking')
+                .then(r => r.json())
+                .then(equipment => {
+                    const item = equipment.find(e => e.id == equipmentId);
+                    if (!item) return;
+                    
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = 'Update Rental: ' + item.equipment_name;
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <div class="form-group">
+                                <label>Rented To</label>
+                                <input type="text" id="rentalLocation" value="${item.location || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea id="rentalNotes" rows="3">${item.notes || ''}</textarea>
+                            </div>
+                            <div class="form-row">
+                                <button class="btn" onclick="updateRentalEquipment(${equipmentId}); closeAddModal();" style="flex: 1;">Update</button>
+                                <button class="btn" onclick="returnRentalEquipment(${equipmentId}); closeAddModal();" style="flex: 1; background: var(--success);">Mark Returned</button>
+                            </div>
+                        </div>
+                    `;
+                    modal.classList.add('show');
+                });
+        }
+        
+        function updateRentalEquipment(equipmentId) {
+            const location = document.getElementById('rentalLocation').value.trim();
+            const notes = document.getElementById('rentalNotes').value.trim();
+            
+            fetch(`/api/equipment-tracking/${equipmentId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    location: location,
+                    status: 'Rented',
+                    notes: notes
+                })
+            }).then(() => loadTools());
+        }
+        
+        function returnRentalEquipment(equipmentId) {
+            if (confirm('Mark this equipment as returned and set status to Available?')) {
+                fetch(`/api/equipment-tracking/${equipmentId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        location: '',
+                        status: 'Available',
+                        notes: ''
+                    })
+                }).then(() => loadTools());
+            }
+        }
+        
+        function deleteRentalEquipment(equipmentId) {
+            if (confirm('Remove this rental? (Equipment will be set back to Available)')) {
+                fetch(`/api/equipment-tracking/${equipmentId}`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        location: '',
+                        status: 'Available',
+                        notes: ''
+                    })
+                }).then(() => loadTools());
             }
         }
         
@@ -6954,6 +7204,385 @@ function exportInventoryReport() {
                 });
         }
         
+        function getAllQRCategories() {
+            const stored = localStorage.getItem('qrCategories');
+            return stored ? JSON.parse(stored) : ['Website/Menu Link','Text Message','Phone Number','Email Address','WiFi Network'];
+        }
+        
+        function loadQRCategories() {
+            fetch('/api/settings/qrCategories')
+                .then(r => r.json())
+                .then(d => {
+                    const categories = d.value ? JSON.parse(d.value) : ['Website/Menu Link','Text Message','Phone Number','Email Address','WiFi Network'];
+                    localStorage.setItem('qrCategories', JSON.stringify(categories));
+                    const list = document.getElementById('qrCategoriesList');
+                    if (list) {
+                        list.innerHTML = categories.map(cat => `
+                            <span onclick="editQRCategory('${cat}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                                ${cat}
+                            </span>
+                        `).join('');
+                    }
+                });
+        }
+        
+        function addQRCategory() {
+            const input = document.getElementById('newQRCategory');
+            const category = input.value.trim();
+            if (!category) return;
+            
+            const categories = getAllQRCategories();
+            if (!categories.includes(category)) {
+                categories.push(category);
+                fetch('/api/settings/qrCategories', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({value: JSON.stringify(categories)})
+                }).then(() => {
+                    input.value = '';
+                    loadQRCategories();
+                });
+            }
+        }
+        
+        function editQRCategory(category) {
+            if (confirm(`Delete "${category}"?`)) {
+                removeQRCategory(category);
+            }
+        }
+        
+        function removeQRCategory(category) {
+            const categories = getAllQRCategories().filter(c => c !== category);
+            fetch('/api/settings/qrCategories', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({value: JSON.stringify(categories)})
+            }).then(() => loadQRCategories());
+        }
+        
+        function loadEquipmentTracking() {
+            fetch('/api/equipment-tracking')
+                .then(r => r.json())
+                .then(equipment => {
+                    if (equipment.length === 0) {
+                        document.getElementById('equipmentList').innerHTML = '<div style="text-align: center; color: var(--gray); padding: 20px;">No equipment tracked yet</div>';
+                        return;
+                    }
+                    
+                    document.getElementById('equipmentList').innerHTML = equipment.map(e => {
+                        const statusColor = e.status === 'Available' ? 'var(--success)' : e.status === 'In Use' ? 'var(--warning)' : 'var(--danger)';
+                        return `
+                            <div class="card">
+                                <div class="card-title">${e.equipment_name}</div>
+                                <div class="card-meta">Location: ${e.location || 'Not set'}</div>
+                                <div class="card-meta" style="color: ${statusColor}; font-weight: bold;">Status: ${e.status}</div>
+                                <div class="card-meta">QR: ${e.qr_code}</div>
+                                ${e.notes ? `<div class="card-meta">Notes: ${e.notes}</div>` : ''}
+                                <div class="card-meta" style="font-size: 0.8em;">Updated: ${new Date(e.last_updated).toLocaleString()}</div>
+                                <div class="card-actions">
+                                    <button class="btn" onclick="updateEquipmentStatus(${e.id})" style="background: var(--orange);">Update</button>
+                                    <button class="btn" onclick="viewEquipmentQR('${e.qr_code}', '${e.equipment_name}')" style="background: var(--success);">View QR</button>
+                                    <button class="btn btn-danger" onclick="deleteEquipment(${e.id})">Delete</button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                });
+        }
+        
+        function addEquipment() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Equipment';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <input type="text" id="equipmentName" placeholder="Equipment Name (e.g., Grill, Cooler)">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="equipmentQR" placeholder="QR Code (unique ID)" value="EQ${Date.now()}">
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="equipmentLocation" placeholder="Location">
+                    </div>
+                    <div class="form-group">
+                        <select id="equipmentStatus">
+                            ${getAllEquipmentStatuses().map(s => `<option value="${s}">${s}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="equipmentNotes" placeholder="Notes" rows="2"></textarea>
+                    </div>
+                    <button class="btn" onclick="saveEquipment(); closeAddModal();">Save Equipment</button>
+                </div>
+            `;
+            
+            modal.classList.add('show');
+        }
+        
+        function saveEquipment() {
+            const equipment_name = document.getElementById('equipmentName').value.trim();
+            const qr_code = document.getElementById('equipmentQR').value.trim();
+            const location = document.getElementById('equipmentLocation').value.trim();
+            const status = document.getElementById('equipmentStatus').value;
+            const notes = document.getElementById('equipmentNotes').value.trim();
+            
+            if (!equipment_name || !qr_code) {
+                alert('Please enter equipment name and QR code');
+                return;
+            }
+            
+            fetch('/api/equipment-tracking', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ equipment_name, qr_code, location, status, notes })
+            }).then(() => loadEquipmentTracking());
+        }
+        
+        function updateEquipmentStatus(id) {
+            fetch('/api/equipment-tracking')
+                .then(r => r.json())
+                .then(equipment => {
+                    const item = equipment.find(e => e.id === id);
+                    if (!item) return;
+                    
+                    const modal = document.getElementById('addModal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalForm = document.getElementById('modalForm');
+                    
+                    modalTitle.textContent = 'Update Equipment Status';
+                    modalForm.innerHTML = `
+                        <div class="form">
+                            <h4>${item.equipment_name}</h4>
+                            <div class="form-group">
+                                <label>Location</label>
+                                <input type="text" id="updateLocation" value="${item.location || ''}">
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="updateStatus">
+                                    ${getAllEquipmentStatuses().map(s => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea id="updateNotes" rows="2">${item.notes || ''}</textarea>
+                            </div>
+                            <button class="btn" onclick="saveEquipmentUpdate(${id}); closeAddModal();">Update</button>
+                        </div>
+                    `;
+                    
+                    modal.classList.add('show');
+                });
+        }
+        
+        function saveEquipmentUpdate(id) {
+            const location = document.getElementById('updateLocation').value.trim();
+            const status = document.getElementById('updateStatus').value;
+            const notes = document.getElementById('updateNotes').value.trim();
+            
+            fetch(`/api/equipment-tracking/${id}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ location, status, notes })
+            }).then(() => loadEquipmentTracking());
+        }
+        
+        function viewEquipmentQR(qrCode, name) {
+            document.getElementById('qrContent').value = qrCode;
+            generateQR();
+            document.getElementById('qrResult').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        let equipmentScanner = null;
+        
+        function lookupEquipmentQR() {
+            const qrCode = prompt('Enter QR Code (e.g., stove):');
+            if (!qrCode) return;
+            
+            fetch(`/api/equipment-tracking/${encodeURIComponent(qrCode)}`)
+                .then(r => r.json())
+                .then(equipment => {
+                    if (equipment && equipment.id) {
+                        updateEquipmentStatus(equipment.id);
+                    } else {
+                        if (confirm(`Equipment "${qrCode}" not found. Add it?`)) {
+                            const modal = document.getElementById('addModal');
+                            const modalTitle = document.getElementById('modalTitle');
+                            const modalForm = document.getElementById('modalForm');
+                            
+                            modalTitle.textContent = 'Add Equipment';
+                            modalForm.innerHTML = `
+                                <div class="form">
+                                    <div class="form-group">
+                                        <input type="text" id="equipmentName" placeholder="Equipment Name">
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="text" id="equipmentQR" value="${qrCode}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <input type="text" id="equipmentLocation" placeholder="Location">
+                                    </div>
+                                    <div class="form-group">
+                                        <select id="equipmentStatus">
+                                            ${getAllEquipmentStatuses().map(s => `<option value="${s}">${s}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <textarea id="equipmentNotes" placeholder="Notes" rows="2"></textarea>
+                                    </div>
+                                    <button class="btn" onclick="saveEquipment(); closeAddModal();">Save Equipment</button>
+                                </div>
+                            `;
+                            modal.classList.add('show');
+                        }
+                    }
+                });
+        }
+        
+        function scanEquipmentQR() {
+            document.getElementById('barcodeScannerModal').classList.add('show');
+            document.getElementById('barcodeScanResult').innerHTML = '<div style="text-align: center; color: var(--gray);">Position QR code in camera view...</div>';
+            
+            equipmentScanner = new Html5Qrcode('barcodeScannerReader');
+            
+            Html5Qrcode.getCameras().then(cameras => {
+                if (cameras && cameras.length) {
+                    const cameraId = cameras[cameras.length - 1].id;
+                    equipmentScanner.start(
+                        cameraId,
+                        { fps: 10, qrbox: { width: 250, height: 250 } },
+                        (decodedText) => {
+                            alert('QR Scanned: ' + decodedText);
+                            equipmentScanner.stop().then(() => {
+                                equipmentScanner.clear();
+                                equipmentScanner = null;
+                                document.getElementById('barcodeScannerModal').classList.remove('show');
+                                
+                                fetch(`/api/equipment-tracking/${encodeURIComponent(decodedText)}`)
+                                    .then(r => r.json())
+                                    .then(equipment => {
+                                        if (equipment && equipment.id) {
+                                            updateEquipmentStatus(equipment.id);
+                                        } else {
+                                            if (confirm(`Equipment "${decodedText}" not found. Add it?`)) {
+                                                const modal = document.getElementById('addModal');
+                                                const modalTitle = document.getElementById('modalTitle');
+                                                const modalForm = document.getElementById('modalForm');
+                                                
+                                                modalTitle.textContent = 'Add Equipment';
+                                                modalForm.innerHTML = `
+                                                    <div class="form">
+                                                        <div class="form-group">
+                                                            <input type="text" id="equipmentName" placeholder="Equipment Name">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <input type="text" id="equipmentQR" value="${decodedText}" readonly>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <input type="text" id="equipmentLocation" placeholder="Location">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <select id="equipmentStatus">
+                                                                <option value="Available">Available</option>
+                                                                <option value="In Use">In Use</option>
+                                                                <option value="Maintenance">Maintenance</option>
+                                                                <option value="Out of Service">Out of Service</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <textarea id="equipmentNotes" placeholder="Notes" rows="2"></textarea>
+                                                        </div>
+                                                        <button class="btn" onclick="saveEquipment(); closeAddModal();">Save Equipment</button>
+                                                    </div>
+                                                `;
+                                                modal.classList.add('show');
+                                            }
+                                        }
+                                    });
+                            });
+                        },
+                        () => {}
+                    ).catch(err => {
+                        console.error('Camera start error:', err);
+                        document.getElementById('barcodeScanResult').innerHTML = '<div style="color: var(--danger);">Camera access denied or not available</div>';
+                    });
+                }
+            }).catch(err => {
+                console.error('Camera error:', err);
+                document.getElementById('barcodeScanResult').innerHTML = '<div style="color: var(--danger);">No camera found</div>';
+            });
+        }
+        
+        function deleteEquipment(id) {
+            if (confirm('Delete this equipment?')) {
+                fetch(`/api/equipment-tracking/${id}`, {method: 'DELETE'})
+                    .then(() => loadEquipmentTracking());
+            }
+        }
+        
+        function getAllEquipmentStatuses() {
+            const stored = localStorage.getItem('equipmentStatuses');
+            return stored ? JSON.parse(stored) : ['Available','In Use','Maintenance','Out of Service'];
+        }
+        
+        function loadEquipmentStatuses() {
+            fetch('/api/settings/equipmentStatuses')
+                .then(r => r.json())
+                .then(d => {
+                    const statuses = d.value ? JSON.parse(d.value) : ['Available','In Use','Maintenance','Out of Service'];
+                    localStorage.setItem('equipmentStatuses', JSON.stringify(statuses));
+                    const list = document.getElementById('equipmentStatusesList');
+                    if (list) {
+                        list.innerHTML = statuses.map(status => `
+                            <span onclick="editEquipmentStatus('${status}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                                ${status}
+                            </span>
+                        `).join('');
+                    }
+                });
+        }
+        
+        function addEquipmentStatus() {
+            const input = document.getElementById('newEquipmentStatus');
+            const status = input.value.trim();
+            if (!status) return;
+            
+            const statuses = getAllEquipmentStatuses();
+            if (!statuses.includes(status)) {
+                statuses.push(status);
+                fetch('/api/settings/equipmentStatuses', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({value: JSON.stringify(statuses)})
+                }).then(() => {
+                    input.value = '';
+                    loadEquipmentStatuses();
+                });
+            }
+        }
+        
+        function editEquipmentStatus(status) {
+            if (confirm(`Delete "${status}"?`)) {
+                const statuses = getAllEquipmentStatuses().filter(s => s !== status);
+                fetch('/api/settings/equipmentStatuses', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({value: JSON.stringify(statuses)})
+                }).then(() => loadEquipmentStatuses());
+            }
+        }
+        
+        function loadQRTypeDropdown() {
+            const categories = getAllQRCategories();
+            const select = document.getElementById('qrType');
+            if (select) {
+                select.innerHTML = categories.map(cat => `<option value="${cat.toLowerCase().replace(/[^a-z0-9]/g, '')}">${cat}</option>`).join('');
+            }
+        }
+        
         function loadMeasurementUnits() {
             fetch('/api/settings/measurementUnits')
                 .then(r => r.json())
@@ -8251,6 +8880,183 @@ function exportInventoryReport() {
             }
         }
         
+        let showingArchivedReviews = false;
+        
+        function togglePerformanceReviews() {
+            const container = document.getElementById('performanceReviewsContainer');
+            const icon = document.getElementById('reviews-icon');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                icon.textContent = '▲';
+                fetch('/api/performance-reviews/auto-archive', {method: 'POST'}).then(() => loadReviewEmployees());
+            } else {
+                container.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function showCurrentReviews() {
+            showingArchivedReviews = false;
+            document.getElementById('currentReviewsBtn').style.background = 'var(--orange)';
+            document.getElementById('archivedReviewsBtn').style.background = 'var(--gray)';
+            loadEmployeeReviews();
+        }
+        
+        function showArchivedReviews() {
+            showingArchivedReviews = true;
+            document.getElementById('currentReviewsBtn').style.background = 'var(--gray)';
+            document.getElementById('archivedReviewsBtn').style.background = 'var(--orange)';
+            loadEmployeeReviews();
+        }
+        
+        async function loadReviewEmployees() {
+            const employees = await fetch('/api/employees').then(r => r.json());
+            const select = document.getElementById('reviewEmployee');
+            select.innerHTML = '<option value="">All employees</option>' + employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            loadEmployeeReviews();
+        }
+        
+        async function loadEmployeeReviews() {
+            const employeeId = document.getElementById('reviewEmployee').value;
+            const endpoint = showingArchivedReviews ? 'archived-performance-reviews' : 'performance-reviews';
+            const reviews = employeeId ? await fetch(`/api/${endpoint}/employee/${employeeId}`).then(r => r.json()) : await fetch(`/api/${endpoint}`).then(r => r.json());
+            
+            if (reviews.length === 0) {
+                document.getElementById('reviewsList').innerHTML = '<div style="color: var(--gray); font-style: italic; text-align: center; padding: 20px;">No reviews yet</div>';
+                return;
+            }
+            
+            document.getElementById('reviewsList').innerHTML = reviews.map(r => `
+                <div style="background: var(--gray-light); border-radius: 8px; margin-bottom: 10px;">
+                    <div onclick="toggleReviewDetails(${r.id})" style="padding: 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; font-size: 1.1em;">${r.employee_name}</div>
+                            <div style="font-size: 0.9em; color: var(--gray);">Reviewed by ${r.reviewer_name || 'N/A'} on ${r.review_date} • Overall: ${r.overall_rating}/5${showingArchivedReviews && r.archived_date ? ` • Archived ${new Date(r.archived_date).toLocaleDateString()}` : ''}</div>
+                        </div>
+                        <span id="review-icon-${r.id}">▼</span>
+                    </div>
+                    <div id="review-details-${r.id}" style="display: none; padding: 0 15px 15px 15px; border-top: 1px solid var(--border);">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin: 10px 0;">
+                            <div><strong>Attendance:</strong> ${r.attendance_rating}/5</div>
+                            <div><strong>Quality:</strong> ${r.quality_rating}/5</div>
+                            <div><strong>Teamwork:</strong> ${r.teamwork_rating}/5</div>
+                            <div><strong>Punctuality:</strong> ${r.punctuality_rating}/5</div>
+                        </div>
+                        ${r.strengths ? `<div style="margin-bottom: 8px;"><strong>Strengths:</strong> ${r.strengths}</div>` : ''}
+                        ${r.areas_for_improvement ? `<div style="margin-bottom: 8px;"><strong>Areas for Improvement:</strong> ${r.areas_for_improvement}</div>` : ''}
+                        ${r.goals ? `<div style="margin-bottom: 8px;"><strong>Goals:</strong> ${r.goals}</div>` : ''}
+                        ${r.notes ? `<div style="margin-bottom: 8px;"><strong>Notes:</strong> ${r.notes}</div>` : ''}
+                        ${!showingArchivedReviews ? `<div style="display: flex; gap: 8px; margin-top: 10px;"><button class="btn" onclick="event.stopPropagation(); archiveReview(${r.id})" style="padding: 4px 8px; font-size: 0.8em; width: auto; background: var(--warning);">Archive</button><button class="btn btn-danger" onclick="event.stopPropagation(); deleteReview(${r.id})" style="padding: 4px 8px; font-size: 0.8em; width: auto;">Delete</button></div>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function addPerformanceReview() {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = 'Add Performance Review';
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <select id="reviewEmployeeId" style="width: 100%;">
+                            <option value="">Select employee...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="reviewerName" placeholder="Reviewer Name" value="${currentUser?.name || ''}">
+                    </div>
+                    <div class="form-group">
+                        <input type="date" id="reviewDate" value="${new Date().toISOString().split('T')[0]}">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div><label>Attendance (1-5)</label><input type="number" id="attendanceRating" min="1" max="5" value="3"></div>
+                        <div><label>Quality (1-5)</label><input type="number" id="qualityRating" min="1" max="5" value="3"></div>
+                        <div><label>Teamwork (1-5)</label><input type="number" id="teamworkRating" min="1" max="5" value="3"></div>
+                        <div><label>Punctuality (1-5)</label><input type="number" id="punctualityRating" min="1" max="5" value="3"></div>
+                        <div style="grid-column: 1 / -1;"><label>Overall (1-5)</label><input type="number" id="overallRating" min="1" max="5" value="3"></div>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="strengths" placeholder="Strengths" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="areasForImprovement" placeholder="Areas for Improvement" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="goals" placeholder="Goals for Next Review" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <textarea id="reviewNotes" placeholder="Additional Notes" rows="2"></textarea>
+                    </div>
+                    <button class="btn" onclick="savePerformanceReview(); closeAddModal();">Save Review</button>
+                </div>
+            `;
+            
+            fetch('/api/employees').then(r => r.json()).then(employees => {
+                document.getElementById('reviewEmployeeId').innerHTML = '<option value="">Select employee...</option>' + employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            });
+            
+            modal.classList.add('show');
+        }
+        
+        function savePerformanceReview() {
+            const employee_id = document.getElementById('reviewEmployeeId').value;
+            const reviewer_name = document.getElementById('reviewerName').value;
+            const review_date = document.getElementById('reviewDate').value;
+            const attendance_rating = parseInt(document.getElementById('attendanceRating').value);
+            const quality_rating = parseInt(document.getElementById('qualityRating').value);
+            const teamwork_rating = parseInt(document.getElementById('teamworkRating').value);
+            const punctuality_rating = parseInt(document.getElementById('punctualityRating').value);
+            const overall_rating = parseInt(document.getElementById('overallRating').value);
+            const strengths = document.getElementById('strengths').value;
+            const areas_for_improvement = document.getElementById('areasForImprovement').value;
+            const goals = document.getElementById('goals').value;
+            const notes = document.getElementById('reviewNotes').value;
+            
+            if (!employee_id || !review_date) {
+                alert('Please select employee and review date');
+                return;
+            }
+            
+            fetch('/api/performance-reviews', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    employee_id, reviewer_name, review_date, attendance_rating, quality_rating,
+                    teamwork_rating, punctuality_rating, overall_rating, strengths,
+                    areas_for_improvement, goals, notes
+                })
+            }).then(() => loadEmployeeReviews());
+        }
+        
+        function toggleReviewDetails(id) {
+            const details = document.getElementById(`review-details-${id}`);
+            const icon = document.getElementById(`review-icon-${id}`);
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function archiveReview(id) {
+            if (confirm('Archive this review?')) {
+                fetch(`/api/performance-reviews/${id}/archive`, {method: 'POST'})
+                    .then(() => loadEmployeeReviews());
+            }
+        }
+        
+        function deleteReview(id) {
+            if (confirm('Delete this review?')) {
+                fetch(`/api/performance-reviews/${id}`, {method: 'DELETE'})
+                    .then(() => loadEmployeeReviews());
+            }
+        }
+        
         function toggleAddEmployeeInList() {
             const form = document.getElementById('add-employee-form');
             if (form.style.display === 'none') {
@@ -8898,6 +9704,37 @@ function exportInventoryReport() {
             `;
         }
         
+        function convertUnits() {
+            const amount = parseFloat(document.getElementById('convertAmount').value);
+            const from = document.getElementById('convertFrom').value;
+            const to = document.getElementById('convertTo').value;
+            
+            if (!amount || amount <= 0) {
+                document.getElementById('conversionResult').textContent = 'Please enter a valid amount';
+                return;
+            }
+            
+            const conversions = {
+                cups: { oz: 8, ml: 236.588, liters: 0.236588, tbsp: 16, tsp: 48, g: 236.588, kg: 0.236588, lb: 0.52 },
+                oz: { cups: 0.125, ml: 29.5735, liters: 0.0295735, tbsp: 2, tsp: 6, g: 28.3495, kg: 0.0283495, lb: 0.0625 },
+                lb: { oz: 16, cups: 1.92, g: 453.592, kg: 0.453592, ml: 453.592, liters: 0.453592, tbsp: 30.67, tsp: 92 },
+                g: { oz: 0.035274, cups: 0.00422675, lb: 0.00220462, kg: 0.001, ml: 1, liters: 0.001, tbsp: 0.067628, tsp: 0.202884 },
+                kg: { g: 1000, oz: 35.274, cups: 4.22675, lb: 2.20462, ml: 1000, liters: 1, tbsp: 67.628, tsp: 202.884 },
+                ml: { oz: 0.033814, cups: 0.00422675, g: 1, kg: 0.001, liters: 0.001, tbsp: 0.067628, tsp: 0.202884, lb: 0.00220462 },
+                liters: { ml: 1000, oz: 33.814, cups: 4.22675, g: 1000, kg: 1, tbsp: 67.628, tsp: 202.884, lb: 2.20462 },
+                tbsp: { tsp: 3, oz: 0.5, cups: 0.0625, ml: 14.7868, liters: 0.0147868, g: 14.7868, kg: 0.0147868, lb: 0.03125 },
+                tsp: { tbsp: 0.333333, oz: 0.166667, cups: 0.0208333, ml: 4.92892, liters: 0.00492892, g: 4.92892, kg: 0.00492892, lb: 0.0104167 }
+            };
+            
+            if (from === to) {
+                document.getElementById('conversionResult').textContent = `${amount} ${from}`;
+                return;
+            }
+            
+            const result = amount * conversions[from][to];
+            document.getElementById('conversionResult').textContent = `${amount} ${from} = ${result.toFixed(3)} ${to}`;
+        }
+        
         function calculateBreakEven() {
             const eventCosts = parseFloat(document.getElementById('eventCosts').value);
             const avgPrice = parseFloat(document.getElementById('avgItemPrice').value);
@@ -8978,26 +9815,32 @@ function exportInventoryReport() {
                 if (type === 'email') content = `mailto:${content}`;
             }
             
-            // Generate QR code using Google Charts API
-            const size = '200x200';
-            const qrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=${size}&chl=${encodeURIComponent(content)}`;
-            
             document.getElementById('qrResult').innerHTML = `
                 <div style="background: white; padding: 20px; border-radius: 12px; display: inline-block; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-                    <img src="${qrUrl}" alt="QR Code" style="display: block; margin-bottom: 10px;">
+                    <div id="qrcode" style="margin-bottom: 10px;"></div>
                     <div style="font-size: 12px; color: var(--gray); margin-bottom: 10px; word-break: break-all;">${content}</div>
-                    <button class="btn" onclick="downloadQR('${qrUrl}')" style="width: auto; padding: 8px 16px; font-size: 0.9em;">Download</button>
+                    <button class="btn" onclick="downloadQRCanvas()" style="width: auto; padding: 8px 16px; font-size: 0.9em;">Download</button>
                 </div>
             `;
+            
+            new QRCode(document.getElementById('qrcode'), {
+                text: content,
+                width: 200,
+                height: 200
+            });
         }
         
-        function downloadQR(url) {
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'qr-code.png';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+        function downloadQRCanvas() {
+            const canvas = document.querySelector('#qrcode canvas');
+            if (canvas) {
+                const url = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'qr-code.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         }
 
         // Initialize

@@ -1691,6 +1691,147 @@ app.post('/api/settings/:key', (req, res) => {
     });
 });
 
+// Equipment tracking endpoints
+app.get('/api/equipment-tracking', (req, res) => {
+    db.all('SELECT * FROM equipment_tracking ORDER BY equipment_name', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/equipment-tracking/:qrCode', (req, res) => {
+    db.get('SELECT * FROM equipment_tracking WHERE qr_code = ?', [req.params.qrCode], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(row || {});
+    });
+});
+
+app.post('/api/equipment-tracking', (req, res) => {
+    const { equipment_name, qr_code, location, status, notes } = req.body;
+    const last_updated = new Date().toISOString();
+    db.run('INSERT INTO equipment_tracking (equipment_name, qr_code, location, status, last_updated, notes) VALUES (?, ?, ?, ?, ?, ?)',
+        [equipment_name, qr_code, location, status || 'Available', last_updated, notes],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/equipment-tracking/:id', (req, res) => {
+    const { location, status, notes } = req.body;
+    const last_updated = new Date().toISOString();
+    db.run('UPDATE equipment_tracking SET location = ?, status = ?, notes = ?, last_updated = ? WHERE id = ?',
+        [location, status, notes, last_updated, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/equipment-tracking/:id', (req, res) => {
+    db.run('DELETE FROM equipment_tracking WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Performance reviews endpoints
+app.get('/api/performance-reviews', (req, res) => {
+    const query = `
+        SELECT pr.*, e.name as employee_name
+        FROM performance_reviews pr
+        JOIN employees e ON pr.employee_id = e.id
+        ORDER BY pr.review_date DESC
+    `;
+    db.all(query, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/performance-reviews/employee/:employeeId', (req, res) => {
+    const query = `
+        SELECT pr.*, e.name as employee_name
+        FROM performance_reviews pr
+        JOIN employees e ON pr.employee_id = e.id
+        WHERE pr.employee_id = ?
+        ORDER BY pr.review_date DESC
+    `;
+    db.all(query, [req.params.employeeId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/performance-reviews', (req, res) => {
+    const { employee_id, reviewer_name, review_date, attendance_rating, quality_rating, teamwork_rating, punctuality_rating, overall_rating, strengths, areas_for_improvement, goals, notes } = req.body;
+    db.run('INSERT INTO performance_reviews (employee_id, reviewer_name, review_date, attendance_rating, quality_rating, teamwork_rating, punctuality_rating, overall_rating, strengths, areas_for_improvement, goals, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [employee_id, reviewer_name, review_date, attendance_rating, quality_rating, teamwork_rating, punctuality_rating, overall_rating, strengths, areas_for_improvement, goals, notes],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.delete('/api/performance-reviews/:id', (req, res) => {
+    db.run('DELETE FROM performance_reviews WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.post('/api/performance-reviews/:id/archive', (req, res) => {
+    db.get('SELECT pr.*, e.name as employee_name FROM performance_reviews pr JOIN employees e ON pr.employee_id = e.id WHERE pr.id = ?', [req.params.id], (err, review) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!review) return res.status(404).json({ error: 'Review not found' });
+        
+        db.run('INSERT INTO archived_performance_reviews (original_id, employee_id, employee_name, reviewer_name, review_date, attendance_rating, quality_rating, teamwork_rating, punctuality_rating, overall_rating, strengths, areas_for_improvement, goals, notes, archived_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [review.id, review.employee_id, review.employee_name, review.reviewer_name, review.review_date, review.attendance_rating, review.quality_rating, review.teamwork_rating, review.punctuality_rating, review.overall_rating, review.strengths, review.areas_for_improvement, review.goals, review.notes, new Date().toISOString()],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                db.run('DELETE FROM performance_reviews WHERE id = ?', [req.params.id], (err) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    res.json({ success: true });
+                });
+            });
+    });
+});
+
+app.get('/api/archived-performance-reviews', (req, res) => {
+    db.all('SELECT * FROM archived_performance_reviews ORDER BY review_date DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/archived-performance-reviews/employee/:employeeId', (req, res) => {
+    db.all('SELECT * FROM archived_performance_reviews WHERE employee_id = ? ORDER BY review_date DESC', [req.params.employeeId], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/performance-reviews/auto-archive', (req, res) => {
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    db.all('SELECT pr.*, e.name as employee_name FROM performance_reviews pr JOIN employees e ON pr.employee_id = e.id WHERE pr.review_date < ?', [ninetyDaysAgo], (err, reviews) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (reviews.length === 0) return res.json({ archived: 0 });
+        
+        let archived = 0;
+        reviews.forEach(review => {
+            db.run('INSERT INTO archived_performance_reviews (original_id, employee_id, employee_name, reviewer_name, review_date, attendance_rating, quality_rating, teamwork_rating, punctuality_rating, overall_rating, strengths, areas_for_improvement, goals, notes, archived_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [review.id, review.employee_id, review.employee_name, review.reviewer_name, review.review_date, review.attendance_rating, review.quality_rating, review.teamwork_rating, review.punctuality_rating, review.overall_rating, review.strengths, review.areas_for_improvement, review.goals, review.notes, new Date().toISOString()],
+                function(err) {
+                    if (!err) {
+                        db.run('DELETE FROM performance_reviews WHERE id = ?', [review.id]);
+                        archived++;
+                    }
+                });
+        });
+        setTimeout(() => res.json({ archived }), 500);
+    });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
     console.error('Server error:', err);
