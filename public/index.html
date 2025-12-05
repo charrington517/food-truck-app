@@ -1530,7 +1530,7 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="newInventoryCategory" placeholder="Add new inventory category" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addInventoryCategory()" style="width: auto; padding: 12px 20px;">Add</button>
-                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('inventoryCategories', JSON.stringify(['Food','Cleaning Supplies','To Go Supplies','Equipment','Other'])); loadInventoryCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/inventoryCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Food','Cleaning Supplies','To Go Supplies','Equipment','Other'])})}); loadInventoryCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="inventoryCategoriesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1545,7 +1545,7 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="newSupplierCategory" placeholder="Add new supplier category (e.g., Produce, Equipment)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addSupplierCategory()" style="width: auto; padding: 12px 20px;">Add</button>
-                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('supplierCategories', JSON.stringify(['Food','Equipment','Supplies','Other'])); loadSupplierCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/supplierCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Food','Beverage','Equipment','Supplies','Other'])})}); loadSupplierCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="supplierCategoriesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1560,7 +1560,7 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="newEventStatus" placeholder="Add new status (e.g., Waitlisted, Confirmed)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addEventStatus()" style="width: auto; padding: 12px 20px;">Add</button>
-                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('eventStatuses', JSON.stringify(['Interested','Applied','Accepted','Accepted & Paid','Rejected','Completed'])); loadEventStatuses(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/eventStatuses', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Scheduled','Confirmed','Completed','Cancelled'])})}); loadEventStatuses(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="eventStatusesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1575,7 +1575,7 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="newFileCategory" placeholder="Add new category (e.g., Invoices, Photos)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addFileCategory()" style="width: auto; padding: 12px 20px;">Add</button>
-                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('fileCategories', JSON.stringify(['General','Event Contracts','Catering Contracts','Permits','Insurance','Marketing','Images','Receipts','Other'])); loadFileCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/fileCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Licenses','Permits','Insurance','Contracts','Invoices','Receipts','Other'])})}); loadFileCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="fileCategoriesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1590,7 +1590,7 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="newEmployeeRoleInput" placeholder="Add new role (e.g., Assistant Manager, Dishwasher)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addEmployeeRole()" style="width: auto; padding: 12px 20px;">Add</button>
-                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('employeeRoles', JSON.stringify(['Cook','Cashier','Manager','Prep Cook','Server','Driver','Cleaner'])); loadEmployeeRoles(); updateEmployeeRoleDropdown(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/employeeRoles', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Manager','Chef','Cook','Server','Cashier','Driver'])})}); loadEmployeeRoles(); updateEmployeeRoleDropdown(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="employeeRolesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1605,7 +1605,7 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="newContactCategory" placeholder="Add new category (e.g., Venue, Photographer)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addContactCategory()" style="width: auto; padding: 12px 20px;">Add</button>
-                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('contactCategories', JSON.stringify(['General','Catering Client','Event Organizer','Vendor'])); loadContactCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/contactCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Client','Supplier','Vendor','Partner','Other'])})}); loadContactCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="contactCategoriesList" style="margin-top: 15px;"></div>
                         </div>
@@ -1620,7 +1620,7 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="newExpenseCategory" placeholder="Add new category (e.g., Rent, Utilities)" onclick="event.stopPropagation()">
                                 <button class="btn" onclick="event.stopPropagation(); addExpenseCategory()" style="width: auto; padding: 12px 20px;">Add</button>
-                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('expenseCategories', JSON.stringify(['Fuel','Supplies','Permits','Insurance','Maintenance','Marketing','Utilities','Labor','Other'])); loadExpenseCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/expenseCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Food','Supplies','Fuel','Maintenance','Permits','Insurance','Marketing','Other'])})}); loadExpenseCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="expenseCategoriesList" style="margin-top: 15px;"></div>
                         </div>
@@ -3186,7 +3186,7 @@ function exportInventoryReport() {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ingredients: JSON.stringify(editIngredients)})
-            });
+            }).catch(err => console.error('Failed to save recipe:', err));
 
             fetch(`/api/menu/${id}`, {
                 method: 'PUT',
@@ -3590,7 +3590,7 @@ function exportInventoryReport() {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({ingredients: JSON.stringify(editIngredients)})
-            });
+            }).catch(err => console.error('Failed to save special recipe:', err));
             
             const today = new Date().toISOString().split('T')[0];
             let status = 'active';
