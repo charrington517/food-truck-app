@@ -266,6 +266,13 @@ db.serialize(() => {
         value TEXT
     )`);
 
+    db.run(`CREATE TABLE IF NOT EXISTS recipes (
+        type TEXT NOT NULL,
+        item_id INTEGER NOT NULL,
+        ingredients TEXT NOT NULL,
+        PRIMARY KEY (type, item_id)
+    )`);
+
     // Time punches table
     db.run(`CREATE TABLE IF NOT EXISTS time_punches (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -422,6 +429,19 @@ db.serialize(() => {
         cost REAL DEFAULT 0,
         created_at TEXT NOT NULL,
         FOREIGN KEY (inventory_id) REFERENCES inventory (id)
+    )`);
+    
+    // Menu specials table
+    db.run(`CREATE TABLE IF NOT EXISTS menu_specials (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        price REAL,
+        start_date TEXT,
+        end_date TEXT,
+        days_of_week TEXT,
+        status TEXT DEFAULT 'active',
+        category TEXT DEFAULT 'seasonal'
     )`);
     
     // Insert sample contacts
@@ -1459,6 +1479,57 @@ app.get('/api/inventory-report', (req, res) => {
     });
 });
 
+// Menu specials endpoints
+app.get('/api/menu-specials', (req, res) => {
+    db.all('SELECT * FROM menu_specials ORDER BY start_date DESC', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/menu-specials', (req, res) => {
+    const { name, description, price, start_date, end_date, days_of_week, status, category } = req.body;
+    console.log('Creating menu special:', { name, description, price, start_date, end_date, days_of_week, status, category });
+    db.run('INSERT INTO menu_specials (name, description, price, start_date, end_date, days_of_week, status, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [name, description, price, start_date || null, end_date || null, days_of_week, status || 'active', category || 'seasonal'],
+        function(err) {
+            if (err) {
+                console.error('Error creating menu special:', err);
+                return res.status(500).json({ error: err.message });
+            }
+            console.log('Menu special created with ID:', this.lastID);
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/menu-specials/:id', (req, res) => {
+    const { name, description, price, start_date, end_date, days_of_week, status, category } = req.body;
+    db.run('UPDATE menu_specials SET name = ?, description = ?, price = ?, start_date = ?, end_date = ?, days_of_week = ?, status = ?, category = ? WHERE id = ?',
+        [name, description, price, start_date, end_date, days_of_week, status, category, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/menu-specials/:id', (req, res) => {
+    db.run('DELETE FROM menu_specials WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.get('/api/menu-specials/active', (req, res) => {
+    const today = new Date().toISOString().split('T')[0];
+    const dayOfWeek = new Date().getDay();
+    db.all(`SELECT * FROM menu_specials WHERE status = 'active' AND start_date <= ? AND end_date >= ? AND (days_of_week IS NULL OR days_of_week LIKE ?)`,
+        [today, today, `%${dayOfWeek}%`],
+        (err, rows) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json(rows);
+        });
+});
+
 // Waste log endpoints
 app.get('/api/waste-log', (req, res) => {
     db.all('SELECT * FROM waste_log ORDER BY created_at DESC LIMIT 100', (err, rows) => {
@@ -1525,6 +1596,45 @@ app.get('/api/waste-report', (req, res) => {
     db.all(sql, params, (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
+    });
+});
+
+// Recipe endpoints
+app.get('/api/recipes/:type/:id', (req, res) => {
+    db.get('SELECT ingredients FROM recipes WHERE type = ? AND item_id = ?', [req.params.type, req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ ingredients: row ? row.ingredients : '[]' });
+    });
+});
+
+app.post('/api/recipes/:type/:id', (req, res) => {
+    const { ingredients } = req.body;
+    db.run('INSERT OR REPLACE INTO recipes (type, item_id, ingredients) VALUES (?, ?, ?)', [req.params.type, req.params.id, ingredients], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+app.delete('/api/recipes/:type/:id', (req, res) => {
+    db.run('DELETE FROM recipes WHERE type = ? AND item_id = ?', [req.params.type, req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Settings sync endpoints
+app.get('/api/settings/:key', (req, res) => {
+    db.get('SELECT value FROM settings WHERE key = ?', [req.params.key], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ value: row ? row.value : null });
+    });
+});
+
+app.post('/api/settings/:key', (req, res) => {
+    const { value } = req.body;
+    db.run('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', [req.params.key, value], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
     });
 });
 

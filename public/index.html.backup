@@ -2161,23 +2161,6 @@ function exportInventoryReport() {
         }
 
         // Authentication Functions
-        async function migrateRecipesToDatabase() {
-            const keys = Object.keys(localStorage);
-            for (const key of keys) {
-                if (key.startsWith('recipe-') || key.startsWith('special-recipe-')) {
-                    const ingredients = localStorage.getItem(key);
-                    const type = key.startsWith('special-recipe-') ? 'special' : 'menu';
-                    const id = key.startsWith('special-recipe-') ? key.replace('special-recipe-', '') : key.replace('recipe-', '');
-                    await fetch(`/api/recipes/${type}/${id}`, {
-                        method: 'POST',
-                        headers: {'Content-Type': 'application/json'},
-                        body: JSON.stringify({ingredients})
-                    });
-                    localStorage.removeItem(key);
-                }
-            }
-        }
-
         async function checkAuth() {
             const user = localStorage.getItem('currentUser');
             if (user) {
@@ -2187,7 +2170,6 @@ function exportInventoryReport() {
                 document.querySelector('.nav').style.display = 'block';
                 resetSessionTimeout();
                 await migrateEmployeesToDatabase();
-                await migrateRecipesToDatabase();
                 loadDashboard();
             } else {
                 document.getElementById('loginScreen').style.display = 'flex';
@@ -3069,10 +3051,7 @@ function exportInventoryReport() {
         }
         
         function loadMenuIngredients(menuId) {
-            fetch(`/api/recipes/menu/${menuId}`)
-                .then(r => r.json())
-                .then(data => {
-                    const ingredients = JSON.parse(data.ingredients || '[]');
+            const ingredients = JSON.parse(localStorage.getItem(`recipe-${menuId}`) || '[]');
             
             if (ingredients.length === 0) {
                 document.getElementById(`ingredients-${menuId}`).innerHTML = '<div style="color: var(--gray); font-style: italic;">No ingredients added yet. Use Edit to add ingredients.</div>';
@@ -3086,18 +3065,15 @@ function exportInventoryReport() {
                 </div>
             `).join('');
             
-                    document.getElementById(`ingredients-${menuId}`).innerHTML = ingredientsHtml;
-                });
+            document.getElementById(`ingredients-${menuId}`).innerHTML = ingredientsHtml;
         }
 
         function editRecipe(id) {
             editingRecipeId = id;
-            fetch(`/api/recipes/menu/${id}`)
-                .then(r => r.json())
-                .then(data => {
-                    editIngredients = JSON.parse(data.ingredients || '[]');
-                    return fetch('/api/menu');
-                })
+            editIngredients = JSON.parse(localStorage.getItem(`recipe-${id}`) || '[]');
+            
+            // Get recipe data
+            fetch('/api/menu')
                 .then(r => r.json())
                 .then(items => {
                     const recipe = items.find(item => item.id === id);
@@ -3109,7 +3085,7 @@ function exportInventoryReport() {
                     const modalForm = document.getElementById('modalForm');
                     
                     modalTitle.textContent = 'Edit Recipe';
-                    const ingredients = editIngredients;
+                    const ingredients = JSON.parse(localStorage.getItem(`recipe-${id}`) || '[]');
                     
                     modalForm.innerHTML = `
                         <div class="form">
@@ -3182,11 +3158,7 @@ function exportInventoryReport() {
                 return;
             }
             
-            fetch(`/api/recipes/menu/${id}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ingredients: JSON.stringify(editIngredients)})
-            });
+            localStorage.setItem(`recipe-${id}`, JSON.stringify(editIngredients));
 
             fetch(`/api/menu/${id}`, {
                 method: 'PUT',
@@ -3350,70 +3322,69 @@ function exportInventoryReport() {
         }
 
         // Menu Specials Functions
-        async function loadMenuSpecials() {
-            const specials = await fetch('/api/menu-specials').then(r => r.json());
-            if (specials.length === 0) {
-                document.getElementById('menuSpecialsList').innerHTML = '<div class="card" style="text-align: center; color: var(--gray);"><div class="card-title">No specials planned</div><div class="card-meta">Add rotating specials or seasonal items</div></div>';
-                return;
-            }
-            
-            const today = new Date().toISOString().split('T')[0];
-            const specialsHtml = await Promise.all(specials.map(async special => {
-                const data = await fetch(`/api/recipes/special/${special.id}`).then(r => r.json());
-                const ingredients = JSON.parse(data.ingredients || '[]');
-                const cost = ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
-                const margin = special.price && cost ? (((special.price - cost) / special.price) * 100).toFixed(1) : 0;
-                
-                let isActive, isPast, isFuture;
-                if (special.start_date && special.end_date) {
-                    isActive = special.start_date <= today && special.end_date >= today;
-                    isPast = special.end_date < today;
-                    isFuture = special.start_date > today;
-                } else {
-                    isActive = true;
-                    isPast = false;
-                    isFuture = false;
-                }
-                const statusColor = isActive ? 'var(--success)' : isPast ? 'var(--gray)' : 'var(--warning)';
-                const statusText = isActive ? 'ACTIVE' : isPast ? 'ENDED' : 'SCHEDULED';
-                const days = special.days_of_week ? JSON.parse(special.days_of_week).map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ') : 'All days';
-                const dateRange = special.start_date && special.end_date ? `${special.start_date} to ${special.end_date}` : 'Ongoing';
-                const categoryDisplay = days !== 'All days' ? `${special.category.charAt(0).toUpperCase() + special.category.slice(1)} - ${days}` : special.category.charAt(0).toUpperCase() + special.category.slice(1);
-                
-                return `
-                    <div class="card">
-                        <div class="card-header" onclick="toggleSpecialDetails(${special.id})" style="cursor: pointer;">
-                            <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
-                                <span>${special.name}</span>
-                                <div style="display: flex; gap: 8px; align-items: center;">
-                                    <span style="background: ${statusColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold;">${statusText}</span>
-                                    <span class="expand-icon" id="special-icon-${special.id}">▼</span>
+        function loadMenuSpecials() {
+            fetch('/api/menu-specials')
+                .then(r => r.json())
+                .then(specials => {
+                    if (specials.length === 0) {
+                        document.getElementById('menuSpecialsList').innerHTML = '<div class="card" style="text-align: center; color: var(--gray);"><div class="card-title">No specials planned</div><div class="card-meta">Add rotating specials or seasonal items</div></div>';
+                        return;
+                    }
+                    
+                    const today = new Date().toISOString().split('T')[0];
+                    document.getElementById('menuSpecialsList').innerHTML = specials.map(special => {
+                        let isActive, isPast, isFuture;
+                        if (special.start_date && special.end_date) {
+                            isActive = special.start_date <= today && special.end_date >= today;
+                            isPast = special.end_date < today;
+                            isFuture = special.start_date > today;
+                        } else {
+                            isActive = true;
+                            isPast = false;
+                            isFuture = false;
+                        }
+                        const statusColor = isActive ? 'var(--success)' : isPast ? 'var(--gray)' : 'var(--warning)';
+                        const statusText = isActive ? 'ACTIVE' : isPast ? 'ENDED' : 'SCHEDULED';
+                        const days = special.days_of_week ? JSON.parse(special.days_of_week).map(d => ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d]).join(', ') : 'All days';
+                        const dateRange = special.start_date && special.end_date ? `${special.start_date} to ${special.end_date}` : 'Ongoing';
+                        const ingredients = JSON.parse(localStorage.getItem(`special-recipe-${special.id}`) || '[]');
+                        const cost = ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
+                        const margin = special.price && cost ? (((special.price - cost) / special.price) * 100).toFixed(1) : 0;
+                        const categoryDisplay = days !== 'All days' ? `${special.category.charAt(0).toUpperCase() + special.category.slice(1)} - ${days}` : special.category.charAt(0).toUpperCase() + special.category.slice(1);
+                        
+                        return `
+                            <div class="card">
+                                <div class="card-header" onclick="toggleSpecialDetails(${special.id})" style="cursor: pointer;">
+                                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <span>${special.name}</span>
+                                        <div style="display: flex; gap: 8px; align-items: center;">
+                                            <span style="background: ${statusColor}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: bold;">${statusText}</span>
+                                            <span class="expand-icon" id="special-icon-${special.id}">▼</span>
+                                        </div>
+                                    </div>
+                                    <div class="card-meta">${categoryDisplay} • ${dateRange}</div>
+                                    <div class="card-meta">Price: ${special.price ? '$' + special.price.toFixed(2) : 'Not set'}${cost > 0 ? ` • Cost: $${cost.toFixed(2)} • Margin: ${margin}%` : ''}</div>
+                                </div>
+                                <div class="card-details" id="special-details-${special.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
+                                    ${special.description ? `<div style="margin-bottom: 10px; font-style: italic;">${special.description}</div>` : ''}
+                                    ${ingredients.length > 0 ? `
+                                        <h4 style="margin-bottom: 10px;">Ingredients:</h4>
+                                        ${ingredients.map(ing => `
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: var(--gray-light); border-radius: 6px;">
+                                                <span>${ing.name}</span>
+                                                <span>${ing.amount} servings - $${(ing.calculatedCost || 0).toFixed(2)}</span>
+                                            </div>
+                                        `).join('')}
+                                    ` : '<div style="color: var(--gray); font-style: italic;">No ingredients added</div>'}
+                                </div>
+                                <div class="card-actions" style="margin-top: 15px;">
+                                    <button class="btn" onclick="event.stopPropagation(); editMenuSpecial(${special.id})" style="background: var(--orange); color: white;">Edit</button>
+                                    <button class="btn btn-danger" onclick="event.stopPropagation(); deleteMenuSpecial(${special.id})">Delete</button>
                                 </div>
                             </div>
-                            <div class="card-meta">${categoryDisplay} • ${dateRange}</div>
-                            <div class="card-meta">Price: ${special.price ? '$' + special.price.toFixed(2) : 'Not set'}${cost > 0 ? ` • Cost: $${cost.toFixed(2)} • Margin: ${margin}%` : ''}</div>
-                        </div>
-                        <div class="card-details" id="special-details-${special.id}" style="display: none; margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--border);">
-                            ${special.description ? `<div style="margin-bottom: 10px; font-style: italic;">${special.description}</div>` : ''}
-                            ${ingredients.length > 0 ? `
-                                <h4 style="margin-bottom: 10px;">Ingredients:</h4>
-                                ${ingredients.map(ing => `
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; padding: 8px; background: var(--gray-light); border-radius: 6px;">
-                                        <span>${ing.name}</span>
-                                        <span>${ing.amount} servings - $${(ing.calculatedCost || 0).toFixed(2)}</span>
-                                    </div>
-                                `).join('')}
-                            ` : '<div style="color: var(--gray); font-style: italic;">No ingredients added</div>'}
-                        </div>
-                        <div class="card-actions" style="margin-top: 15px;">
-                            <button class="btn" onclick="event.stopPropagation(); editMenuSpecial(${special.id})" style="background: var(--orange); color: white;">Edit</button>
-                            <button class="btn btn-danger" onclick="event.stopPropagation(); deleteMenuSpecial(${special.id})">Delete</button>
-                        </div>
-                    </div>
-                `;
-            }));
-            
-            document.getElementById('menuSpecialsList').innerHTML = specialsHtml.join('');
+                        `;
+                    }).join('');
+                });
         }
         
         function addMenuSpecial() {
@@ -3492,12 +3463,9 @@ function exportInventoryReport() {
         
         function editMenuSpecial(id) {
             editingRecipeId = id;
-            fetch(`/api/recipes/special/${id}`)
-                .then(r => r.json())
-                .then(data => {
-                    editIngredients = JSON.parse(data.ingredients || '[]');
-                    return fetch('/api/menu-specials');
-                })
+            editIngredients = JSON.parse(localStorage.getItem(`special-recipe-${id}`) || '[]');
+            
+            fetch('/api/menu-specials')
                 .then(r => r.json())
                 .then(specials => {
                     const special = specials.find(s => s.id === id);
@@ -3508,7 +3476,7 @@ function exportInventoryReport() {
                     const modalForm = document.getElementById('modalForm');
                     
                     const days = special.days_of_week ? JSON.parse(special.days_of_week) : [];
-                    const ingredients = editIngredients;
+                    const ingredients = JSON.parse(localStorage.getItem(`special-recipe-${id}`) || '[]');
                     const calculatedCost = ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
                     
                     modalTitle.textContent = 'Edit Menu Special';
@@ -3586,11 +3554,7 @@ function exportInventoryReport() {
                 return;
             }
             
-            fetch(`/api/recipes/special/${id}`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ingredients: JSON.stringify(editIngredients)})
-            });
+            localStorage.setItem(`special-recipe-${id}`, JSON.stringify(editIngredients));
             
             const today = new Date().toISOString().split('T')[0];
             let status = 'active';
@@ -3620,7 +3584,7 @@ function exportInventoryReport() {
             if (confirm('Delete this menu special?')) {
                 fetch(`/api/menu-specials/${id}`, { method: 'DELETE' })
                     .then(() => {
-                        fetch(`/api/recipes/special/${id}`, {method: 'DELETE'});
+                        localStorage.removeItem(`special-recipe-${id}`);
                         loadMenuSpecials();
                     });
             }
@@ -6837,33 +6801,30 @@ function exportInventoryReport() {
 
         function addSupplierCategory() {
             const category = document.getElementById('newSupplierCategory').value.trim();
-            if (!category) return alert('Please enter a category name');
+            if (!category) {
+                alert('Please enter a category name');
+                return;
+            }
             
-            fetch('/api/settings/supplierCategories')
-                .then(r => r.json())
-                .then(d => {
-                    const categories = d.value ? JSON.parse(d.value) : [];
-                    if (categories.includes(category)) return alert('Category already exists');
-                    categories.push(category);
-                    return fetch('/api/settings/supplierCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(categories)})});
-                })
-                .then(() => {
-                    document.getElementById('newSupplierCategory').value = '';
-                    loadSupplierCategories();
-                });
+            const categories = JSON.parse(localStorage.getItem('supplierCategories') || '[]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('supplierCategories', JSON.stringify(categories));
+                document.getElementById('newSupplierCategory').value = '';
+                loadSupplierCategories();
+            } else {
+                alert('Category already exists');
+            }
         }
         
         function loadSupplierCategories() {
-            fetch('/api/settings/supplierCategories')
-                .then(r => r.json())
-                .then(d => {
-                    const categories = d.value ? JSON.parse(d.value) : JSON.parse('["Food","Beverage","Equipment","Supplies","Other"]');
-                    document.getElementById('supplierCategoriesList').innerHTML = categories.map(category => `
-                        <span onclick="editSupplierCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
-                            ${category}
-                        </span>
-                    `).join('');
-                });
+            const categories = JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
+            
+            document.getElementById('supplierCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editSupplierCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
         }
         
         function editSupplierCategory(category) {
@@ -6875,7 +6836,7 @@ function exportInventoryReport() {
         }
         
         function getAllSupplierCategories() {
-            return fetch('/api/settings/supplierCategories').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
+            return JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
         }
 
         // Measurement Units Functions
@@ -6963,17 +6924,13 @@ function exportInventoryReport() {
                     })
                     .then(() => loadInventoryCategories());
             } else if (editType === 'supplierCategory') {
-                fetch('/api/settings/supplierCategories')
-                    .then(r => r.json())
-                    .then(d => {
-                        const categories = d.value ? JSON.parse(d.value) : [];
-                        const index = categories.indexOf(editOriginalValue);
-                        if (index !== -1) {
-                            categories[index] = newValue;
-                            return fetch('/api/settings/supplierCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(categories)})});
-                        }
-                    })
-                    .then(() => loadSupplierCategories());
+                const categories = JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('supplierCategories', JSON.stringify(categories));
+                    loadSupplierCategories();
+                }
             } else if (editType === 'eventStatus') {
                 const statuses = JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
                 const index = statuses.indexOf(editOriginalValue);
@@ -6983,56 +6940,38 @@ function exportInventoryReport() {
                     loadEventStatuses();
                 }
             } else if (editType === 'fileCategory') {
-                fetch('/api/settings/fileCategories')
-                    .then(r => r.json())
-                    .then(d => {
-                        const categories = d.value ? JSON.parse(d.value) : [];
-                        const index = categories.indexOf(editOriginalValue);
-                        if (index !== -1) {
-                            categories[index] = newValue;
-                            return fetch('/api/settings/fileCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(categories)})});
-                        }
-                    })
-                    .then(() => loadFileCategories());
+                const categories = JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('fileCategories', JSON.stringify(categories));
+                    loadFileCategories();
+                }
             } else if (editType === 'employeeRole') {
-                fetch('/api/settings/employeeRoles')
-                    .then(r => r.json())
-                    .then(d => {
-                        const roles = d.value ? JSON.parse(d.value) : [];
-                        const index = roles.indexOf(editOriginalValue);
-                        if (index !== -1) {
-                            roles[index] = newValue;
-                            return fetch('/api/settings/employeeRoles', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(roles)})});
-                        }
-                    })
-                    .then(() => {
-                        loadEmployeeRoles();
-                        updateEmployeeRoleDropdown();
-                    });
+                const roles = JSON.parse(localStorage.getItem('employeeRoles') || '["Cook","Cashier","Manager","Prep Cook","Server","Driver","Cleaner"]');
+                const index = roles.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    roles[index] = newValue;
+                    localStorage.setItem('employeeRoles', JSON.stringify(roles));
+                    loadEmployeeRoles();
+                    updateEmployeeRoleDropdown();
+                }
             } else if (editType === 'contactCategory') {
-                fetch('/api/settings/contactCategories')
-                    .then(r => r.json())
-                    .then(d => {
-                        const categories = d.value ? JSON.parse(d.value) : [];
-                        const index = categories.indexOf(editOriginalValue);
-                        if (index !== -1) {
-                            categories[index] = newValue;
-                            return fetch('/api/settings/contactCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(categories)})});
-                        }
-                    })
-                    .then(() => loadContactCategories());
+                const categories = JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('contactCategories', JSON.stringify(categories));
+                    loadContactCategories();
+                }
             } else if (editType === 'expenseCategory') {
-                fetch('/api/settings/expenseCategories')
-                    .then(r => r.json())
-                    .then(d => {
-                        const categories = d.value ? JSON.parse(d.value) : [];
-                        const index = categories.indexOf(editOriginalValue);
-                        if (index !== -1) {
-                            categories[index] = newValue;
-                            return fetch('/api/settings/expenseCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(categories)})});
-                        }
-                    })
-                    .then(() => loadExpenseCategories());
+                const categories = JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('expenseCategories', JSON.stringify(categories));
+                    loadExpenseCategories();
+                }
             } else if (editType === 'specialCategory') {
                 fetch('/api/settings/specialCategories')
                     .then(r => r.json())
@@ -7078,58 +7017,36 @@ function exportInventoryReport() {
                     })
                     .then(() => loadInventoryCategories());
             } else if (editType === 'supplierCategory') {
-                fetch('/api/settings/supplierCategories')
-                    .then(r => r.json())
-                    .then(d => {
-                        const categories = d.value ? JSON.parse(d.value) : [];
-                        const filtered = categories.filter(c => c !== editOriginalValue);
-                        return fetch('/api/settings/supplierCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(filtered)})});
-                    })
-                    .then(() => loadSupplierCategories());
+                const categories = JSON.parse(localStorage.getItem('supplierCategories') || '["Food","Equipment","Supplies","Other"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('supplierCategories', JSON.stringify(filtered));
+                loadSupplierCategories();
             } else if (editType === 'eventStatus') {
                 const statuses = JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
                 const filtered = statuses.filter(s => s !== editOriginalValue);
                 localStorage.setItem('eventStatuses', JSON.stringify(filtered));
                 loadEventStatuses();
             } else if (editType === 'fileCategory') {
-                fetch('/api/settings/fileCategories')
-                    .then(r => r.json())
-                    .then(d => {
-                        const categories = d.value ? JSON.parse(d.value) : [];
-                        const filtered = categories.filter(c => c !== editOriginalValue);
-                        return fetch('/api/settings/fileCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(filtered)})});
-                    })
-                    .then(() => loadFileCategories());
+                const categories = JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('fileCategories', JSON.stringify(filtered));
+                loadFileCategories();
             } else if (editType === 'employeeRole') {
-                fetch('/api/settings/employeeRoles')
-                    .then(r => r.json())
-                    .then(d => {
-                        const roles = d.value ? JSON.parse(d.value) : [];
-                        const filtered = roles.filter(r => r !== editOriginalValue);
-                        return fetch('/api/settings/employeeRoles', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(filtered)})});
-                    })
-                    .then(() => {
-                        loadEmployeeRoles();
-                        updateEmployeeRoleDropdown();
-                    });
+                const roles = JSON.parse(localStorage.getItem('employeeRoles') || '["Cook","Cashier","Manager","Prep Cook","Server","Driver","Cleaner"]');
+                const filtered = roles.filter(r => r !== editOriginalValue);
+                localStorage.setItem('employeeRoles', JSON.stringify(filtered));
+                loadEmployeeRoles();
+                updateEmployeeRoleDropdown();
             } else if (editType === 'contactCategory') {
-                fetch('/api/settings/contactCategories')
-                    .then(r => r.json())
-                    .then(d => {
-                        const categories = d.value ? JSON.parse(d.value) : [];
-                        const filtered = categories.filter(c => c !== editOriginalValue);
-                        return fetch('/api/settings/contactCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(filtered)})});
-                    })
-                    .then(() => loadContactCategories());
+                const categories = JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('contactCategories', JSON.stringify(filtered));
+                loadContactCategories();
             } else if (editType === 'expenseCategory') {
-                fetch('/api/settings/expenseCategories')
-                    .then(r => r.json())
-                    .then(d => {
-                        const categories = d.value ? JSON.parse(d.value) : [];
-                        const filtered = categories.filter(c => c !== editOriginalValue);
-                        return fetch('/api/settings/expenseCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(filtered)})});
-                    })
-                    .then(() => loadExpenseCategories());
+                const categories = JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('expenseCategories', JSON.stringify(filtered));
+                loadExpenseCategories();
             } else if (editType === 'specialCategory') {
                 fetch('/api/settings/specialCategories')
                     .then(r => r.json())
@@ -7143,40 +7060,46 @@ function exportInventoryReport() {
             closeEditModal();
         }
         
+        function deleteMeasurementUnit(unit) {
+            if (confirm(`Delete unit "${unit}"?`)) {
+                const units = JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
+                const filtered = units.filter(u => u !== unit);
+                localStorage.setItem('measurementUnits', JSON.stringify(filtered));
+                loadMeasurementUnits();
+            }
+        }
+        
         function getAllMeasurementUnits() {
-            return fetch('/api/settings/measurementUnits').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
+            return JSON.parse(localStorage.getItem('measurementUnits') || '["lb","oz","kg","g","cups","tbsp","tsp","liters","ml","pieces","pack"]');
         }
         
         // Event Status Functions
         function addEventStatus() {
             const status = document.getElementById('newEventStatus').value.trim();
-            if (!status) return alert('Please enter a status name');
+            if (!status) {
+                alert('Please enter a status name');
+                return;
+            }
             
-            fetch('/api/settings/eventStatuses')
-                .then(r => r.json())
-                .then(d => {
-                    const statuses = d.value ? JSON.parse(d.value) : [];
-                    if (statuses.includes(status)) return alert('Status already exists');
-                    statuses.push(status);
-                    return fetch('/api/settings/eventStatuses', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(statuses)})});
-                })
-                .then(() => {
-                    document.getElementById('newEventStatus').value = '';
-                    loadEventStatuses();
-                });
+            const statuses = JSON.parse(localStorage.getItem('eventStatuses') || '[]');
+            if (!statuses.includes(status)) {
+                statuses.push(status);
+                localStorage.setItem('eventStatuses', JSON.stringify(statuses));
+                document.getElementById('newEventStatus').value = '';
+                loadEventStatuses();
+            } else {
+                alert('Status already exists');
+            }
         }
         
         function loadEventStatuses() {
-            fetch('/api/settings/eventStatuses')
-                .then(r => r.json())
-                .then(d => {
-                    const statuses = d.value ? JSON.parse(d.value) : JSON.parse('["Scheduled","Confirmed","Completed","Cancelled"]');
-                    document.getElementById('eventStatusesList').innerHTML = statuses.map(status => `
-                        <span onclick="editEventStatus('${status}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
-                            ${status}
-                        </span>
-                    `).join('');
-                });
+            const statuses = JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
+            
+            document.getElementById('eventStatusesList').innerHTML = statuses.map(status => `
+                <span onclick="editEventStatus('${status}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${status}
+                </span>
+            `).join('');
         }
         
         function editEventStatus(status) {
@@ -7188,39 +7111,36 @@ function exportInventoryReport() {
         }
         
         function getAllEventStatuses() {
-            return fetch('/api/settings/eventStatuses').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
+            return JSON.parse(localStorage.getItem('eventStatuses') || '["Interested","Applied","Accepted","Accepted & Paid","Rejected","Completed"]');
         }
         
         // File Category Functions
         function addFileCategory() {
             const category = document.getElementById('newFileCategory').value.trim();
-            if (!category) return alert('Please enter a category name');
+            if (!category) {
+                alert('Please enter a category name');
+                return;
+            }
             
-            fetch('/api/settings/fileCategories')
-                .then(r => r.json())
-                .then(d => {
-                    const categories = d.value ? JSON.parse(d.value) : [];
-                    if (categories.includes(category)) return alert('Category already exists');
-                    categories.push(category);
-                    return fetch('/api/settings/fileCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(categories)})});
-                })
-                .then(() => {
-                    document.getElementById('newFileCategory').value = '';
-                    loadFileCategories();
-                });
+            const categories = JSON.parse(localStorage.getItem('fileCategories') || '[]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('fileCategories', JSON.stringify(categories));
+                document.getElementById('newFileCategory').value = '';
+                loadFileCategories();
+            } else {
+                alert('Category already exists');
+            }
         }
         
         function loadFileCategories() {
-            fetch('/api/settings/fileCategories')
-                .then(r => r.json())
-                .then(d => {
-                    const categories = d.value ? JSON.parse(d.value) : JSON.parse('["Licenses","Permits","Insurance","Contracts","Invoices","Receipts","Other"]');
-                    document.getElementById('fileCategoriesList').innerHTML = categories.map(category => `
-                        <span onclick="editFileCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
-                            ${category}
-                        </span>
-                    `).join('');
-                });
+            const categories = JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
+            
+            document.getElementById('fileCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editFileCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
         }
         
         function editFileCategory(category) {
@@ -7232,40 +7152,37 @@ function exportInventoryReport() {
         }
         
         function getAllFileCategories() {
-            return fetch('/api/settings/fileCategories').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
+            return JSON.parse(localStorage.getItem('fileCategories') || '["General","Event Contracts","Catering Contracts","Permits","Insurance","Marketing","Images","Receipts","Other"]');
         }
         
         // Employee Roles Functions
         function addEmployeeRole() {
             const role = document.getElementById('newEmployeeRoleInput').value.trim();
-            if (!role) return alert('Please enter a role name');
+            if (!role) {
+                alert('Please enter a role name');
+                return;
+            }
             
-            fetch('/api/settings/employeeRoles')
-                .then(r => r.json())
-                .then(d => {
-                    const roles = d.value ? JSON.parse(d.value) : [];
-                    if (roles.includes(role)) return alert('Role already exists');
-                    roles.push(role);
-                    return fetch('/api/settings/employeeRoles', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(roles)})});
-                })
-                .then(() => {
-                    document.getElementById('newEmployeeRoleInput').value = '';
-                    loadEmployeeRoles();
-                    updateEmployeeRoleDropdown();
-                });
+            const roles = JSON.parse(localStorage.getItem('employeeRoles') || '[]');
+            if (!roles.includes(role)) {
+                roles.push(role);
+                localStorage.setItem('employeeRoles', JSON.stringify(roles));
+                document.getElementById('newEmployeeRoleInput').value = '';
+                loadEmployeeRoles();
+                updateEmployeeRoleDropdown();
+            } else {
+                alert('Role already exists');
+            }
         }
         
         function loadEmployeeRoles() {
-            fetch('/api/settings/employeeRoles')
-                .then(r => r.json())
-                .then(d => {
-                    const roles = d.value ? JSON.parse(d.value) : JSON.parse('["Manager","Chef","Cook","Server","Cashier","Driver"]');
-                    document.getElementById('employeeRolesList').innerHTML = roles.map(role => `
-                        <span onclick="editEmployeeRole('${role}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
-                            ${role}
-                        </span>
-                    `).join('');
-                });
+            const roles = JSON.parse(localStorage.getItem('employeeRoles') || '["Cook","Cashier","Manager","Prep Cook","Server","Driver","Cleaner"]');
+            
+            document.getElementById('employeeRolesList').innerHTML = roles.map(role => `
+                <span onclick="editEmployeeRole('${role}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${role}
+                </span>
+            `).join('');
         }
         
         function editEmployeeRole(role) {
@@ -7277,7 +7194,7 @@ function exportInventoryReport() {
         }
         
         function getAllEmployeeRoles() {
-            return fetch('/api/settings/employeeRoles').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
+            return JSON.parse(localStorage.getItem('employeeRoles') || '["Cook","Cashier","Manager","Prep Cook","Server","Driver","Cleaner"]');
         }
         
         function updateEmployeeRoleDropdown() {
@@ -7291,16 +7208,13 @@ function exportInventoryReport() {
 
         // Data Management Functions
         function loadContactCategories() {
-            fetch('/api/settings/contactCategories')
-                .then(r => r.json())
-                .then(d => {
-                    const categories = d.value ? JSON.parse(d.value) : JSON.parse('["Client","Supplier","Vendor","Partner","Other"]');
-                    document.getElementById('contactCategoriesList').innerHTML = categories.map(category => `
-                        <span onclick="editContactCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
-                            ${category}
-                        </span>
-                    `).join('');
-                });
+            const categories = JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+            
+            document.getElementById('contactCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editContactCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
         }
         
         function editContactCategory(category) {
@@ -7312,7 +7226,7 @@ function exportInventoryReport() {
         }
         
         function getAllContactCategories() {
-            return fetch('/api/settings/contactCategories').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
+            return JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
         }
         
         function addContactCategory() {
@@ -7320,18 +7234,13 @@ function exportInventoryReport() {
             const category = input.value.trim();
             if (!category) return;
             
-            fetch('/api/settings/contactCategories')
-                .then(r => r.json())
-                .then(d => {
-                    const categories = d.value ? JSON.parse(d.value) : [];
-                    if (categories.includes(category)) return alert('Category already exists');
-                    categories.push(category);
-                    return fetch('/api/settings/contactCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(categories)})});
-                })
-                .then(() => {
-                    input.value = '';
-                    loadContactCategories();
-                });
+            const categories = JSON.parse(localStorage.getItem('contactCategories') || '["General","Catering Client","Event Organizer","Vendor"]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('contactCategories', JSON.stringify(categories));
+                input.value = '';
+                loadContactCategories();
+            }
         }
 
         // Expense Categories Functions
@@ -7340,31 +7249,23 @@ function exportInventoryReport() {
             const category = input.value.trim();
             if (!category) return;
             
-            fetch('/api/settings/expenseCategories')
-                .then(r => r.json())
-                .then(d => {
-                    const categories = d.value ? JSON.parse(d.value) : [];
-                    if (categories.includes(category)) return alert('Category already exists');
-                    categories.push(category);
-                    return fetch('/api/settings/expenseCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(categories)})});
-                })
-                .then(() => {
-                    input.value = '';
-                    loadExpenseCategories();
-                });
+            const categories = JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('expenseCategories', JSON.stringify(categories));
+                input.value = '';
+                loadExpenseCategories();
+            }
         }
         
         function loadExpenseCategories() {
-            fetch('/api/settings/expenseCategories')
-                .then(r => r.json())
-                .then(d => {
-                    const categories = d.value ? JSON.parse(d.value) : JSON.parse('["Food","Supplies","Fuel","Maintenance","Permits","Insurance","Marketing","Other"]');
-                    document.getElementById('expenseCategoriesList').innerHTML = categories.map(category => `
-                        <span onclick="editExpenseCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
-                            ${category}
-                        </span>
-                    `).join('');
-                });
+            const categories = JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
+            
+            document.getElementById('expenseCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editExpenseCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
         }
         
         function editExpenseCategory(category) {
@@ -7376,7 +7277,7 @@ function exportInventoryReport() {
         }
         
         function getAllExpenseCategories() {
-            return fetch('/api/settings/expenseCategories').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
+            return JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
         }
         
         function loadSpecialCategories() {
@@ -7409,6 +7310,7 @@ function exportInventoryReport() {
                     input.value = '';
                     loadSpecialCategories();
                 });
+            }
         }
         
         function editSpecialCategory(category) {
@@ -7423,8 +7325,7 @@ function exportInventoryReport() {
             return fetch('/api/settings/specialCategories').then(r => r.json()).then(d => d.value ? JSON.parse(d.value) : []);
         }
 
-        async function exportData() {
-            const measurementUnits = await fetch('/api/settings/measurementUnits').then(r=>r.json()).then(d=>d.value?JSON.parse(d.value):[]);
+        function exportData() {
             const data = {
                 menu: [],
                 ingredients: [],
@@ -7432,7 +7333,7 @@ function exportInventoryReport() {
                 suppliers: [],
                 tools: JSON.parse(localStorage.getItem('tools') || '[]'),
                 catering: JSON.parse(localStorage.getItem('catering') || '[]'),
-                measurementUnits: measurementUnits,
+                measurementUnits: JSON.parse(localStorage.getItem('measurementUnits') || '[]'),
                 uploadedFiles: JSON.parse(localStorage.getItem('uploadedFiles') || '[]'),
                 exportDate: new Date().toISOString()
             };
@@ -8633,13 +8534,10 @@ function exportInventoryReport() {
                     const recipe = items.find(item => item.id == recipeId);
                     if (!recipe) return;
                     
-                    fetch(`/api/recipes/menu/${recipeId}`)
-                        .then(r => r.json())
-                        .then(data => {
-                            const ingredients = JSON.parse(data.ingredients || '[]');
-                            const totalCost = ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
-                            const costPerPortion = totalCost / recipe.portions;
-                            const margin = ((recipe.price - costPerPortion) / recipe.price) * 100;
+                    const ingredients = JSON.parse(localStorage.getItem(`recipe-${recipeId}`) || '[]');
+                    const totalCost = ingredients.reduce((sum, ing) => sum + (ing.calculatedCost || 0), 0);
+                    const costPerPortion = totalCost / recipe.portions;
+                    const margin = ((recipe.price - costPerPortion) / recipe.price) * 100;
                     
                     document.getElementById('recipeCalculation').innerHTML = `
                         <div style="font-size: 0.9em; line-height: 1.4;">
@@ -8651,7 +8549,6 @@ function exportInventoryReport() {
                             <div style="color: ${margin >= 30 ? 'var(--success)' : margin >= 20 ? 'var(--warning)' : 'var(--danger)'}">Margin: ${margin.toFixed(1)}%</div>
                         </div>
                     `;
-                        });
                 });
         }
         
