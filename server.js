@@ -136,6 +136,9 @@ db.serialize(() => {
         permissions TEXT
     )`);
 
+    db.run(`ALTER TABLE employees ADD COLUMN food_handler_card_number TEXT`, () => {});
+    db.run(`ALTER TABLE employees ADD COLUMN food_handler_expiration TEXT`, () => {});
+
     // Users table
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -708,6 +708,7 @@
             </div>
 
             <div id="licenseAlerts" style="display: none; margin: 20px 0;"></div>
+            <div id="foodHandlerAlerts" style="display: none; margin: 20px 0;"></div>
 
             <div class="section">
                 <h2 class="section-title">Upcoming Schedule</h2>
@@ -811,6 +812,11 @@
                             <input type="email" id="newEmployeeEmail" placeholder="Email" style="width: 100%; margin-bottom: 8px;">
                             <input type="tel" id="newEmployeePhone" placeholder="Phone" style="width: 100%; margin-bottom: 8px;">
                             <input type="text" id="newEmployeeAddress" placeholder="Address" style="width: 100%; margin-bottom: 8px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                                <input type="text" id="newEmployeeFoodHandlerCard" placeholder="Food Handler Card #" style="width: 100%;">
+                                <input type="date" id="newEmployeeFoodHandlerExpiration" placeholder="Card Expiration" style="width: 100%;">
+                            </div>
+                            <input type="file" id="newEmployeeFoodHandlerPhoto" accept="image/*" style="width: 100%; margin-bottom: 8px;">
                             <textarea id="newEmployeeNotes" placeholder="Notes" rows="2" style="width: 100%; margin-bottom: 8px;"></textarea>
                             
                             <div style="background: var(--gray-light); padding: 10px; border-radius: 6px; margin-bottom: 8px;">
@@ -1016,8 +1022,10 @@
                 </div>
                 
                 <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
-                    <h4 style="margin-bottom: 10px;">Current Status</h4>
-                    <div id="employeeStatusList"></div>
+                    <h4 onclick="toggleStatusSection()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Current Status <span id="empstatus-icon">▼</span></h4>
+                    <div id="employeeStatusContainer" style="display: none; margin-top: 15px;">
+                        <div id="employeeStatusList"></div>
+                    </div>
                 </div>
                 <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-top: 15px;">
                     <h4 onclick="toggleTimePunches()" style="margin: 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;">Time Punch History <span id="punch-icon">▼</span></h4>
@@ -2875,6 +2883,46 @@ function exportInventoryReport() {
                             return `
                                 <div style="padding: 15px; margin-bottom: 10px; border-radius: 8px; ${urgency}">
                                     <strong>License Expiring:</strong> ${license.name} expires in ${daysUntilExpiry} days (${license.expiry_date})
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        alertsDiv.style.display = 'none';
+                    }
+                });
+            
+            fetch('/api/employees')
+                .then(r => r.json())
+                .then(employees => {
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+                    
+                    const issues = employees.filter(emp => {
+                        if (!emp.food_handler_expiration) return true;
+                        const expiryDate = new Date(emp.food_handler_expiration);
+                        expiryDate.setHours(0, 0, 0, 0);
+                        return expiryDate <= thirtyDaysFromNow;
+                    });
+                    
+                    const alertsDiv = document.getElementById('foodHandlerAlerts');
+                    if (issues.length > 0) {
+                        alertsDiv.style.display = 'block';
+                        alertsDiv.innerHTML = issues.map(emp => {
+                            if (!emp.food_handler_expiration) {
+                                return `
+                                    <div style="padding: 15px; margin-bottom: 10px; border-radius: 8px; background: #dc3545; color: white;">
+                                        <strong>Food Handler Card:</strong> ${emp.name} has NO card on file
+                                    </div>
+                                `;
+                            }
+                            const expiryDate = new Date(emp.food_handler_expiration);
+                            const daysUntilExpiry = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
+                            const urgency = daysUntilExpiry < 0 ? 'background: #dc3545; color: white;' : daysUntilExpiry <= 7 ? 'background: #dc3545; color: white;' : daysUntilExpiry <= 14 ? 'background: #ffc107; color: black;' : 'background: #17a2b8; color: white;';
+                            const message = daysUntilExpiry < 0 ? 'EXPIRED' : `expires in ${daysUntilExpiry} days`;
+                            return `
+                                <div style="padding: 15px; margin-bottom: 10px; border-radius: 8px; ${urgency}">
+                                    <strong>Food Handler Card:</strong> ${emp.name}'s card ${message} (${emp.food_handler_expiration})
                                 </div>
                             `;
                         }).join('');
@@ -8123,6 +8171,9 @@ function exportInventoryReport() {
             const email = document.getElementById('newEmployeeEmail').value.trim();
             const phone = document.getElementById('newEmployeePhone').value.trim();
             const address = document.getElementById('newEmployeeAddress').value.trim();
+            const food_handler_card_number = document.getElementById('newEmployeeFoodHandlerCard').value.trim();
+            const food_handler_expiration = document.getElementById('newEmployeeFoodHandlerExpiration').value;
+            const food_handler_photo_file = document.getElementById('newEmployeeFoodHandlerPhoto').files[0];
             const notes = document.getElementById('newEmployeeNotes').value.trim();
             
             if (!name || !role) {
@@ -8130,31 +8181,48 @@ function exportInventoryReport() {
                 return;
             }
             
-            const employees = JSON.parse(localStorage.getItem('employees') || '[]');
-            const newEmployee = {
-                id: Date.now(),
-                name,
-                role,
-                email,
-                phone,
-                address,
-                notes,
-                status: 'signed-out',
-                signInTime: null
+            const saveEmployee = (photoPath = null) => {
+                const employees = JSON.parse(localStorage.getItem('employees') || '[]');
+                const newEmployee = {
+                    id: Date.now(),
+                    name,
+                    role,
+                    email,
+                    phone,
+                    address,
+                    food_handler_card_number,
+                    food_handler_expiration,
+                    food_handler_photo: photoPath,
+                    notes,
+                    status: 'signed-out',
+                    signInTime: null
+                };
+                
+                employees.push(newEmployee);
+                localStorage.setItem('employees', JSON.stringify(employees));
+                
+                document.getElementById('newEmployeeName').value = '';
+                document.getElementById('newEmployeeRole').value = '';
+                document.getElementById('newEmployeeEmail').value = '';
+                document.getElementById('newEmployeePhone').value = '';
+                document.getElementById('newEmployeeAddress').value = '';
+                document.getElementById('newEmployeeFoodHandlerCard').value = '';
+                document.getElementById('newEmployeeFoodHandlerExpiration').value = '';
+                document.getElementById('newEmployeeFoodHandlerPhoto').value = '';
+                document.getElementById('newEmployeeNotes').value = '';
+                
+                loadEmployees();
             };
             
-            employees.push(newEmployee);
-            localStorage.setItem('employees', JSON.stringify(employees));
-            
-            // Clear form
-            document.getElementById('newEmployeeName').value = '';
-            document.getElementById('newEmployeeRole').value = '';
-            document.getElementById('newEmployeeEmail').value = '';
-            document.getElementById('newEmployeePhone').value = '';
-            document.getElementById('newEmployeeAddress').value = '';
-            document.getElementById('newEmployeeNotes').value = '';
-            
-            loadEmployees();
+            if (food_handler_photo_file) {
+                const formData = new FormData();
+                formData.append('file', food_handler_photo_file);
+                fetch('/upload', {method: 'POST', body: formData})
+                    .then(r => r.json())
+                    .then(data => saveEmployee(data.path));
+            } else {
+                saveEmployee();
+            }
         }
         
         function toggleEmployeeList() {
@@ -8164,6 +8232,19 @@ function exportInventoryReport() {
                 container.style.display = 'block';
                 icon.textContent = '▲';
                 loadEmployeeList();
+            } else {
+                container.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function toggleStatusSection() {
+            const container = document.getElementById('employeeStatusContainer');
+            const icon = document.getElementById('empstatus-icon');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                icon.textContent = '▲';
+                loadEmployees();
             } else {
                 container.style.display = 'none';
                 icon.textContent = '▼';
@@ -8188,18 +8269,52 @@ function exportInventoryReport() {
             if (employees.length === 0) {
                 html = '<div style="color: var(--gray); font-style: italic; text-align: center; padding: 20px;">No employees added yet</div>';
             } else {
-                html = employees.map(emp => `
-                    <div style="background: var(--gray-light); padding: 12px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: 600;">${emp.name}</div>
-                            <div style="font-size: 0.85em; color: var(--gray);">${emp.role}</div>
+                html = employees.map(emp => {
+                    let cardStatus = '';
+                    let cardColor = 'var(--gray)';
+                    if (emp.food_handler_expiration) {
+                        const expDate = new Date(emp.food_handler_expiration);
+                        const today = new Date();
+                        const daysUntilExpiry = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                        if (daysUntilExpiry < 0) {
+                            cardStatus = 'EXPIRED';
+                            cardColor = 'var(--danger)';
+                        } else if (daysUntilExpiry <= 30) {
+                            cardStatus = `Expires in ${daysUntilExpiry} days`;
+                            cardColor = 'var(--warning)';
+                        } else {
+                            cardStatus = `Valid until ${emp.food_handler_expiration}`;
+                            cardColor = 'var(--success)';
+                        }
+                    } else {
+                        cardStatus = 'No card on file';
+                        cardColor = 'var(--danger)';
+                    }
+                    
+                    return `
+                        <div style="background: var(--gray-light); border-radius: 6px; margin-bottom: 8px;">
+                            <div onclick="toggleEmployeeDetails(${emp.id})" style="cursor: pointer; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: 600;">${emp.name}</div>
+                                    <div style="font-size: 0.85em; color: var(--gray);">${emp.role}</div>
+                                    <div style="font-size: 0.8em; color: ${cardColor}; font-weight: 500; margin-top: 4px;">Food Handler Card: ${cardStatus}</div>
+                                </div>
+                                <span id="emp-icon-${emp.id}" style="font-size: 1.2em;">▼</span>
+                            </div>
+                            <div id="emp-details-${emp.id}" style="display: none; padding: 0 12px 12px 12px; border-top: 1px solid var(--border);">
+                                ${emp.email ? `<div style="margin: 8px 0;"><strong>Email:</strong> ${emp.email}</div>` : ''}
+                                ${emp.phone ? `<div style="margin: 8px 0;"><strong>Phone:</strong> ${emp.phone}</div>` : ''}
+                                ${emp.address ? `<div style="margin: 8px 0;"><strong>Address:</strong> ${emp.address}</div>` : ''}
+                                ${emp.notes ? `<div style="margin: 8px 0;"><strong>Notes:</strong> ${emp.notes}</div>` : ''}
+                                ${emp.food_handler_photo ? `<div style="margin: 8px 0;"><strong>Food Handler Card Photo:</strong><br><img src="${emp.food_handler_photo}" style="max-width: 200px; border-radius: 4px; margin-top: 5px; cursor: pointer;" onclick="window.open('${emp.food_handler_photo}', '_blank')"></div>` : ''}
+                                <div style="display: flex; gap: 8px; margin-top: 15px;">
+                                    <button class="btn" onclick="event.stopPropagation(); editEmployee(${emp.id})" style="padding: 6px 12px; font-size: 0.85em; width: auto; background: var(--orange); color: white;">Edit</button>
+                                    <button class="btn btn-danger" onclick="event.stopPropagation(); deleteEmployee(${emp.id})" style="padding: 6px 12px; font-size: 0.85em; width: auto;">Delete</button>
+                                </div>
+                            </div>
                         </div>
-                        <div style="display: flex; gap: 8px;">
-                            <button class="btn" onclick="editEmployee(${emp.id})" style="padding: 6px 12px; font-size: 0.85em; width: auto; background: var(--orange); color: white;">Edit</button>
-                            <button class="btn btn-danger" onclick="deleteEmployee(${emp.id})" style="padding: 6px 12px; font-size: 0.85em; width: auto;">Delete</button>
-                        </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
             
             list.innerHTML = html;
@@ -8338,25 +8453,12 @@ function exportInventoryReport() {
                 const statusText = emp.status === 'signed-in' ? `Signed in at ${emp.signInTime}` : 'Signed out';
                 
                 return `
-                    <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 10px;">
-                        <div onclick="toggleEmployeeDetails(${emp.id})" style="cursor: pointer; padding: 15px; display: flex; justify-content: space-between; align-items: center;">
-                            <div>
-                                <div style="font-weight: bold; font-size: 1.1em;">${emp.name}</div>
-                                <div style="font-size: 0.9em; color: var(--gray);">${emp.role}</div>
-                                <div style="font-size: 0.8em; color: ${statusColor};">${statusText}</div>
-                            </div>
-                            <span id="emp-icon-${emp.id}" style="font-size: 1.2em;">▼</span>
+                    <div style="background: var(--white); border: 1px solid var(--border); border-radius: 8px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold; font-size: 1.1em;">${emp.name}</div>
+                            <div style="font-size: 0.9em; color: var(--gray);">${emp.role}</div>
                         </div>
-                        <div id="emp-details-${emp.id}" style="display: none; padding: 0 15px 15px 15px; border-top: 1px solid var(--border);">
-                            ${emp.email ? `<div style="margin: 8px 0;"><strong>Email:</strong> ${emp.email}</div>` : ''}
-                            ${emp.phone ? `<div style="margin: 8px 0;"><strong>Phone:</strong> ${emp.phone}</div>` : ''}
-                            ${emp.address ? `<div style="margin: 8px 0;"><strong>Address:</strong> ${emp.address}</div>` : ''}
-                            ${emp.notes ? `<div style="margin: 8px 0;"><strong>Notes:</strong> ${emp.notes}</div>` : ''}
-                            <div style="display: flex; gap: 8px; margin-top: 15px;">
-                                <button class="btn" onclick="editEmployee(${emp.id})" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--orange); color: white;">Edit</button>
-                                <button class="btn btn-danger" onclick="deleteEmployee(${emp.id})" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Delete</button>
-                            </div>
-                        </div>
+                        <div style="font-size: 0.9em; color: ${statusColor}; font-weight: 500;">${statusText}</div>
                     </div>
                 `;
             }).join('');
@@ -8913,7 +9015,7 @@ function exportInventoryReport() {
             }
         });
         
-        function editEmployee(id) {
+        async function editEmployee(id) {
             const employees = JSON.parse(localStorage.getItem('employees') || '[]');
             const employee = employees.find(emp => emp.id === id);
             if (!employee) return;
@@ -8923,7 +9025,7 @@ function exportInventoryReport() {
             const modalForm = document.getElementById('modalForm');
             
             modalTitle.textContent = 'Edit Employee';
-            const roles = getAllEmployeeRoles();
+            const roles = await getAllEmployeeRoles();
             
             modalForm.innerHTML = `
                 <div class="form">
@@ -8944,6 +9046,15 @@ function exportInventoryReport() {
                     </div>
                     <div class="form-group">
                         <input type="text" id="editEmployeeAddress" placeholder="Address" value="${employee.address || ''}">
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px;">
+                        <input type="text" id="editEmployeeFoodHandlerCard" placeholder="Food Handler Card #" value="${employee.food_handler_card_number || ''}" style="width: 100%;">
+                        <input type="date" id="editEmployeeFoodHandlerExpiration" placeholder="Card Expiration" value="${employee.food_handler_expiration || ''}" style="width: 100%;">
+                    </div>
+                    <div style="margin-bottom: 8px;">
+                        <label style="display: block; margin-bottom: 5px; font-size: 0.9em;">Food Handler Card Photo:</label>
+                        ${employee.food_handler_photo ? `<img src="${employee.food_handler_photo}" style="max-width: 200px; border-radius: 4px; margin-bottom: 8px;">` : ''}
+                        <input type="file" id="editEmployeeFoodHandlerPhoto" accept="image/*" style="width: 100%;">
                     </div>
                     <div class="form-group">
                         <textarea id="editEmployeeNotes" placeholder="Notes" rows="2">${employee.notes || ''}</textarea>
@@ -8970,17 +9081,35 @@ function exportInventoryReport() {
             const email = document.getElementById('editEmployeeEmail').value.trim();
             const phone = document.getElementById('editEmployeePhone').value.trim();
             const address = document.getElementById('editEmployeeAddress').value.trim();
+            const food_handler_card_number = document.getElementById('editEmployeeFoodHandlerCard').value.trim();
+            const food_handler_expiration = document.getElementById('editEmployeeFoodHandlerExpiration').value;
+            const food_handler_photo_file = document.getElementById('editEmployeeFoodHandlerPhoto').files[0];
             const notes = document.getElementById('editEmployeeNotes').value.trim();
             
-            if (employeeIndex !== -1) {
-                employees[employeeIndex].name = name;
-                employees[employeeIndex].role = role;
-                employees[employeeIndex].email = email;
-                employees[employeeIndex].phone = phone;
-                employees[employeeIndex].address = address;
-                employees[employeeIndex].notes = notes;
-                localStorage.setItem('employees', JSON.stringify(employees));
-                loadEmployees();
+            const updateEmployee = (photoPath = null) => {
+                if (employeeIndex !== -1) {
+                    employees[employeeIndex].name = name;
+                    employees[employeeIndex].role = role;
+                    employees[employeeIndex].email = email;
+                    employees[employeeIndex].phone = phone;
+                    employees[employeeIndex].address = address;
+                    employees[employeeIndex].food_handler_card_number = food_handler_card_number;
+                    employees[employeeIndex].food_handler_expiration = food_handler_expiration;
+                    if (photoPath) employees[employeeIndex].food_handler_photo = photoPath;
+                    employees[employeeIndex].notes = notes;
+                    localStorage.setItem('employees', JSON.stringify(employees));
+                    loadEmployees();
+                }
+            };
+            
+            if (food_handler_photo_file) {
+                const formData = new FormData();
+                formData.append('file', food_handler_photo_file);
+                fetch('/upload', {method: 'POST', body: formData})
+                    .then(r => r.json())
+                    .then(data => updateEmployee(data.path));
+            } else {
+                updateEmployee();
             }
         }
         
