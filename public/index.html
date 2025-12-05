@@ -754,6 +754,11 @@
                 </div>
                 <div class="grid" id="inventoryList"></div>
             </div>
+            
+            <div class="section">
+                <h2 class="section-title">Waste Log</h2>
+                <div id="wasteLogList"></div>
+            </div>
         </div>
 
         <!-- Suppliers Page -->
@@ -1215,7 +1220,7 @@
         <div id="marketing" class="page">
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">⭐ Review Management</h2>
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Review Management</h2>
                     <button class="btn" onclick="addReview()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Review</button>
                 </div>
                 <div class="stats" id="reviewStats"></div>
@@ -1227,7 +1232,7 @@
         <div id="analytics" class="page">
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">💰 Expense Tracking</h2>
+                    <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Expense Tracking</h2>
                     <button class="btn" onclick="addExpense()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">Add Expense</button>
                 </div>
                 <div class="stats" id="expenseStats"></div>
@@ -1242,6 +1247,134 @@
                 <h2 class="section-title">Detailed Analysis</h2>
                 <div class="grid" id="foodCostAnalysis"></div>
             </div>
+            
+            <div class="section">
+    <h2 class="section-title">Inventory Usage Report</h2>
+    <div style="margin-bottom: 20px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;">
+            <select id="reportPeriod" style="padding: 10px; border-radius: 6px; flex: 1; min-width: 150px;">
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+                <option value="year">This Year</option>
+                <option value="custom">Custom Range</option>
+            </select>
+            <input type="date" id="reportStartDate" style="padding: 10px; border-radius: 6px; display: none;">
+            <input type="date" id="reportEndDate" style="padding: 10px; border-radius: 6px; display: none;">
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn" onclick="loadInventoryReport()" style="flex: 1; padding: 10px 20px;">Generate Report</button>
+            <button class="btn" onclick="exportInventoryReport()" style="flex: 1; padding: 10px 20px; background: var(--success);">Export Excel</button>
+        </div>
+    </div>
+    <div id="inventoryReportData"></div>
+</div>
+
+<script>
+document.getElementById('reportPeriod').addEventListener('change', function() {
+    const custom = this.value === 'custom';
+    document.getElementById('reportStartDate').style.display = custom ? 'block' : 'none';
+    document.getElementById('reportEndDate').style.display = custom ? 'block' : 'none';
+});
+
+function loadInventoryReport() {
+    const period = document.getElementById('reportPeriod').value;
+    let startDate, endDate;
+    const today = new Date();
+    
+    if (period === 'week') {
+        startDate = new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0];
+        endDate = new Date().toISOString().split('T')[0];
+    } else if (period === 'month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        endDate = new Date().toISOString().split('T')[0];
+    } else if (period === 'year') {
+        startDate = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+        endDate = new Date().toISOString().split('T')[0];
+    } else {
+        startDate = document.getElementById('reportStartDate').value;
+        endDate = document.getElementById('reportEndDate').value;
+        if (!startDate || !endDate) {
+            alert('Please select start and end dates');
+            return;
+        }
+    }
+    
+    fetch(`/api/inventory-report?start_date=${startDate}&end_date=${endDate}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.length === 0) {
+                document.getElementById('inventoryReportData').innerHTML = '<div style="text-align: center; padding: 40px; color: var(--gray);">No inventory changes in this period</div>';
+                return;
+            }
+            
+            let html = '<table style="width: 100%; border-collapse: collapse;">';
+            html += '<thead><tr style="background: var(--orange); color: white;">';
+            html += '<th style="padding: 12px; text-align: left;">Item</th>';
+            html += '<th style="padding: 12px; text-align: right;">Used</th>';
+            html += '<th style="padding: 12px; text-align: right;">Added</th>';
+            html += '<th style="padding: 12px; text-align: right;">Net Change</th>';
+            html += '<th style="padding: 12px; text-align: center;">Transactions</th>';
+            html += '</tr></thead><tbody>';
+            
+            data.forEach((item, i) => {
+                const netChange = item.total_added - item.total_used;
+                const bgColor = i % 2 === 0 ? 'var(--gray-light)' : 'var(--white)';
+                html += `<tr style="background: ${bgColor};">`;
+                html += `<td style="padding: 12px;">${item.item_name}</td>`;
+                html += `<td style="padding: 12px; text-align: right; color: var(--danger);">${item.total_used.toFixed(2)} ${item.unit || ''}</td>`;
+                html += `<td style="padding: 12px; text-align: right; color: var(--success);">+${item.total_added.toFixed(2)} ${item.unit || ''}</td>`;
+                html += `<td style="padding: 12px; text-align: right; font-weight: bold; color: ${netChange >= 0 ? 'var(--success)' : 'var(--danger)'};">${netChange >= 0 ? '+' : ''}${netChange.toFixed(2)} ${item.unit || ''}</td>`;
+                html += `<td style="padding: 12px; text-align: center;">${item.transaction_count}</td>`;
+                html += '</tr>';
+            });
+            
+            html += '</tbody></table>';
+            document.getElementById('inventoryReportData').innerHTML = html;
+        });
+}
+
+function exportInventoryReport() {
+    const period = document.getElementById('reportPeriod').value;
+    let startDate, endDate;
+    const today = new Date();
+    
+    if (period === 'week') {
+        startDate = new Date(today.setDate(today.getDate() - 7)).toISOString().split('T')[0];
+        endDate = new Date().toISOString().split('T')[0];
+    } else if (period === 'month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+        endDate = new Date().toISOString().split('T')[0];
+    } else if (period === 'year') {
+        startDate = new Date(today.getFullYear(), 0, 1).toISOString().split('T')[0];
+        endDate = new Date().toISOString().split('T')[0];
+    } else {
+        startDate = document.getElementById('reportStartDate').value;
+        endDate = document.getElementById('reportEndDate').value;
+        if (!startDate || !endDate) {
+            alert('Please select start and end dates');
+            return;
+        }
+    }
+    
+    fetch(`/api/inventory-report?start_date=${startDate}&end_date=${endDate}`)
+        .then(r => r.json())
+        .then(data => {
+            let csv = 'Item,Used,Added,Net Change,Unit,Transactions\n';
+            data.forEach(item => {
+                const netChange = item.total_added - item.total_used;
+                csv += `"${item.item_name}",${item.total_used},${item.total_added},${netChange},"${item.unit || ''}",${item.transaction_count}\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `inventory-report-${startDate}-to-${endDate}.csv`;
+            a.click();
+            window.URL.revokeObjectURL(url);
+        });
+}
+</script>
         </div>
 
         <!-- Contacts Page -->
@@ -1469,6 +1602,21 @@
                                 <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('contactCategories', JSON.stringify(['General','Catering Client','Event Organizer','Vendor'])); loadContactCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
                             </div>
                             <div id="contactCategoriesList" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 20px; padding: 15px; background: var(--card-bg); border-radius: 8px; cursor: pointer;" onclick="toggleCategorySection('expenseCategories')">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500;">
+                            <span>Expense Categories</span>
+                            <span id="expenseCategories-arrow">▶</span>
+                        </div>
+                        <div id="expenseCategories-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
+                            <div class="form-row">
+                                <input type="text" id="newExpenseCategory" placeholder="Add new category (e.g., Rent, Utilities)" onclick="event.stopPropagation()">
+                                <button class="btn" onclick="event.stopPropagation(); addExpenseCategory()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); localStorage.setItem('expenseCategories', JSON.stringify(['Fuel','Supplies','Permits','Insurance','Maintenance','Marketing','Utilities','Labor','Other'])); loadExpenseCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                            </div>
+                            <div id="expenseCategoriesList" style="margin-top: 15px;"></div>
                         </div>
                     </div>
                     
@@ -1780,15 +1928,15 @@
                 html += `<div style="font-weight: bold; margin-bottom: 4px; color: ${isToday ? 'var(--orange)' : 'var(--charcoal)'}; font-size: 14px;">${day}</div>`;
                 
                 dayEvents.forEach(e => {
-                    html += `<div onclick="calendarClickedItem={type:'event',id:${e.id}}; window.closeCalendar(); window.showPage('events');" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name}\n${e.location || ''}\n${e.date} ${e.time || ''}">📅 ${e.name}</div>`;
+                    html += `<div onclick="calendarClickedItem={type:'event',id:${e.id}}; window.closeCalendar(); window.showPage('events');" style="background: #007bff; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${e.name}\n${e.location || ''}\n${e.date} ${e.time || ''}">${e.name}</div>`;
                 });
                 
                 dayCatering.forEach(c => {
-                    html += `<div onclick="calendarClickedItem={type:'catering',id:${c.id}}; window.closeCalendar(); window.showPage('catering');" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client}\n${c.guests} guests\n${c.date}\n$${c.price || 0}">🍽️ ${c.client}</div>`;
+                    html += `<div onclick="calendarClickedItem={type:'catering',id:${c.id}}; window.closeCalendar(); window.showPage('catering');" style="background: #28a745; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${c.client}\n${c.guests} guests\n${c.date}\n$${c.price || 0}">${c.client}</div>`;
                 });
                 
                 dayMaintenance.forEach(m => {
-                    html += `<div onclick="calendarClickedItem={type:'maintenance',id:${m.id}}; window.closeCalendar(); window.showPage('tools');" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}\n${m.date}">🔧 ${m.task}</div>`;
+                    html += `<div onclick="calendarClickedItem={type:'maintenance',id:${m.id}}; window.closeCalendar(); window.showPage('tools');" style="background: #ff6b35; color: white; padding: 2px 4px; margin-bottom: 2px; border-radius: 3px; font-size: 10px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${m.task}\n${m.date}">${m.task}</div>`;
                 });
                 
                 html += `</div>`;
@@ -2332,7 +2480,7 @@
             if (pageId === 'dashboard') loadDashboard();
             if (pageId === 'menu') loadMenu();
             if (pageId === 'ingredients') loadIngredients();
-            if (pageId === 'inventory') loadInventory();
+            if (pageId === 'inventory') { loadInventory(); loadWasteLog(); }
             if (pageId === 'suppliers') loadSuppliers();
             if (pageId === 'employee') { 
                 loadEmployees(); 
@@ -2350,7 +2498,7 @@
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
             if (pageId === 'contacts') loadContacts();
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadInventoryCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadInventoryCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadExpenseCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
             
             // Expand calendar clicked item
             if (calendarClickedItem) {
@@ -2678,7 +2826,7 @@
                             const urgency = daysUntilExpiry <= 30 ? 'background: #dc3545; color: white;' : daysUntilExpiry <= 60 ? 'background: #ffc107; color: black;' : 'background: #17a2b8; color: white;';
                             return `
                                 <div style="padding: 15px; margin-bottom: 10px; border-radius: 8px; ${urgency}">
-                                    <strong>⚠️ License Expiring:</strong> ${license.name} expires in ${daysUntilExpiry} days (${license.expiry_date})
+                                    <strong>License Expiring:</strong> ${license.name} expires in ${daysUntilExpiry} days (${license.expiry_date})
                                 </div>
                             `;
                         }).join('');
@@ -2772,7 +2920,7 @@
                         const foodCost = (item.cost / item.price) * 100;
                         const defaultMargin = parseFloat(localStorage.getItem('defaultMargin') || '30');
                         const margin = ((item.price - item.cost) / item.price) * 100;
-                        const status = margin >= defaultMargin ? '🟢 Good' : margin >= (defaultMargin * 0.67) ? '🟡 Needs Attention' : '🔴 Bad - Urgent';
+                        const status = margin >= defaultMargin ? 'Good' : margin >= (defaultMargin * 0.67) ? 'Needs Attention' : 'Bad - Urgent';
                         return `
                             <div class="card">
                                 <div class="card-title">${item.name}</div>
@@ -2834,7 +2982,7 @@
                         
                         grouped[category].forEach(item => {
                             const margin = ((item.price - item.cost) / item.price) * 100;
-                            const status = margin >= 30 ? '🟢 Good' : margin >= 20 ? '🟡 Needs Attention' : '🔴 Bad - Urgent';
+                            const status = margin >= 30 ? 'Good' : margin >= 20 ? 'Needs Attention' : 'Bad - Urgent';
                             html += `
                                 <div class="card">
                                     <div class="card-header" onclick="toggleMenuDetails(${item.id})" style="cursor: pointer;">
@@ -3336,11 +3484,11 @@
                     if (item) {
                         document.getElementById('barcodeScanResult').innerHTML = `
                             <div style="background: var(--success); color: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                                <h3 style="margin: 0 0 10px 0;">✓ Item Found</h3>
+                                <h3 style="margin: 0 0 10px 0;">Item Found</h3>
                                 <div style="font-size: 1.2em; font-weight: bold;">${item.name}</div>
                                 <div style="margin-top: 10px;">Current Stock: ${item.current_stock} ${item.unit}</div>
                                 <div>Min Stock: ${item.min_stock} ${item.unit}</div>
-                                <div style="margin-top: 10px; font-weight: bold;">${item.current_stock <= item.min_stock ? '🔴 LOW STOCK' : '🟢 Stock OK'}</div>
+                                <div style="margin-top: 10px; font-weight: bold;">${item.current_stock <= item.min_stock ? 'LOW STOCK' : 'Stock OK'}</div>
                             </div>
                             <button class="btn" onclick="editInventoryFromScan(${item.id})" style="width: 100%; margin-bottom: 10px;">Update Stock</button>
                             <button class="btn" onclick="closeBarcodeScanner()" style="width: 100%; background: var(--gray);">Close</button>
@@ -3488,15 +3636,16 @@
                 .then(r => r.json())
                 .then(items => {
                     document.getElementById('inventoryList').innerHTML = items.map(item => {
-                        const status = item.current_stock <= item.min_stock ? '🔴 Low Stock' : '🟢 Good';
+                        const status = item.current_stock <= item.min_stock ? 'Low Stock' : 'Good';
                         return `
                             <div class="card">
                                 <div class="card-title">${item.name}</div>
                                 <div class="card-meta">${status}</div>
                                 <div class="card-meta">Stock: ${item.current_stock} / ${item.min_stock} min ${item.unit}</div>
-                                ${item.barcode ? `<div class="card-meta" style="font-family: monospace; font-size: 0.85em;">📊 ${item.barcode}</div>` : ''}
+                                ${item.barcode ? `<div class="card-meta" style="font-family: monospace; font-size: 0.85em;">${item.barcode}</div>` : ''}
                                 <div class="card-actions">
                                     <button class="btn" onclick="editInventoryItem(${item.id})" style="background: var(--orange); color: white;">Edit</button>
+                                    <button class="btn" onclick="logWaste(${item.id}, '${item.name.replace(/'/g, "\\'")}',' ${item.unit}')" style="background: #dc3545; color: white;">Log Waste</button>
                                     <button class="btn btn-danger" onclick="deleteInventoryItem(${item.id})">Delete</button>
                                 </div>
                             </div>
@@ -3623,6 +3772,96 @@
                 fetch(`/api/inventory/${id}`, { method: 'DELETE' })
                     .then(() => loadInventory());
             }
+        }
+
+        // Waste Logging Functions
+        function logWaste(inventoryId, itemName, unit) {
+            const modal = document.getElementById('addModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalForm = document.getElementById('modalForm');
+            
+            modalTitle.textContent = `Log Waste - ${itemName}`;
+            modalForm.innerHTML = `
+                <div class="form">
+                    <div class="form-group">
+                        <label>Amount Wasted</label>
+                        <input type="number" id="wasteAmount" placeholder="Amount" step="0.1" min="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Reason</label>
+                        <select id="wasteReason">
+                            <option value="Spoiled">Spoiled</option>
+                            <option value="Expired">Expired</option>
+                            <option value="Dropped">Dropped/Spilled</option>
+                            <option value="Overcooked">Overcooked/Burned</option>
+                            <option value="Customer Return">Customer Return</option>
+                            <option value="Prep Error">Prep Error</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="saveWaste(${inventoryId}, '${itemName}', '${unit}'); closeAddModal();">Log Waste</button>
+                </div>
+            `;
+            modal.classList.add('show');
+        }
+        
+        function saveWaste(inventoryId, itemName, unit) {
+            const amount = parseFloat(document.getElementById('wasteAmount').value);
+            const reason = document.getElementById('wasteReason').value;
+            
+            if (!amount || amount <= 0) {
+                alert('Please enter a valid amount');
+                return;
+            }
+            
+            fetch('/api/waste-log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    inventory_id: inventoryId,
+                    item_name: itemName,
+                    amount: amount,
+                    unit: unit,
+                    reason: reason,
+                    cost: 0
+                })
+            }).then(() => {
+                loadWasteLog();
+                alert(`Logged ${amount} ${unit} of ${itemName} as waste`);
+            });
+        }
+        
+        function loadWasteLog() {
+            fetch('/api/waste-log')
+                .then(r => r.json())
+                .then(logs => {
+                    if (logs.length === 0) {
+                        document.getElementById('wasteLogList').innerHTML = '<div style="text-align: center; padding: 20px; color: var(--gray);">No waste logged yet</div>';
+                        return;
+                    }
+                    
+                    let html = '<table style="width: 100%; border-collapse: collapse;">';
+                    html += '<thead><tr style="background: var(--orange); color: white;">';
+                    html += '<th style="padding: 10px; text-align: left;">Date</th>';
+                    html += '<th style="padding: 10px; text-align: left;">Item</th>';
+                    html += '<th style="padding: 10px; text-align: right;">Amount</th>';
+                    html += '<th style="padding: 10px; text-align: left;">Reason</th>';
+                    html += '</tr></thead><tbody>';
+                    
+                    logs.slice(0, 20).forEach((log, i) => {
+                        const date = new Date(log.created_at).toLocaleDateString();
+                        const bgColor = i % 2 === 0 ? 'var(--gray-light)' : 'var(--white)';
+                        html += `<tr style="background: ${bgColor};">`;
+                        html += `<td style="padding: 10px;">${date}</td>`;
+                        html += `<td style="padding: 10px;">${log.item_name}</td>`;
+                        html += `<td style="padding: 10px; text-align: right;">${log.amount} ${log.unit}</td>`;
+                        html += `<td style="padding: 10px;">${log.reason}</td>`;
+                        html += '</tr>';
+                    });
+                    
+                    html += '</tbody></table>';
+                    document.getElementById('wasteLogList').innerHTML = html;
+                });
         }
 
         // Supplier Functions
@@ -4488,7 +4727,8 @@
                             <div class="card-actions" style="margin-top: 10px;">
                                 <button class="btn" onclick="editCateringOrder(${order.id})" style="background: var(--orange); color: white;">Edit</button>
                                 <button class="btn" onclick="printCateringDetails(${order.id})" style="background: #666; color: white;">Print</button>
-                                <button class="btn" onclick="exportCateringPDF(${order.id})" style="background: var(--warning); color: white;">PDF</button>
+                                <button class="btn" onclick="exportCateringPDF(${order.id})" style="background: var(--warning); color: white;">Quote</button>
+                                <button class="btn" onclick="exportCateringInvoice(${order.id})" style="background: #17a2b8; color: white;">Invoice</button>
                                 <button class="btn" onclick="updateCateringStatus(${order.id})" style="background: var(--success); color: white;">Status</button>
                                 <button class="btn" onclick="openNotesModal('catering', ${order.id}, '${order.client.replace(/'/g, "\\'")}')" style="background: #666; color: white;">Notes</button>
                                 <button class="btn" onclick="archiveCateringOrder(${order.id})" style="background: #6c757d; color: white;">Archive</button>
@@ -5247,6 +5487,216 @@
             };
         }
 
+        async function exportCateringInvoice(id) {
+            const response = await fetch('/api/catering');
+            const orders = await response.json();
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+            
+            if (typeof window.jsPDF === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+                script.onload = () => generateCateringInvoice(order);
+                document.head.appendChild(script);
+            } else {
+                await generateCateringInvoice(order);
+            }
+        }
+        
+        async function generateCateringInvoice(order) {
+            const doc = new window.jspdf.jsPDF();
+            const invoiceNumber = `INV-${order.id}-${new Date().getFullYear()}`;
+            const invoiceDate = new Date().toISOString().split('T')[0];
+            const dueDate = new Date(Date.now() + 15*24*60*60*1000).toISOString().split('T')[0];
+            
+            let selectedMenu = [];
+            if (order.selected_menu) {
+                selectedMenu = typeof order.selected_menu === 'string' ? JSON.parse(order.selected_menu) : order.selected_menu;
+            } else if (order.selectedMenu) {
+                selectedMenu = typeof order.selectedMenu === 'string' ? JSON.parse(order.selectedMenu) : order.selectedMenu;
+            }
+            
+            const response = await fetch('/api/business-info');
+            const businessInfo = await response.json();
+            
+            const logo = new Image();
+            logo.src = '/uploads/1763192867406_birria-fusion-logo.png';
+            logo.onload = function() {
+                doc.addImage(logo, 'PNG', 15, 10, 30, 30);
+                
+                doc.setFontSize(24);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(255, 107, 53);
+                doc.text('BIRRIA FUSION', 50, 22);
+                
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100, 100, 100);
+                const phone = businessInfo.phone || '(555) 123-4567';
+                const email = businessInfo.email || 'info@birriafusion.com';
+                const website = businessInfo.website || 'www.birriafusion.com';
+                doc.text(`${phone} | ${email}`, 50, 28);
+                doc.text(website, 50, 33);
+                
+                doc.setFontSize(20);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(220, 53, 69);
+                doc.text('INVOICE', 105, 55, { align: 'center' });
+                
+                doc.setDrawColor(255, 107, 53);
+                doc.setLineWidth(0.5);
+                doc.line(15, 60, 195, 60);
+                
+                doc.setFillColor(250, 250, 250);
+                doc.rect(15, 68, 85, 30, 'F');
+                doc.rect(110, 68, 85, 30, 'F');
+                
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(0, 0, 0);
+                doc.text('BILL TO:', 20, 76);
+                doc.setFont('helvetica', 'normal');
+                doc.text(order.client, 20, 82);
+                doc.text(`Event Date: ${order.date}`, 20, 88);
+                doc.text(`Guests: ${order.guests}`, 20, 94);
+                
+                doc.setFont('helvetica', 'bold');
+                doc.text('INVOICE DETAILS:', 115, 76);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Invoice #: ${invoiceNumber}`, 115, 82);
+                doc.text(`Invoice Date: ${invoiceDate}`, 115, 88);
+                doc.text(`Due Date: ${dueDate}`, 115, 94);
+                
+                let yPos = 110;
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'bold');
+                doc.text('SERVICES PROVIDED', 20, yPos);
+                
+                yPos += 8;
+                doc.setDrawColor(200, 200, 200);
+                doc.setLineWidth(0.3);
+                doc.line(15, yPos, 195, yPos);
+                
+                yPos += 7;
+                doc.setFontSize(9);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(80, 80, 80);
+                doc.text('DESCRIPTION', 20, yPos);
+                doc.text('QTY', 130, yPos);
+                doc.text('AMOUNT', 185, yPos, { align: 'right' });
+                
+                yPos += 3;
+                doc.line(15, yPos, 195, yPos);
+                
+                yPos += 8;
+                let subtotal = 0;
+                if (selectedMenu && selectedMenu.length > 0) {
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(0, 0, 0);
+                    
+                    selectedMenu.forEach(item => {
+                        const itemTotal = item.total || item.totalPrice;
+                        doc.setFontSize(10);
+                        doc.text(item.name, 20, yPos);
+                        doc.text(`${item.quantity}`, 130, yPos);
+                        doc.text(`$${itemTotal.toFixed(2)}`, 185, yPos, { align: 'right' });
+                        subtotal += itemTotal;
+                        yPos += 8;
+                    });
+                }
+                
+                yPos += 5;
+                doc.setDrawColor(200, 200, 200);
+                doc.line(120, yPos, 195, yPos);
+                
+                yPos += 8;
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('FOOD SUBTOTAL:', 130, yPos);
+                doc.text(`$${subtotal.toFixed(2)}`, 185, yPos, { align: 'right' });
+                
+                if (order.staff_count > 0 || order.staff_cost > 0) {
+                    yPos += 8;
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(`Staff (${order.staff_count || 0}):`, 130, yPos);
+                    doc.text(`$${(order.staff_cost || 0).toFixed(2)}`, 185, yPos, { align: 'right' });
+                }
+                
+                if (order.equipment_cost > 0) {
+                    yPos += 8;
+                    doc.text('Equipment:', 130, yPos);
+                    doc.text(`$${(order.equipment_cost || 0).toFixed(2)}`, 185, yPos, { align: 'right' });
+                }
+                
+                yPos += 8;
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(13);
+                const totalPrice = order.price || subtotal + (order.staff_cost || 0) + (order.equipment_cost || 0);
+                doc.text('TOTAL DUE:', 130, yPos);
+                doc.text(`$${totalPrice.toFixed(2)}`, 185, yPos, { align: 'right' });
+                
+                if (order.deposit > 0) {
+                    yPos += 8;
+                    doc.setFontSize(11);
+                    doc.setTextColor(40, 167, 69);
+                    doc.text('Deposit Paid:', 130, yPos);
+                    doc.text(`-$${order.deposit.toFixed(2)}`, 185, yPos, { align: 'right' });
+                    
+                    yPos += 8;
+                    doc.setTextColor(220, 53, 69);
+                    doc.setFontSize(13);
+                    doc.text('BALANCE DUE:', 130, yPos);
+                    doc.text(`$${(totalPrice - order.deposit).toFixed(2)}`, 185, yPos, { align: 'right' });
+                }
+                
+                yPos += 3;
+                doc.setDrawColor(220, 53, 69);
+                doc.setLineWidth(0.8);
+                doc.line(120, yPos, 195, yPos);
+                
+                yPos += 15;
+                doc.setFillColor(255, 243, 205);
+                doc.rect(15, yPos, 180, 20, 'F');
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(133, 100, 4);
+                doc.text('PAYMENT TERMS:', 20, yPos + 7);
+                doc.setFont('helvetica', 'normal');
+                doc.text(`Payment due within 15 days (by ${dueDate})`, 20, yPos + 13);
+                doc.text('Make checks payable to: Birria Fusion', 20, yPos + 17);
+                
+                if (order.notes) {
+                    yPos += 30;
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('NOTES:', 20, yPos);
+                    
+                    yPos += 6;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    const splitNotes = doc.splitTextToSize(order.notes, 170);
+                    doc.text(splitNotes, 20, yPos);
+                }
+                
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'italic');
+                doc.setTextColor(120, 120, 120);
+                doc.text('Thank you for your business!', 105, 275, { align: 'center' });
+                doc.text('Please remit payment by the due date to avoid late fees.', 105, 280, { align: 'center' });
+                
+                doc.save(`Invoice-${invoiceNumber}-${order.client}.pdf`);
+            };
+            
+            logo.onerror = function() {
+                doc.setFontSize(24);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(255, 107, 53);
+                doc.text('BIRRIA FUSION', 15, 25);
+                doc.save(`Invoice-${invoiceNumber}-${order.client}.pdf`);
+            };
+        }
+
         function archiveCateringOrder(id) {
             if (confirm('Archive this order? You can restore it later from Archives.')) {
                 fetch(`/api/catering/${id}/archive`, { method: 'POST' })
@@ -5405,7 +5855,7 @@
                                 <span>${event.name}</span>
                                 <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
                                     <span style="color: ${statusColors[event.status]}; font-size: 0.8em; font-weight: bold; white-space: nowrap;">${event.status}</span>
-                                    ${event.fee > 0 ? `<span style="color: ${event.paid ? 'var(--success)' : 'var(--danger)'}; font-size: 0.7em; font-weight: bold; white-space: nowrap;">${event.paid ? '✓ PAID' : '✗ UNPAID'}</span>` : ''}
+                                    ${event.fee > 0 ? `<span style="color: ${event.paid ? 'var(--success)' : 'var(--danger)'}; font-size: 0.7em; font-weight: bold; white-space: nowrap;">${event.paid ? 'PAID' : '✗ UNPAID'}</span>` : ''}
                                 </div>
                             </div>
                             <div class="card-meta" style="display: flex; justify-content: space-between; align-items: center;">
@@ -5751,15 +6201,7 @@
                 <div class="form">
                     <div class="form-row">
                         <select id="expenseCategory">
-                            <option value="Fuel">Fuel</option>
-                            <option value="Supplies">Supplies</option>
-                            <option value="Permits">Permits & Licenses</option>
-                            <option value="Insurance">Insurance</option>
-                            <option value="Maintenance">Vehicle Maintenance</option>
-                            <option value="Marketing">Marketing</option>
-                            <option value="Utilities">Utilities</option>
-                            <option value="Labor">Labor</option>
-                            <option value="Other">Other</option>
+                            ${getAllExpenseCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
                         </select>
                         <input type="number" id="expenseAmount" placeholder="Amount ($)" step="0.01" min="0">
                     </div>
@@ -6194,6 +6636,14 @@
                     localStorage.setItem('contactCategories', JSON.stringify(categories));
                     loadContactCategories();
                 }
+            } else if (editType === 'expenseCategory') {
+                const categories = JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
+                const index = categories.indexOf(editOriginalValue);
+                if (index !== -1) {
+                    categories[index] = newValue;
+                    localStorage.setItem('expenseCategories', JSON.stringify(categories));
+                    loadExpenseCategories();
+                }
             }
             closeEditModal();
         }
@@ -6242,6 +6692,11 @@
                 const filtered = categories.filter(c => c !== editOriginalValue);
                 localStorage.setItem('contactCategories', JSON.stringify(filtered));
                 loadContactCategories();
+            } else if (editType === 'expenseCategory') {
+                const categories = JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
+                const filtered = categories.filter(c => c !== editOriginalValue);
+                localStorage.setItem('expenseCategories', JSON.stringify(filtered));
+                loadExpenseCategories();
             }
             closeEditModal();
         }
@@ -6427,6 +6882,43 @@
                 input.value = '';
                 loadContactCategories();
             }
+        }
+
+        // Expense Categories Functions
+        function addExpenseCategory() {
+            const input = document.getElementById('newExpenseCategory');
+            const category = input.value.trim();
+            if (!category) return;
+            
+            const categories = JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
+            if (!categories.includes(category)) {
+                categories.push(category);
+                localStorage.setItem('expenseCategories', JSON.stringify(categories));
+                input.value = '';
+                loadExpenseCategories();
+            }
+        }
+        
+        function loadExpenseCategories() {
+            const categories = JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
+            
+            document.getElementById('expenseCategoriesList').innerHTML = categories.map(category => `
+                <span onclick="editExpenseCategory('${category}')" style="display: inline-block; background: var(--orange); color: white; padding: 5px 10px; margin: 2px; border-radius: 15px; font-size: 12px; cursor: pointer;">
+                    ${category}
+                </span>
+            `).join('');
+        }
+        
+        function editExpenseCategory(category) {
+            editType = 'expenseCategory';
+            editOriginalValue = category;
+            document.getElementById('editModalTitle').textContent = 'Edit Expense Category';
+            document.getElementById('editInput').value = category;
+            document.getElementById('editModal').classList.add('show');
+        }
+        
+        function getAllExpenseCategories() {
+            return JSON.parse(localStorage.getItem('expenseCategories') || '["Fuel","Supplies","Permits","Insurance","Maintenance","Marketing","Utilities","Labor","Other"]');
         }
 
         function exportData() {
@@ -6934,13 +7426,13 @@
                 
                 let status, statusColor;
                 if (daysUntilExp < 0) {
-                    status = '🔴 EXPIRED';
+                    status = 'EXPIRED';
                     statusColor = 'var(--danger)';
                 } else if (daysUntilExp <= 30) {
-                    status = '🟡 Expires Soon';
+                    status = 'Expires Soon';
                     statusColor = 'var(--warning)';
                 } else {
-                    status = '🟢 Valid';
+                    status = 'Valid';
                     statusColor = 'var(--success)';
                 }
                 
@@ -7057,7 +7549,7 @@
             document.getElementById('maintenanceList').innerHTML = tasks.map(task => {
                 const isOverdue = task.nextDue < today;
                 const isDueSoon = task.nextDue <= new Date(Date.now() + 7*24*60*60*1000).toISOString().split('T')[0];
-                const status = isOverdue ? '🔴 Overdue' : isDueSoon ? '🟡 Due Soon' : '🟢 On Track';
+                const status = isOverdue ? 'Overdue' : isDueSoon ? 'Due Soon' : 'On Track';
                 const statusColor = isOverdue ? 'var(--danger)' : isDueSoon ? 'var(--warning)' : 'var(--success)';
                 
                 return `

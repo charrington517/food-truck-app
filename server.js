@@ -13,7 +13,13 @@ const PORT = 3000;
 
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use((req, res, next) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('X-Frame-Options', 'DENY');
+    next();
+});
 app.use(express.static('public'));
 
 // Create uploads directory
@@ -31,7 +37,10 @@ const storage = multer.diskStorage({
         cb(null, Date.now() + '_' + file.originalname);
     }
 });
-const upload = multer({ storage });
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 // Database setup
 const db = new sqlite3.Database('foodtruck.db');
@@ -57,9 +66,7 @@ db.serialize(() => {
     )`);
 
     // Add servings column if it doesn't exist
-    db.run(`ALTER TABLE ingredients ADD COLUMN servings INTEGER DEFAULT 1`, (err) => {
-        // Ignore error if column already exists
-    });
+    db.run(`ALTER TABLE ingredients ADD COLUMN servings INTEGER DEFAULT 1`, () => {});
 
     db.run(`CREATE TABLE IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -111,9 +118,7 @@ db.serialize(() => {
     )`);
     
     // Add address column if it doesn't exist
-    db.run(`ALTER TABLE suppliers ADD COLUMN address TEXT`, (err) => {
-        // Ignore error if column already exists
-    });
+    db.run(`ALTER TABLE suppliers ADD COLUMN address TEXT`, () => {});
 
     // Employees table
     db.run(`CREATE TABLE IF NOT EXISTS employees (
@@ -392,6 +397,33 @@ db.serialize(() => {
         FOREIGN KEY (employee_id) REFERENCES employees (id)
     )`);
     
+    // Inventory history table
+    db.run(`CREATE TABLE IF NOT EXISTS inventory_history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_id INTEGER NOT NULL,
+        item_name TEXT NOT NULL,
+        change_amount REAL NOT NULL,
+        previous_stock REAL NOT NULL,
+        new_stock REAL NOT NULL,
+        change_type TEXT NOT NULL,
+        notes TEXT,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (inventory_id) REFERENCES inventory (id)
+    )`);
+    
+    // Waste log table
+    db.run(`CREATE TABLE IF NOT EXISTS waste_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_id INTEGER,
+        item_name TEXT NOT NULL,
+        amount REAL NOT NULL,
+        unit TEXT,
+        reason TEXT NOT NULL,
+        cost REAL DEFAULT 0,
+        created_at TEXT NOT NULL,
+        FOREIGN KEY (inventory_id) REFERENCES inventory (id)
+    )`);
+    
     // Insert sample contacts
     db.get('SELECT COUNT(*) as count FROM contacts', (err, row) => {
         if (!err && row.count === 0) {
@@ -514,30 +546,42 @@ app.post('/api/inventory', (req, res) => {
 });
 
 app.put('/api/inventory/:id', (req, res) => {
-    const { ingredient_id, name, unit, current_stock, min_stock, max_stock, barcode, category } = req.body;
+    const { ingredient_id, name, unit, current_stock, min_stock, max_stock, barcode, category, change_type, notes } = req.body;
     
-    let sql = 'UPDATE inventory SET current_stock = ?, min_stock = ?, max_stock = ?, barcode = ?, category = ?';
-    let params = [current_stock, min_stock, max_stock, barcode, category];
-    
-    if (ingredient_id !== undefined) {
-        sql += ', ingredient_id = ?';
-        params.push(ingredient_id);
-    }
-    if (name !== undefined) {
-        sql += ', name = ?';
-        params.push(name);
-    }
-    if (unit !== undefined) {
-        sql += ', unit = ?';
-        params.push(unit);
-    }
-    
-    sql += ' WHERE id = ?';
-    params.push(req.params.id);
-    
-    db.run(sql, params, function(err) {
+    db.get('SELECT * FROM inventory WHERE id = ?', [req.params.id], (err, oldItem) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true });
+        
+        let sql = 'UPDATE inventory SET current_stock = ?, min_stock = ?, max_stock = ?, barcode = ?, category = ?';
+        let params = [current_stock, min_stock, max_stock, barcode, category];
+        
+        if (ingredient_id !== undefined) {
+            sql += ', ingredient_id = ?';
+            params.push(ingredient_id);
+        }
+        if (name !== undefined) {
+            sql += ', name = ?';
+            params.push(name);
+        }
+        if (unit !== undefined) {
+            sql += ', unit = ?';
+            params.push(unit);
+        }
+        
+        sql += ' WHERE id = ?';
+        params.push(req.params.id);
+        
+        db.run(sql, params, function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            
+            if (oldItem && oldItem.current_stock !== current_stock) {
+                const change = current_stock - oldItem.current_stock;
+                db.run('INSERT INTO inventory_history (inventory_id, item_name, change_amount, previous_stock, new_stock, change_type, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                    [req.params.id, oldItem.name || name, change, oldItem.current_stock, current_stock, change_type || 'adjustment', notes || '', new Date().toISOString()]
+                );
+            }
+            
+            res.json({ success: true });
+        });
     });
 });
 
@@ -1356,6 +1400,131 @@ app.post('/api/archived-catering/:id/restore', (req, res) => {
                     res.json({ success: true });
                 });
             });
+    });
+});
+
+// Inventory history and reporting endpoints
+app.get('/api/inventory-history', (req, res) => {
+    const { start_date, end_date } = req.query;
+    let sql = 'SELECT * FROM inventory_history WHERE 1=1';
+    const params = [];
+    
+    if (start_date) {
+        sql += ' AND created_at >= ?';
+        params.push(start_date);
+    }
+    if (end_date) {
+        sql += ' AND created_at <= ?';
+        params.push(end_date + 'T23:59:59');
+    }
+    
+    sql += ' ORDER BY created_at DESC';
+    
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/inventory-report', (req, res) => {
+    const { start_date, end_date } = req.query;
+    
+    let sql = `
+        SELECT 
+            ih.item_name,
+            SUM(CASE WHEN ih.change_amount < 0 THEN ABS(ih.change_amount) ELSE 0 END) as total_used,
+            SUM(CASE WHEN ih.change_amount > 0 THEN ih.change_amount ELSE 0 END) as total_added,
+            COUNT(*) as transaction_count,
+            i.unit
+        FROM inventory_history ih
+        LEFT JOIN inventory i ON ih.inventory_id = i.id
+        WHERE 1=1
+    `;
+    const params = [];
+    
+    if (start_date) {
+        sql += ' AND ih.created_at >= ?';
+        params.push(start_date);
+    }
+    if (end_date) {
+        sql += ' AND ih.created_at <= ?';
+        params.push(end_date + 'T23:59:59');
+    }
+    
+    sql += ' GROUP BY ih.item_name, i.unit ORDER BY total_used DESC';
+    
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+// Waste log endpoints
+app.get('/api/waste-log', (req, res) => {
+    db.all('SELECT * FROM waste_log ORDER BY created_at DESC LIMIT 100', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/waste-log', (req, res) => {
+    const { inventory_id, item_name, amount, unit, reason, cost } = req.body;
+    const created_at = new Date().toISOString();
+    
+    db.get('SELECT * FROM inventory WHERE id = ?', [inventory_id], (err, item) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!item) return res.status(404).json({ error: 'Inventory item not found' });
+        
+        const newStock = item.current_stock - amount;
+        
+        db.run('INSERT INTO waste_log (inventory_id, item_name, amount, unit, reason, cost, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [inventory_id, item_name, amount, unit, reason, cost || 0, created_at],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                
+                db.run('UPDATE inventory SET current_stock = ? WHERE id = ?', [newStock, inventory_id], (err) => {
+                    if (err) return res.status(500).json({ error: err.message });
+                    
+                    db.run('INSERT INTO inventory_history (inventory_id, item_name, change_amount, previous_stock, new_stock, change_type, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                        [inventory_id, item_name, -amount, item.current_stock, newStock, 'waste', `Waste: ${reason}`, created_at],
+                        (err) => {
+                            if (err) console.error('Failed to log inventory history:', err);
+                            res.json({ id: this.lastID, new_stock: newStock });
+                        });
+                });
+            });
+    });
+});
+
+app.get('/api/waste-report', (req, res) => {
+    const { start_date, end_date } = req.query;
+    let sql = `
+        SELECT 
+            item_name,
+            SUM(amount) as total_amount,
+            unit,
+            SUM(cost) as total_cost,
+            COUNT(*) as waste_count,
+            reason
+        FROM waste_log
+        WHERE 1=1
+    `;
+    const params = [];
+    
+    if (start_date) {
+        sql += ' AND created_at >= ?';
+        params.push(start_date);
+    }
+    if (end_date) {
+        sql += ' AND created_at <= ?';
+        params.push(end_date + 'T23:59:59');
+    }
+    
+    sql += ' GROUP BY item_name, unit, reason ORDER BY total_cost DESC';
+    
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
     });
 });
 
