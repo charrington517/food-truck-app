@@ -461,6 +461,21 @@ db.serialize(() => {
         category TEXT DEFAULT 'seasonal'
     )`);
     
+    db.run(`CREATE TABLE IF NOT EXISTS equipment_tracking (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        equipment_name TEXT NOT NULL,
+        qr_code TEXT UNIQUE NOT NULL,
+        location TEXT,
+        status TEXT DEFAULT 'Available',
+        last_updated TEXT NOT NULL,
+        notes TEXT,
+        quantity_total INTEGER DEFAULT 1,
+        quantity_available INTEGER DEFAULT 1
+    )`);
+    
+    db.run(`ALTER TABLE equipment_tracking ADD COLUMN quantity_total INTEGER DEFAULT 1`, () => {});
+    db.run(`ALTER TABLE equipment_tracking ADD COLUMN quantity_available INTEGER DEFAULT 1`, () => {});
+    
     // Insert sample contacts
     db.get('SELECT COUNT(*) as count FROM contacts', (err, row) => {
         if (!err && row.count === 0) {
@@ -1707,10 +1722,12 @@ app.get('/api/equipment-tracking/:qrCode', (req, res) => {
 });
 
 app.post('/api/equipment-tracking', (req, res) => {
-    const { equipment_name, qr_code, location, status, notes } = req.body;
+    const { equipment_name, qr_code, location, status, notes, quantity_total, quantity_available } = req.body;
     const last_updated = new Date().toISOString();
-    db.run('INSERT INTO equipment_tracking (equipment_name, qr_code, location, status, last_updated, notes) VALUES (?, ?, ?, ?, ?, ?)',
-        [equipment_name, qr_code, location, status || 'Available', last_updated, notes],
+    const qty_total = quantity_total || 1;
+    const qty_available = quantity_available !== undefined ? quantity_available : qty_total;
+    db.run('INSERT INTO equipment_tracking (equipment_name, qr_code, location, status, last_updated, notes, quantity_total, quantity_available) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [equipment_name, qr_code, location, status || 'Available', last_updated, notes, qty_total, qty_available],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
@@ -1718,14 +1735,27 @@ app.post('/api/equipment-tracking', (req, res) => {
 });
 
 app.put('/api/equipment-tracking/:id', (req, res) => {
-    const { location, status, notes } = req.body;
+    const { location, status, notes, quantity_total, quantity_available } = req.body;
     const last_updated = new Date().toISOString();
-    db.run('UPDATE equipment_tracking SET location = ?, status = ?, notes = ?, last_updated = ? WHERE id = ?',
-        [location, status, notes, last_updated, req.params.id],
-        function(err) {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ success: true });
-        });
+    let sql = 'UPDATE equipment_tracking SET location = ?, status = ?, notes = ?, last_updated = ?';
+    let params = [location, status, notes, last_updated];
+    
+    if (quantity_total !== undefined) {
+        sql += ', quantity_total = ?';
+        params.push(quantity_total);
+    }
+    if (quantity_available !== undefined) {
+        sql += ', quantity_available = ?';
+        params.push(quantity_available);
+    }
+    
+    sql += ' WHERE id = ?';
+    params.push(req.params.id);
+    
+    db.run(sql, params, function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
 });
 
 app.delete('/api/equipment-tracking/:id', (req, res) => {

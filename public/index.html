@@ -1190,14 +1190,17 @@
             </div>
             
             <div class="section">
-                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <div onclick="toggleEquipmentTracking()" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0; font-size: 1.2em;">Equipment Tracking</h3>
-                    <div style="display: flex; gap: 8px;">
+                    <span id="equipment-tracking-icon">▼</span>
+                </div>
+                <div id="equipmentTrackingContent" style="display: none;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 15px;">
                         <button class="btn" onclick="scanEquipmentQR()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--success);">Scan QR</button>
                         <button class="btn" onclick="addEquipment()" style="padding: 8px 16px; font-size: 0.9em; width: auto;">+ Add Equipment</button>
                     </div>
+                    <div class="grid" id="equipmentList"></div>
                 </div>
-                <div class="grid" id="equipmentList"></div>
             </div>
             
             <div class="section">
@@ -4559,10 +4562,14 @@ function exportInventoryReport() {
                         <div class="form">
                             <div class="form-group">
                                 <label>Select Equipment</label>
-                                <select id="rentalEquipmentId">
+                                <select id="rentalEquipmentId" onchange="updateRentalQuantityMax()">
                                     <option value="">Choose equipment...</option>
-                                    ${available.map(e => `<option value="${e.id}">${e.equipment_name} (${e.status})</option>`).join('')}
+                                    ${available.map(e => `<option value="${e.id}" data-qty="${e.quantity_available || 1}">${e.equipment_name} (${e.quantity_available || 1} available)</option>`).join('')}
                                 </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Quantity to Rent</label>
+                                <input type="number" id="rentalQuantity" min="1" max="1" value="1">
                             </div>
                             <div class="form-group">
                                 <label>Rented To</label>
@@ -4593,6 +4600,15 @@ function exportInventoryReport() {
                 });
         }
         
+        function updateRentalQuantityMax() {
+            const select = document.getElementById('rentalEquipmentId');
+            const qtyInput = document.getElementById('rentalQuantity');
+            const selectedOption = select.options[select.selectedIndex];
+            const maxQty = parseInt(selectedOption.getAttribute('data-qty')) || 1;
+            qtyInput.max = maxQty;
+            qtyInput.value = Math.min(parseInt(qtyInput.value) || 1, maxQty);
+        }
+        
         function saveRentalEquipment() {
             const equipmentId = document.getElementById('rentalEquipmentId').value;
             const client = document.getElementById('rentalClient').value.trim();
@@ -4600,24 +4616,48 @@ function exportInventoryReport() {
             const rentalDate = document.getElementById('rentalDate').value;
             const returnDate = document.getElementById('returnDate').value;
             const notes = document.getElementById('rentalNotes').value.trim();
+            const rentalQty = parseInt(document.getElementById('rentalQuantity').value) || 1;
             
             if (!equipmentId || !client) {
                 alert('Please select equipment and enter client name');
                 return;
             }
             
-            const location = `Rented to: ${client}`;
-            const fullNotes = `Event: ${purpose || 'N/A'}\nRental: ${rentalDate || 'N/A'} to ${returnDate || 'N/A'}\n${notes}`;
-            
-            fetch(`/api/equipment-tracking/${equipmentId}`, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    location: location,
-                    status: 'Rented',
-                    notes: fullNotes
-                })
-            }).then(() => { loadTools(); if (currentPage === 'catering') loadCatering(); });
+            fetch('/api/equipment-tracking')
+                .then(r => r.json())
+                .then(equipment => {
+                    const item = equipment.find(e => e.id == equipmentId);
+                    if (!item) return;
+                    
+                    const newAvailable = (item.quantity_available || 1) - rentalQty;
+                    
+                    fetch(`/api/equipment-tracking/${equipmentId}`, {
+                        method: 'PUT',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            location: item.location,
+                            status: item.status,
+                            notes: item.notes,
+                            quantity_available: newAvailable
+                        })
+                    }).then(() => {
+                        const rentalNotes = `Client: ${client}\nEvent: ${purpose || 'N/A'}\nRental: ${rentalDate || 'N/A'} to ${returnDate || 'N/A'}\nQuantity: ${rentalQty}\n${notes}`;
+                        
+                        fetch('/api/equipment-tracking', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                equipment_name: `${item.equipment_name} - ${client}`,
+                                qr_code: `RENTAL-${Date.now()}`,
+                                location: client,
+                                status: 'Rented',
+                                notes: rentalNotes,
+                                quantity_total: rentalQty,
+                                quantity_available: 0
+                            })
+                        }).then(() => loadTools());
+                    });
+                });
         }
         
         function editRentalEquipment(equipmentId) {
@@ -4668,30 +4708,34 @@ function exportInventoryReport() {
         }
         
         function returnRentalEquipment(equipmentId) {
-            if (confirm('Mark this equipment as returned and set status to Available?')) {
-                fetch(`/api/equipment-tracking/${equipmentId}`, {
-                    method: 'PUT',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        location: '',
-                        status: 'Available',
-                        notes: ''
-                    })
-                }).then(() => loadTools());
+            if (confirm('Mark this equipment as returned?')) {
+                fetch('/api/equipment-tracking')
+                    .then(r => r.json())
+                    .then(equipment => {
+                        const rental = equipment.find(e => e.id == equipmentId);
+                        if (!rental) return;
+                        
+                        const baseName = rental.equipment_name.split(' - ')[0];
+                        const originalEquipment = equipment.find(e => e.equipment_name === baseName && e.status !== 'Rented');
+                        
+                        if (originalEquipment) {
+                            const restoredQty = (originalEquipment.quantity_available || 0) + (rental.quantity_total || 1);
+                            fetch(`/api/equipment-tracking/${originalEquipment.id}`, {
+                                method: 'PUT',
+                                headers: {'Content-Type': 'application/json'},
+                                body: JSON.stringify({ quantity_available: restoredQty })
+                            });
+                        }
+                        
+                        fetch(`/api/equipment-tracking/${equipmentId}`, { method: 'DELETE' })
+                            .then(() => loadTools());
+                    });
             }
         }
         
         function deleteRentalEquipment(equipmentId) {
-            if (confirm('Remove this rental? (Equipment will be set back to Available)')) {
-                fetch(`/api/equipment-tracking/${equipmentId}`, {
-                    method: 'PUT',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({
-                        location: '',
-                        status: 'Available',
-                        notes: ''
-                    })
-                }).then(() => loadTools());
+            if (confirm('Remove this rental?')) {
+                returnRentalEquipment(equipmentId);
             }
         }
         
@@ -7260,29 +7304,60 @@ function exportInventoryReport() {
             }).then(() => loadQRCategories());
         }
         
+        function toggleEquipmentTracking() {
+            const content = document.getElementById('equipmentTrackingContent');
+            const icon = document.getElementById('equipment-tracking-icon');
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                content.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
+        function toggleEquipmentCard(id) {
+            const details = document.getElementById(`eq-details-${id}`);
+            const icon = document.getElementById(`eq-icon-${id}`);
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
+            }
+        }
+        
         function loadEquipmentTracking() {
             fetch('/api/equipment-tracking')
                 .then(r => r.json())
                 .then(equipment => {
-                    if (equipment.length === 0) {
+                    const tracked = equipment.filter(e => e.status !== 'Rented');
+                    if (tracked.length === 0) {
                         document.getElementById('equipmentList').innerHTML = '<div style="text-align: center; color: var(--gray); padding: 20px;">No equipment tracked yet</div>';
                         return;
                     }
                     
-                    document.getElementById('equipmentList').innerHTML = equipment.map(e => {
+                    document.getElementById('equipmentList').innerHTML = tracked.map(e => {
                         const statusColor = e.status === 'Available' ? 'var(--success)' : e.status === 'In Use' ? 'var(--warning)' : 'var(--danger)';
                         return `
                             <div class="card">
-                                <div class="card-title">${e.equipment_name}</div>
-                                <div class="card-meta">Location: ${e.location || 'Not set'}</div>
-                                <div class="card-meta" style="color: ${statusColor}; font-weight: bold;">Status: ${e.status}</div>
-                                <div class="card-meta">QR: ${e.qr_code}</div>
-                                ${e.notes ? `<div class="card-meta">Notes: ${e.notes}</div>` : ''}
-                                <div class="card-meta" style="font-size: 0.8em;">Updated: ${new Date(e.last_updated).toLocaleString()}</div>
-                                <div class="card-actions">
-                                    <button class="btn" onclick="updateEquipmentStatus(${e.id})" style="background: var(--orange);">Update</button>
-                                    <button class="btn" onclick="viewEquipmentQR('${e.qr_code}', '${e.equipment_name}')" style="background: var(--success);">View QR</button>
-                                    <button class="btn btn-danger" onclick="deleteEquipment(${e.id})">Delete</button>
+                                <div onclick="toggleEquipmentCard(${e.id})" style="cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                                    <div class="card-title" style="margin: 0;">${e.equipment_name}</div>
+                                    <span id="eq-icon-${e.id}">▼</span>
+                                </div>
+                                <div id="eq-details-${e.id}" style="display: none; margin-top: 10px;">
+                                    <div class="card-meta">Quantity: ${e.quantity_available || 0} / ${e.quantity_total || 1} available</div>
+                                    <div class="card-meta">Location: ${e.location || 'Not set'}</div>
+                                    <div class="card-meta" style="color: ${statusColor}; font-weight: bold;">Status: ${e.status}</div>
+                                    <div class="card-meta">QR: ${e.qr_code}</div>
+                                    ${e.notes ? `<div class="card-meta">Notes: ${e.notes}</div>` : ''}
+                                    <div class="card-meta" style="font-size: 0.8em;">Updated: ${new Date(e.last_updated).toLocaleString()}</div>
+                                    <div class="card-actions">
+                                        <button class="btn" onclick="event.stopPropagation(); updateEquipmentStatus(${e.id})" style="background: var(--orange);">Update</button>
+                                        <button class="btn" onclick="event.stopPropagation(); viewEquipmentQR('${e.qr_code}', '${e.equipment_name}')" style="background: var(--success);">View QR</button>
+                                        <button class="btn btn-danger" onclick="event.stopPropagation(); deleteEquipment(${e.id})">Delete</button>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -7312,6 +7387,16 @@ function exportInventoryReport() {
                             ${getAllEquipmentStatuses().map(s => `<option value="${s}">${s}</option>`).join('')}
                         </select>
                     </div>
+                    <div class="form-row">
+                        <div style="flex: 1;">
+                            <label>Total Quantity</label>
+                            <input type="number" id="equipmentQtyTotal" placeholder="Total" min="1" value="1">
+                        </div>
+                        <div style="flex: 1;">
+                            <label>Available</label>
+                            <input type="number" id="equipmentQtyAvailable" placeholder="Available" min="0" value="1">
+                        </div>
+                    </div>
                     <div class="form-group">
                         <textarea id="equipmentNotes" placeholder="Notes" rows="2"></textarea>
                     </div>
@@ -7334,10 +7419,13 @@ function exportInventoryReport() {
                 return;
             }
             
+            const quantity_total = parseInt(document.getElementById('equipmentQtyTotal').value) || 1;
+            const quantity_available = parseInt(document.getElementById('equipmentQtyAvailable').value) || quantity_total;
+            
             fetch('/api/equipment-tracking', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ equipment_name, qr_code, location, status, notes })
+                body: JSON.stringify({ equipment_name, qr_code, location, status, notes, quantity_total, quantity_available })
             }).then(() => loadEquipmentTracking());
         }
         
@@ -7366,6 +7454,16 @@ function exportInventoryReport() {
                                     ${getAllEquipmentStatuses().map(s => `<option value="${s}" ${item.status === s ? 'selected' : ''}>${s}</option>`).join('')}
                                 </select>
                             </div>
+                            <div class="form-row">
+                                <div style="flex: 1;">
+                                    <label>Total Quantity</label>
+                                    <input type="number" id="updateQtyTotal" min="1" value="${item.quantity_total || 1}">
+                                </div>
+                                <div style="flex: 1;">
+                                    <label>Available</label>
+                                    <input type="number" id="updateQtyAvailable" min="0" value="${item.quantity_available || 1}">
+                                </div>
+                            </div>
                             <div class="form-group">
                                 <label>Notes</label>
                                 <textarea id="updateNotes" rows="2">${item.notes || ''}</textarea>
@@ -7382,11 +7480,13 @@ function exportInventoryReport() {
             const location = document.getElementById('updateLocation').value.trim();
             const status = document.getElementById('updateStatus').value;
             const notes = document.getElementById('updateNotes').value.trim();
+            const quantity_total = parseInt(document.getElementById('updateQtyTotal').value) || 1;
+            const quantity_available = parseInt(document.getElementById('updateQtyAvailable').value) || 0;
             
             fetch(`/api/equipment-tracking/${id}`, {
                 method: 'PUT',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ location, status, notes })
+                body: JSON.stringify({ location, status, notes, quantity_total, quantity_available })
             }).then(() => loadEquipmentTracking());
         }
         
