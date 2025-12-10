@@ -2340,32 +2340,32 @@ function exportInventoryReport() {
                 return;
             }
 
-            // Input validation
-            if (username.length < 3 || password.length < 6) {
-                errorDiv.textContent = 'Invalid credentials format';
-                return;
-            }
-
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.username === username && u.password === password);
-
-            if (user) {
-                currentUser = user;
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
-                document.querySelector('.nav').style.display = 'block';
-                resetSessionTimeout(); // Start session management
-                loadDashboard();
-                errorDiv.textContent = '';
-                
-                // Clear password field for security
+            fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username, password})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) {
+                    errorDiv.textContent = 'Invalid username or password';
+                    document.getElementById('loginPassword').value = '';
+                } else {
+                    currentUser = data.user;
+                    localStorage.setItem('currentUser', JSON.stringify(data.user));
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('mainApp').style.display = 'block';
+                    document.querySelector('.nav').style.display = 'block';
+                    resetSessionTimeout();
+                    loadDashboard();
+                    errorDiv.textContent = '';
+                    document.getElementById('loginPassword').value = '';
+                }
+            })
+            .catch(() => {
+                errorDiv.textContent = 'Login failed. Please try again.';
                 document.getElementById('loginPassword').value = '';
-            } else {
-                errorDiv.textContent = 'Invalid username or password';
-                // Clear password field on failed attempt
-                document.getElementById('loginPassword').value = '';
-            }
+            });
         }
 
         function showEmployeeRegistration() {
@@ -2483,19 +2483,25 @@ function exportInventoryReport() {
         }
 
         function initializeDefaultUsers() {
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            if (users.length === 0) {
-                const adminUser = {
-                    id: 1,
-                    username: 'admin',
-                    password: generateSecurePassword(),
-                    role: 'Owner',
-                    name: 'System Administrator'
-                };
-                localStorage.setItem('users', JSON.stringify([adminUser]));
-                console.log('Default admin created. Username: admin, Password:', adminUser.password);
-                alert(`Default admin created!\nUsername: admin\nPassword: ${adminUser.password}\n\nPlease save this password and change it immediately.`);
-            }
+            fetch('/api/users')
+                .then(r => r.json())
+                .then(users => {
+                    if (users.length === 0) {
+                        const password = 'admin123';
+                        fetch('/api/users', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify({
+                                username: 'admin',
+                                password: password,
+                                role: 'Owner',
+                                name: 'System Administrator'
+                            })
+                        }).then(() => {
+                            alert(`Default admin created!\nUsername: admin\nPassword: ${password}\n\nPlease change this password immediately.`);
+                        });
+                    }
+                });
             
             let employees = JSON.parse(localStorage.getItem('employees') || '[]');
             const hasMaria = employees.some(e => e.name === 'Maria Garcia');
@@ -2715,7 +2721,12 @@ function exportInventoryReport() {
                                 <div style="flex: 1;">
                                     <label>Category</label>
                                     <select id="recipeType">
-                                        ${getAllMenuCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                                        <option value="Entree">Entree</option>
+                                        <option value="Appetizer">Appetizer</option>
+                                        <option value="Dessert">Dessert</option>
+                                        <option value="Sauce">Sauce</option>
+                                        <option value="Side">Side</option>
+                                        <option value="Beverage">Beverage</option>
                                     </select>
                                 </div>
                                 <div style="flex: 1;">
@@ -2739,8 +2750,6 @@ function exportInventoryReport() {
                     break;
                 case 'ingredients':
                     title = 'Add Ingredient';
-                    const units = getAllMeasurementUnits();
-                    const unitOptions = units.map(unit => `<option value="${unit}">${unit}</option>`).join('');
                     form = `
                         <div class="form">
                             <div class="form-group">
@@ -2756,7 +2765,17 @@ function exportInventoryReport() {
                                     <label>Unit</label>
                                     <select id="ingredientUnit">
                                         <option value="">Select unit...</option>
-                                        ${unitOptions}
+                                        <option value="lb">lb</option>
+                                        <option value="oz">oz</option>
+                                        <option value="kg">kg</option>
+                                        <option value="g">g</option>
+                                        <option value="cups">cups</option>
+                                        <option value="tbsp">tbsp</option>
+                                        <option value="tsp">tsp</option>
+                                        <option value="liters">liters</option>
+                                        <option value="ml">ml</option>
+                                        <option value="pieces">pieces</option>
+                                        <option value="pack">pack</option>
                                     </select>
                                 </div>
                             </div>
@@ -2780,14 +2799,28 @@ function exportInventoryReport() {
                                 <div style="flex: 1;">
                                     <label>Category</label>
                                     <select id="inventoryCategory" onchange="document.getElementById('addToIngredients').checked = (this.value === 'Food')">
-                                        ${getAllInventoryCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                                        <option value="Food">Food</option>
+                                        <option value="Cleaning Supplies">Cleaning Supplies</option>
+                                        <option value="To Go Supplies">To Go Supplies</option>
+                                        <option value="Equipment">Equipment</option>
+                                        <option value="Other">Other</option>
                                     </select>
                                 </div>
                                 <div style="flex: 1;">
                                     <label>Unit</label>
                                     <select id="inventoryUnit">
                                         <option value="">Select unit...</option>
-                                        ${getAllMeasurementUnits().map(unit => `<option value="${unit}">${unit}</option>`).join('')}
+                                        <option value="lb">lb</option>
+                                        <option value="oz">oz</option>
+                                        <option value="kg">kg</option>
+                                        <option value="g">g</option>
+                                        <option value="cups">cups</option>
+                                        <option value="tbsp">tbsp</option>
+                                        <option value="tsp">tsp</option>
+                                        <option value="liters">liters</option>
+                                        <option value="ml">ml</option>
+                                        <option value="pieces">pieces</option>
+                                        <option value="pack">pack</option>
                                     </select>
                                 </div>
                             </div>
@@ -2821,7 +2854,11 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="supplierContact" placeholder="Contact Person">
                                 <select id="supplierCategory">
-                                    ${getAllSupplierCategories().map(cat => `<option value="${cat}">${cat}</option>`).join('')}
+                                    <option value="Food">Food</option>
+                                    <option value="Beverage">Beverage</option>
+                                    <option value="Equipment">Equipment</option>
+                                    <option value="Supplies">Supplies</option>
+                                    <option value="Other">Other</option>
                                 </select>
                             </div>
                             <div class="form-row">
@@ -3140,10 +3177,10 @@ function exportInventoryReport() {
             const type = document.getElementById('recipeType').value;
             const portions = parseInt(document.getElementById('portions').value) || 1;
             const price = parseFloat(document.getElementById('price').value);
-            const cost = parseFloat(document.getElementById('cost').value);
+            const cost = parseFloat(document.getElementById('cost').value) || 0;
 
-            if (!name || !price || !cost) {
-                alert('Please fill in all fields');
+            if (!name || !price) {
+                alert('Please fill in name and price');
                 return;
             }
 
@@ -3278,7 +3315,12 @@ function exportInventoryReport() {
                                 <div style="flex: 1;">
                                     <label>Category</label>
                                     <select id="recipeType">
-                                        ${getAllMenuCategories().map(cat => `<option value="${cat}" ${recipe.recipe_type === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                                        <option value="Entree" ${recipe.recipe_type === 'Entree' ? 'selected' : ''}>Entree</option>
+                                        <option value="Appetizer" ${recipe.recipe_type === 'Appetizer' ? 'selected' : ''}>Appetizer</option>
+                                        <option value="Dessert" ${recipe.recipe_type === 'Dessert' ? 'selected' : ''}>Dessert</option>
+                                        <option value="Sauce" ${recipe.recipe_type === 'Sauce' ? 'selected' : ''}>Sauce</option>
+                                        <option value="Side" ${recipe.recipe_type === 'Side' ? 'selected' : ''}>Side</option>
+                                        <option value="Beverage" ${recipe.recipe_type === 'Beverage' ? 'selected' : ''}>Beverage</option>
                                     </select>
                                 </div>
                                 <div style="flex: 1;">
@@ -3860,8 +3902,6 @@ function exportInventoryReport() {
                     const modalForm = document.getElementById('modalForm');
                     
                     modalTitle.textContent = 'Edit Ingredient';
-                    const units = getAllMeasurementUnits();
-                    const unitOptions = units.map(unit => `<option value="${unit}" ${unit === ingredient.unit ? 'selected' : ''}>${unit}</option>`).join('');
                     
                     modalForm.innerHTML = `
                         <div class="form">
@@ -3878,7 +3918,17 @@ function exportInventoryReport() {
                                     <label>Unit</label>
                                     <select id="ingredientUnit">
                                         <option value="">Select unit...</option>
-                                        ${unitOptions}
+                                        <option value="lb" ${ingredient.unit === 'lb' ? 'selected' : ''}>lb</option>
+                                        <option value="oz" ${ingredient.unit === 'oz' ? 'selected' : ''}>oz</option>
+                                        <option value="kg" ${ingredient.unit === 'kg' ? 'selected' : ''}>kg</option>
+                                        <option value="g" ${ingredient.unit === 'g' ? 'selected' : ''}>g</option>
+                                        <option value="cups" ${ingredient.unit === 'cups' ? 'selected' : ''}>cups</option>
+                                        <option value="tbsp" ${ingredient.unit === 'tbsp' ? 'selected' : ''}>tbsp</option>
+                                        <option value="tsp" ${ingredient.unit === 'tsp' ? 'selected' : ''}>tsp</option>
+                                        <option value="liters" ${ingredient.unit === 'liters' ? 'selected' : ''}>liters</option>
+                                        <option value="ml" ${ingredient.unit === 'ml' ? 'selected' : ''}>ml</option>
+                                        <option value="pieces" ${ingredient.unit === 'pieces' ? 'selected' : ''}>pieces</option>
+                                        <option value="pack" ${ingredient.unit === 'pack' ? 'selected' : ''}>pack</option>
                                     </select>
                                 </div>
                             </div>
@@ -4172,7 +4222,11 @@ function exportInventoryReport() {
                             <div class="form-group">
                                 <label>Category</label>
                                 <select id="inventoryCategory">
-                                    ${getAllInventoryCategories().map(cat => `<option value="${cat}" ${item.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                                    <option value="Food" ${item.category === 'Food' ? 'selected' : ''}>Food</option>
+                                    <option value="Cleaning Supplies" ${item.category === 'Cleaning Supplies' ? 'selected' : ''}>Cleaning Supplies</option>
+                                    <option value="To Go Supplies" ${item.category === 'To Go Supplies' ? 'selected' : ''}>To Go Supplies</option>
+                                    <option value="Equipment" ${item.category === 'Equipment' ? 'selected' : ''}>Equipment</option>
+                                    <option value="Other" ${item.category === 'Other' ? 'selected' : ''}>Other</option>
                                 </select>
                             </div>
                             <div class="form-row">
@@ -4440,7 +4494,11 @@ function exportInventoryReport() {
                             <div class="form-row">
                                 <input type="text" id="supplierContact" placeholder="Contact Person" value="${supplier.contact || ''}">
                                 <select id="supplierCategory">
-                                    ${getAllSupplierCategories().map(cat => `<option value="${cat}" ${supplier.category === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+                                    <option value="Food" ${supplier.category === 'Food' ? 'selected' : ''}>Food</option>
+                                    <option value="Beverage" ${supplier.category === 'Beverage' ? 'selected' : ''}>Beverage</option>
+                                    <option value="Equipment" ${supplier.category === 'Equipment' ? 'selected' : ''}>Equipment</option>
+                                    <option value="Supplies" ${supplier.category === 'Supplies' ? 'selected' : ''}>Supplies</option>
+                                    <option value="Other" ${supplier.category === 'Other' ? 'selected' : ''}>Other</option>
                                 </select>
                             </div>
                             <div class="form-row">
@@ -4534,13 +4592,20 @@ function exportInventoryReport() {
                     }
                     document.getElementById('toolsList').innerHTML = rentals.map(tool => `
                         <div class="card">
-                            <div class="card-title">${tool.equipment_name}</div>
-                            <div class="card-meta">${tool.location || 'No location'}</div>
-                            <div class="card-meta">Last updated: ${new Date(tool.last_updated).toLocaleDateString()}</div>
-                            ${tool.notes ? `<div class="card-meta" style="font-style: italic; white-space: pre-line;">${tool.notes}</div>` : ''}
-                            <div class="card-actions">
-                                <button class="btn" onclick="editRentalEquipment(${tool.id})" style="background: var(--orange); color: white;">Update</button>
-                                <button class="btn" onclick="returnRentalEquipment(${tool.id})" style="background: var(--success); color: white;">Return</button>
+                            <div onclick="toggleRentalCard(${tool.id})" style="cursor: pointer;">
+                                <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                                    ${tool.equipment_name}
+                                    <span id="rental-icon-${tool.id}">▼</span>
+                                </div>
+                                <div class="card-meta">${tool.location || 'No location'}</div>
+                                <div class="card-meta">Last updated: ${new Date(tool.last_updated).toLocaleDateString()}</div>
+                            </div>
+                            <div id="rental-details-${tool.id}" style="display: none;">
+                                ${tool.notes ? `<div class="card-meta" style="font-style: italic; white-space: pre-line; margin-top: 10px;">${tool.notes}</div>` : ''}
+                                <div class="card-actions">
+                                    <button class="btn" onclick="event.stopPropagation(); editRentalEquipment(${tool.id})" style="background: var(--orange); color: white;">Update</button>
+                                    <button class="btn" onclick="event.stopPropagation(); returnRentalEquipment(${tool.id})" style="background: var(--success); color: white;">Return</button>
+                                </div>
                             </div>
                         </div>
                     `).join('');
@@ -4700,7 +4765,7 @@ function exportInventoryReport() {
                                 catering_id: catering_id,
                                 contact_id: contact_id
                             })
-                        }).then(() => loadTools());
+                        }).then(() => { loadTools(); if(typeof loadEquipmentTracking === 'function') loadEquipmentTracking(); });
                     });
                 });
         }
@@ -4749,7 +4814,19 @@ function exportInventoryReport() {
                     status: 'Rented',
                     notes: notes
                 })
-            }).then(() => loadTools());
+            }).then(() => { loadTools(); if(typeof loadEquipmentTracking === 'function') loadEquipmentTracking(); });
+        }
+        
+        function toggleRentalCard(id) {
+            const details = document.getElementById(`rental-details-${id}`);
+            const icon = document.getElementById(`rental-icon-${id}`);
+            if (details.style.display === 'none') {
+                details.style.display = 'block';
+                icon.textContent = '▲';
+            } else {
+                details.style.display = 'none';
+                icon.textContent = '▼';
+            }
         }
         
         function returnRentalEquipment(equipmentId) {
@@ -4773,7 +4850,7 @@ function exportInventoryReport() {
                         }
                         
                         fetch(`/api/equipment-tracking/${equipmentId}`, { method: 'DELETE' })
-                            .then(() => loadTools());
+                            .then(() => { loadTools(); if(typeof loadEquipmentTracking === 'function') loadEquipmentTracking(); });
                     });
             }
         }

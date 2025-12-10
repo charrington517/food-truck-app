@@ -1,6 +1,8 @@
 const fs = require('fs');
+const path = require('path');
 
-let html = fs.readFileSync('/root/food-truck-app/public/index.html', 'utf8');
+const htmlPath = process.env.HTML_PATH || path.join(__dirname, 'public', 'index.html');
+let html = fs.readFileSync(htmlPath, 'utf8');
 
 const categories = [
     {key: 'eventStatuses', defaults: '["Scheduled","Confirmed","Completed","Cancelled"]'},
@@ -20,5 +22,5 @@ categories.forEach(cat => {
     html = html.replace(regex2, `fetch('/api/settings/${cat.key}', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify($1)})})`);
 });
 
-fs.writeFileSync('/root/food-truck-app/public/index.html', html);
+fs.writeFileSync(htmlPath, html);
 console.log('Fixed all category localStorage references');

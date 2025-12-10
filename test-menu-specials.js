@@ -1,5 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('foodtruck.db');
+const db = new sqlite3.Database(process.env.DB_PATH || 'foodtruck.db');
 
 console.log('Testing menu_specials table...\n');
 
