@@ -480,6 +480,19 @@ db.serialize(() => {
     db.run(`ALTER TABLE equipment_tracking ADD COLUMN catering_id INTEGER`, () => {});
     db.run(`ALTER TABLE equipment_tracking ADD COLUMN contact_id INTEGER`, () => {});
     
+    // Recipe book table
+    db.run(`CREATE TABLE IF NOT EXISTS recipe_book (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        prep_time TEXT,
+        cook_time TEXT,
+        servings INTEGER,
+        ingredients TEXT,
+        instructions TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
     // Insert sample contacts
     db.get('SELECT COUNT(*) as count FROM contacts', (err, row) => {
         if (!err && row.count === 0) {
@@ -1859,6 +1872,52 @@ app.post('/api/performance-reviews/auto-archive', (req, res) => {
                 });
         });
         setTimeout(() => res.json({ archived }), 500);
+    });
+});
+
+// Recipe Book endpoints
+app.get('/api/recipe-book', (req, res) => {
+    db.all('SELECT * FROM recipe_book ORDER BY name', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/recipe-book/:id', (req, res) => {
+    db.get('SELECT * FROM recipe_book WHERE id = ?', [req.params.id], (err, row) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (row) {
+            res.json(row);
+        } else {
+            res.status(404).json({error: 'Recipe not found'});
+        }
+    });
+});
+
+app.post('/api/recipe-book', (req, res) => {
+    const { name, description, prep_time, cook_time, servings, ingredients, instructions } = req.body;
+    db.run('INSERT INTO recipe_book (name, description, prep_time, cook_time, servings, ingredients, instructions) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [name, description, prep_time, cook_time, servings, ingredients, instructions],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.put('/api/recipe-book/:id', (req, res) => {
+    const { name, description, prep_time, cook_time, servings, ingredients, instructions } = req.body;
+    db.run('UPDATE recipe_book SET name = ?, description = ?, prep_time = ?, cook_time = ?, servings = ?, ingredients = ?, instructions = ? WHERE id = ?',
+        [name, description, prep_time, cook_time, servings, ingredients, instructions, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.delete('/api/recipe-book/:id', (req, res) => {
+    db.run('DELETE FROM recipe_book WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
     });
 });
 
