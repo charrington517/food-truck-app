@@ -67,6 +67,8 @@ db.serialize(() => {
 
     // Add servings column if it doesn't exist
     db.run(`ALTER TABLE ingredients ADD COLUMN servings INTEGER DEFAULT 1`, () => {});
+    db.run(`ALTER TABLE ingredients ADD COLUMN is_compound INTEGER DEFAULT 0`, () => {});
+    db.run(`ALTER TABLE ingredients ADD COLUMN recipe TEXT`, () => {});
 
     db.run(`CREATE TABLE IF NOT EXISTS inventory (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -530,20 +532,16 @@ app.delete('/api/menu/:id', (req, res) => {
 });
 
 app.get('/api/ingredients', (req, res) => {
-    db.all(`SELECT ing.* 
-            FROM ingredients ing
-            INNER JOIN inventory inv ON ing.id = inv.ingredient_id
-            WHERE inv.category = 'Food'
-            ORDER BY ing.name`, (err, rows) => {
+    db.all('SELECT * FROM ingredients ORDER BY name', (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json(rows);
     });
 });
 
 app.post('/api/ingredients', (req, res) => {
-    const { name, cost, unit, servings } = req.body;
-    db.run('INSERT INTO ingredients (name, cost, unit, servings) VALUES (?, ?, ?, ?)',
-        [name, cost, unit, servings || 1],
+    const { name, cost, unit, servings, is_compound, recipe } = req.body;
+    db.run('INSERT INTO ingredients (name, cost, unit, servings, is_compound, recipe) VALUES (?, ?, ?, ?, ?, ?)',
+        [name, cost, unit, servings || 1, is_compound || 0, recipe || null],
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID });
