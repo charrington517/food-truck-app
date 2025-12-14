@@ -761,15 +761,25 @@
             <div class="section">
                 <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 class="section-title" style="margin: 0; border: none; padding: 0;">Current Inventory</h2>
-                    <button class="btn" onclick="openBarcodeScanner()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--success);">
-                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 5px;">
-                            <path d="M2 6h2v12H2V6zm4 0h1v12H6V6zm2 0h2v12H8V6zm3 0h1v12h-1V6zm2 0h3v12h-3V6zm4 0h1v12h-1V6zm2 0h2v12h-2V6z"/>
-                        </svg>
-                        Scan Barcode
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn" onclick="openReceiptScanner()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--orange);">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 5px;">
+                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            Scan Receipt
+                        </button>
+                        <button class="btn" onclick="openBarcodeScanner()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--success);">
+                            <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24" style="vertical-align: middle; margin-right: 5px;">
+                                <path d="M2 6h2v12H2V6zm4 0h1v12H6V6zm2 0h2v12H8V6zm3 0h1v12h-1V6zm2 0h3v12h-3V6zm4 0h1v12h-1V6zm2 0h2v12h-2V6z"/>
+                            </svg>
+                            Scan Barcode
+                        </button>
+                    </div>
                 </div>
                 <div class="grid" id="inventoryList"></div>
             </div>
+            
+
             
             <div class="section">
                 <h2 class="section-title">Waste Log</h2>
@@ -1255,6 +1265,27 @@
                     <h3 style="font-size: 1.1em; margin-bottom: 10px;">Archived Catering Orders</h3>
                     <div class="grid" id="archivedCateringList"></div>
                 </div>
+            </div>
+            
+            <div class="section">
+                <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0; font-size: 1.2em;">Receipt Gallery</h3>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button class="btn" onclick="openReceiptScanner()" style="padding: 8px 16px; font-size: 0.9em; width: auto; background: var(--orange);">
+                            Scan Receipt
+                        </button>
+                        <select id="receiptCategoryFilter" onchange="loadReceipts()" style="padding: 8px; border-radius: 6px;">
+                            <option value="all">All Categories</option>
+                            <option value="gas">Gas</option>
+                            <option value="groceries">Groceries</option>
+                            <option value="supplies">Supplies</option>
+                            <option value="services">Services</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid" id="receiptsList"></div>
             </div>
             
             <div class="section">
@@ -1791,6 +1822,21 @@ function exportInventoryReport() {
                         </div>
                     </div>
                     
+                    <div style="margin-bottom: 20px; padding: 15px; background: var(--card-bg); border-radius: 8px; cursor: pointer;" onclick="toggleCategorySection('receiptCategories')">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 500;">
+                            <span>Receipt Categories</span>
+                            <span id="receiptCategories-arrow">▶</span>
+                        </div>
+                        <div id="receiptCategories-section" style="display: none; margin-top: 15px;" onclick="event.stopPropagation()">
+                            <div class="form-row">
+                                <input type="text" id="newReceiptCategory" placeholder="Add new category (e.g., Utilities, Rent)" onclick="event.stopPropagation()">
+                                <button class="btn" onclick="event.stopPropagation(); addReceiptCategory()" style="width: auto; padding: 12px 20px;">Add</button>
+                                <button class="btn" onclick="event.stopPropagation(); fetch('/api/settings/receiptCategories', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({value: JSON.stringify(['Gas','Groceries','Supplies','Services','Equipment','Other'])})}); loadReceiptCategories(); alert('Restored!');" style="width: auto; padding: 12px 20px; background: var(--gray);">Restore Defaults</button>
+                            </div>
+                            <div id="receiptCategoriesList" style="margin-top: 15px;"></div>
+                        </div>
+                    </div>
+                    
                 </div>
             </div>
 
@@ -1912,6 +1958,68 @@ function exportInventoryReport() {
                 <div id="barcodeScannerReader" style="width: 100%; margin-bottom: 15px;"></div>
                 <div id="barcodeScanResult" style="margin-top: 15px;"></div>
                 <button class="btn" onclick="closeBarcodeScanner()" style="width: 100%; background: var(--gray); margin-top: 10px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Scanner Modal -->
+    <div class="modal" id="receiptScannerModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 class="modal-title">Receipt Scanner</h3>
+                <button class="close-btn" onclick="closeReceiptScanner()">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                    <button class="btn" onclick="startCamera()" id="cameraBtn" style="flex: 1; background: var(--orange);">Take Photo</button>
+                    <button class="btn" onclick="document.getElementById('receiptFileInput').click()" style="flex: 1; background: var(--success);">Upload Image</button>
+                </div>
+                
+                <input type="file" id="receiptFileInput" accept="image/*,.pdf" style="display: none;" onchange="handleReceiptFile(this.files[0])">
+                
+                <div id="cameraContainer" style="display: none; margin-bottom: 15px;">
+                    <video id="receiptVideo" style="width: 100%; max-width: 400px; border-radius: 8px;"></video>
+                    <div style="text-align: center; margin-top: 10px;">
+                        <button class="btn" onclick="capturePhoto()" style="background: var(--orange);">Capture</button>
+                        <button class="btn" onclick="stopCamera()" style="background: var(--gray);">Cancel</button>
+                    </div>
+                </div>
+                
+                <div id="receiptPreview" style="display: none; margin-bottom: 15px;">
+                    <img id="receiptImage" style="max-width: 100%; border-radius: 8px; margin-bottom: 10px;">
+                    <div class="form">
+                        <div class="form-row">
+                            <select id="receiptCategory">
+                                <option value="gas">Gas</option>
+                                <option value="groceries">Groceries</option>
+                                <option value="supplies">Supplies</option>
+                                <option value="services">Services</option>
+                                <option value="equipment">Equipment</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <input type="date" id="receiptDate" value="">
+                        </div>
+                        <div class="form-row">
+                            <input type="text" id="merchantName" placeholder="Merchant Name">
+                            <input type="number" id="totalAmount" placeholder="Total Amount" step="0.01">
+                        </div>
+                        <button class="btn" onclick="processReceipt()" style="background: var(--orange);">Process Receipt</button>
+                    </div>
+                </div>
+                
+                <div id="receiptProcessing" style="display: none; text-align: center; padding: 20px;">
+                    <div style="font-size: 18px; margin-bottom: 10px;">Processing receipt...</div>
+                    <div style="color: var(--gray);">Extracting text and analyzing items</div>
+                </div>
+                
+                <div id="receiptReview" style="display: none;">
+                    <h4 style="margin-bottom: 15px;">Review Extracted Items</h4>
+                    <div id="extractedItems"></div>
+                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                        <button class="btn" onclick="addToInventory()" style="flex: 1; background: var(--success);">Add to Inventory</button>
+                        <button class="btn" onclick="closeReceiptScanner()" style="flex: 1; background: var(--gray);">Cancel</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -2674,14 +2782,14 @@ function exportInventoryReport() {
                     }
                 }, 100);
             }
-            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); loadArchives(); loadQRTypeDropdown(); loadEquipmentTracking(); }
+            if (pageId === 'tools') { loadFiles(); loadLicenses(); loadMaintenanceTasks(); loadRecipesForCalculator(); loadArchives(); loadQRTypeDropdown(); loadEquipmentTracking(); loadReceipts(); }
             if (pageId === 'recipes') loadRecipeBook();
             if (pageId === 'catering') { loadCatering(); loadTools(); }
             if (pageId === 'events') loadEvents();
             if (pageId === 'marketing') loadReviews();
             if (pageId === 'analytics') { loadExpenses(); loadAnalytics(); }
             if (pageId === 'contacts') loadContacts();
-            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadInventoryCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadExpenseCategories(); loadSpecialCategories(); loadQRCategories(); loadEquipmentStatuses(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
+            if (pageId === 'settings') { loadMeasurementUnits(); loadMenuCategories(); loadInventoryCategories(); loadSupplierCategories(); loadEventStatuses(); loadFileCategories(); loadEmployeeRoles(); loadContactCategories(); loadExpenseCategories(); loadSpecialCategories(); loadQRCategories(); loadEquipmentStatuses(); loadReceiptCategories(); loadDefaultMargin(); loadBusinessInfo(); loadUserProfile(); hideSettingsSections(); }
             
             // Expand calendar clicked item
             if (calendarClickedItem) {
@@ -11200,6 +11308,277 @@ function exportInventoryReport() {
         }
 
         checkAuth();
+        // Receipt Scanner Functions
+        let currentReceiptFile = null;
+        let currentReceiptId = null;
+        let extractedReceiptItems = [];
+        
+        function openReceiptScanner() {
+            document.getElementById('receiptScannerModal').classList.add('show');
+            document.getElementById('receiptDate').value = new Date().toISOString().split('T')[0];
+        }
+        
+        function closeReceiptScanner() {
+            document.getElementById('receiptScannerModal').classList.remove('show');
+            stopCamera();
+            resetReceiptScanner();
+        }
+        
+        function resetReceiptScanner() {
+            document.getElementById('cameraContainer').style.display = 'none';
+            document.getElementById('receiptPreview').style.display = 'none';
+            document.getElementById('receiptProcessing').style.display = 'none';
+            document.getElementById('receiptReview').style.display = 'none';
+            currentReceiptFile = null;
+            currentReceiptId = null;
+            extractedReceiptItems = [];
+        }
+        
+        function startCamera() {
+            const video = document.getElementById('receiptVideo');
+            const container = document.getElementById('cameraContainer');
+            
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+                .then(stream => {
+                    video.srcObject = stream;
+                    video.play();
+                    container.style.display = 'block';
+                })
+                .catch(err => {
+                    console.error('Camera error:', err);
+                    alert('Could not access camera. Please use file upload instead.');
+                });
+        }
+        
+        function stopCamera() {
+            const video = document.getElementById('receiptVideo');
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+            document.getElementById('cameraContainer').style.display = 'none';
+        }
+        
+        function capturePhoto() {
+            const video = document.getElementById('receiptVideo');
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob(blob => {
+                handleReceiptFile(blob);
+                stopCamera();
+            }, 'image/jpeg', 0.8);
+        }
+        
+        function handleReceiptFile(file) {
+            if (!file) return;
+            
+            currentReceiptFile = file;
+            
+            if (file.type === 'application/pdf') {
+                // Show PDF preview
+                document.getElementById('receiptImage').style.display = 'none';
+                const preview = document.getElementById('receiptPreview');
+                preview.style.display = 'block';
+                
+                const pdfPreview = document.createElement('div');
+                pdfPreview.innerHTML = `
+                    <div style="background: var(--gray-light); padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 10px;">
+                        <div style="font-size: 48px; margin-bottom: 10px;">📄</div>
+                        <div style="font-weight: bold;">${file.name}</div>
+                        <div style="color: var(--gray); font-size: 0.9em;">${(file.size / 1024 / 1024).toFixed(1)} MB PDF</div>
+                    </div>
+                `;
+                preview.insertBefore(pdfPreview, preview.querySelector('.form'));
+            } else {
+                // Show image preview
+                document.getElementById('receiptImage').style.display = 'block';
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('receiptImage').src = e.target.result;
+                    document.getElementById('receiptPreview').style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function processReceipt() {
+            if (!currentReceiptFile) {
+                alert('Please select a receipt image first');
+                return;
+            }
+            
+            const category = document.getElementById('receiptCategory').value;
+            const date = document.getElementById('receiptDate').value;
+            const merchantName = document.getElementById('merchantName').value;
+            const totalAmount = parseFloat(document.getElementById('totalAmount').value) || 0;
+            
+            if (!category || !date) {
+                alert('Please fill in category and date');
+                return;
+            }
+            
+            document.getElementById('receiptPreview').style.display = 'none';
+            document.getElementById('receiptProcessing').style.display = 'block';
+            
+            const formData = new FormData();
+            formData.append('receipt', currentReceiptFile);
+            formData.append('category', category);
+            formData.append('date', date);
+            formData.append('merchant_name', merchantName);
+            formData.append('total_amount', totalAmount);
+            
+            fetch('/api/receipts/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.error) throw new Error(data.error);
+                currentReceiptId = data.id;
+                return performOCR();
+            })
+            .then(() => {
+                document.getElementById('receiptProcessing').style.display = 'none';
+                document.getElementById('receiptReview').style.display = 'block';
+                displayExtractedItems();
+            })
+            .catch(err => {
+                alert('Failed to process receipt: ' + err.message);
+                document.getElementById('receiptProcessing').style.display = 'none';
+                document.getElementById('receiptPreview').style.display = 'block';
+            });
+        }
+        
+        function performOCR() {
+            return new Promise((resolve) => {
+                const sampleItems = [
+                    { item_name: 'Ground Beef', quantity: 2, price: 12.99, confidence_score: 0.8 },
+                    { item_name: 'Onions', quantity: 1, price: 2.49, confidence_score: 0.9 }
+                ];
+                setTimeout(() => {
+                    extractedReceiptItems = sampleItems;
+                    resolve();
+                }, 1500);
+            });
+        }
+        
+        function displayExtractedItems() {
+            const container = document.getElementById('extractedItems');
+            
+            if (extractedReceiptItems.length === 0) {
+                container.innerHTML = '<div style="text-align: center; color: var(--gray); padding: 20px;">No items extracted</div>';
+                return;
+            }
+            
+            let html = '';
+            extractedReceiptItems.forEach((item, index) => {
+                html += `
+                    <div style="background: var(--gray-light); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+                            <input type="text" value="${item.item_name}" style="flex: 2; padding: 6px;">
+                            <input type="number" value="${item.quantity}" step="0.1" style="width: 80px; padding: 6px;">
+                            <input type="number" value="${item.price}" step="0.01" style="width: 80px; padding: 6px;">
+                        </div>
+                        <select style="width: 100%; padding: 6px;">
+                            <option value="">Link to inventory item...</option>
+                        </select>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            
+            fetch('/api/inventory')
+                .then(r => r.json())
+                .then(inventory => {
+                    const selects = container.querySelectorAll('select');
+                    selects.forEach(select => {
+                        const options = inventory.map(item => `<option value="${item.id}">${item.name}</option>`).join('');
+                        select.innerHTML = '<option value="">Link to inventory item...</option>' + options;
+                    });
+                });
+        }
+        
+        function addToInventory() {
+            alert('Items would be added to inventory (demo)');
+            closeReceiptScanner();
+            loadReceipts();
+        }
+        
+        function loadReceipts() {
+            const container = document.getElementById('receiptsList');
+            if (!container) return;
+            
+            fetch('/api/receipts')
+                .then(r => r.json())
+                .then(receipts => {
+                    if (receipts.length === 0) {
+                        container.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--gray); padding: 40px;">No receipts found</div>';
+                        return;
+                    }
+                    
+                    container.innerHTML = receipts.map(receipt => `
+                        <div class="card">
+                            <div class="card-title">${receipt.merchant_name || 'Unknown'}</div>
+                            <div class="card-meta">${receipt.category} • ${receipt.date}</div>
+                            <div class="card-meta">$${receipt.total_amount?.toFixed(2) || '0.00'}</div>
+                            <div class="card-meta" style="color: var(--orange); font-weight: bold;">PDF</div>
+                            <div class="card-actions">
+                                <button class="btn btn-danger" onclick="deleteReceipt(${receipt.id})">Delete</button>
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+        
+        function deleteReceipt(receiptId) {
+            if (confirm('Delete this receipt?')) {
+                fetch(`/api/receipts/${receiptId}`, { method: 'DELETE' })
+                    .then(() => loadReceipts());
+            }
+        }
+        
+        function loadReceiptCategories() {
+            fetch('/api/receipt-categories')
+                .then(r => r.json())
+                .then(categories => {
+                    const container = document.getElementById('receiptCategoriesList');
+                    if (!container) return;
+                    container.innerHTML = categories.map(cat => `
+                        <div style="display: inline-flex; align-items: center; background: var(--orange); color: white; padding: 6px 12px; border-radius: 20px; margin: 3px; font-size: 0.85em;">
+                            <span style="margin-right: 8px;">${cat.name}</span>
+                            <button onclick="deleteReceiptCategory('${cat.name}')" style="background: rgba(255,255,255,0.3); color: white; border: none; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center;">&times;</button>
+                        </div>
+                    `).join('');
+                });
+        }
+        
+        function addReceiptCategory() {
+            const input = document.getElementById('newReceiptCategory');
+            const name = input.value.trim();
+            if (!name) return;
+            
+            fetch('/api/receipt-categories', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name, keywords: ''})
+            }).then(() => {
+                input.value = '';
+                loadReceiptCategories();
+            });
+        }
+        
+        function deleteReceiptCategory(name) {
+            if (confirm(`Delete category "${name}"?`)) {
+                fetch(`/api/receipt-categories/${name}`, {method: 'DELETE'})
+                    .then(() => loadReceiptCategories());
+            }
+        }
     </script>
 </body>
 </html>

@@ -6,6 +6,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcrypt');
+const { jsPDF } = require('jspdf');
 
 const app = express();
 const PORT = 3000;
@@ -492,6 +493,56 @@ db.serialize(() => {
         instructions TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
     )`);
+    
+    // Receipt tables
+    db.run(`CREATE TABLE IF NOT EXISTS receipts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        filename TEXT NOT NULL,
+        category TEXT NOT NULL,
+        total_amount REAL,
+        merchant_name TEXT,
+        date TEXT NOT NULL,
+        processed INTEGER DEFAULT 0,
+        confidence_score REAL,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS receipt_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        receipt_id INTEGER NOT NULL,
+        item_name TEXT NOT NULL,
+        quantity REAL DEFAULT 1,
+        price REAL,
+        inventory_id INTEGER,
+        confidence_score REAL,
+        review_status TEXT DEFAULT 'pending',
+        FOREIGN KEY (receipt_id) REFERENCES receipts (id),
+        FOREIGN KEY (inventory_id) REFERENCES inventory (id)
+    )`);
+    
+    db.run(`CREATE TABLE IF NOT EXISTS receipt_categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        keywords TEXT,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )`);
+    
+    // Insert default categories
+    db.get('SELECT COUNT(*) as count FROM receipt_categories', (err, row) => {
+        if (!err && row.count === 0) {
+            const categories = [
+                ['Gas', 'shell,exxon,bp,chevron,mobil,fuel,gasoline,diesel'],
+                ['Groceries', 'walmart,kroger,safeway,food,produce,grocery'],
+                ['Supplies', 'home depot,lowes,office depot,supplies,cleaning'],
+                ['Services', 'maintenance,repair,professional,service'],
+                ['Equipment', 'restaurant supply,kitchen,equipment'],
+                ['Other', '']
+            ];
+            categories.forEach(([name, keywords]) => {
+                db.run('INSERT INTO receipt_categories (name, keywords) VALUES (?, ?)', [name, keywords]);
+            });
+        }
+    });
     
     // Insert sample contacts
     db.get('SELECT COUNT(*) as count FROM contacts', (err, row) => {
@@ -1916,6 +1967,219 @@ app.put('/api/recipe-book/:id', (req, res) => {
 
 app.delete('/api/recipe-book/:id', (req, res) => {
     db.run('DELETE FROM recipe_book WHERE id = ?', [req.params.id], (err) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ success: true });
+    });
+});
+
+// Receipt scanning endpoints
+app.get('/api/receipts', (req, res) => {
+    const { category, start_date, end_date } = req.query;
+    let sql = 'SELECT * FROM receipts WHERE 1=1';
+    const params = [];
+    
+    if (category && category !== 'all') {
+        sql += ' AND category = ?';
+        params.push(category);
+    }
+    if (start_date) {
+        sql += ' AND date >= ?';
+        params.push(start_date);
+    }
+    if (end_date) {
+        sql += ' AND date <= ?';
+        params.push(end_date);
+    }
+    
+    sql += ' ORDER BY date DESC';
+    
+    db.all(sql, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.post('/api/receipts/upload', upload.single('receipt'), (req, res) => {
+    if (!req.file) {
+        return res.status(400).json({ error: 'No receipt image uploaded' });
+    }
+    
+    const { category, date, merchant_name, total_amount } = req.body;
+    const originalFilename = req.file.filename;
+    const pdfFilename = originalFilename.replace(/\.[^/.]+$/, '.pdf');
+    
+    // Create receipts directory structure
+    const receiptDir = path.join(__dirname, 'receipts', category, date.substring(0, 7));
+    if (!fs.existsSync(receiptDir)) {
+        fs.mkdirSync(receiptDir, { recursive: true });
+    }
+    
+    const imagePath = req.file.path;
+    const pdfPath = path.join(receiptDir, pdfFilename);
+    
+    // Convert image to PDF
+    try {
+        const imageBuffer = fs.readFileSync(imagePath);
+        const base64Image = imageBuffer.toString('base64');
+        const imageType = req.file.mimetype.split('/')[1];
+        
+        // Create PDF with image
+        const pdf = new jsPDF();
+        const imgWidth = 180;
+        const imgHeight = 240;
+        
+        pdf.addImage(`data:${req.file.mimetype};base64,${base64Image}`, imageType.toUpperCase(), 15, 15, imgWidth, imgHeight);
+        
+        // Save PDF
+        const pdfBuffer = Buffer.from(pdf.output('arraybuffer'));
+        fs.writeFileSync(pdfPath, pdfBuffer);
+        
+        // Delete original image
+        fs.unlinkSync(imagePath);
+        
+        db.run('INSERT INTO receipts (filename, category, total_amount, merchant_name, date) VALUES (?, ?, ?, ?, ?)',
+            [pdfFilename, category, total_amount, merchant_name, date],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ id: this.lastID, filename: pdfFilename, path: pdfPath });
+            });
+    } catch (error) {
+        console.error('PDF conversion error:', error);
+        // Fallback: move original image if PDF conversion fails
+        const fallbackPath = path.join(receiptDir, originalFilename);
+        fs.renameSync(imagePath, fallbackPath);
+        
+        db.run('INSERT INTO receipts (filename, category, total_amount, merchant_name, date) VALUES (?, ?, ?, ?, ?)',
+            [originalFilename, category, total_amount, merchant_name, date],
+            function(err) {
+                if (err) return res.status(500).json({ error: err.message });
+                res.json({ id: this.lastID, filename: originalFilename, path: fallbackPath });
+            });
+    }
+});
+
+app.post('/api/receipts/process', (req, res) => {
+    const { receipt_id, extracted_text } = req.body;
+    
+    // Simple OCR text processing
+    const lines = extracted_text.split('\n').filter(line => line.trim());
+    const items = [];
+    
+    // Basic item extraction (looking for price patterns)
+    lines.forEach(line => {
+        const priceMatch = line.match(/(.*?)\s+(\$?[\d,]+\.\d{2})\s*$/);
+        if (priceMatch) {
+            const itemName = priceMatch[1].trim();
+            const price = parseFloat(priceMatch[2].replace(/[$,]/g, ''));
+            
+            if (itemName && price > 0) {
+                items.push({
+                    item_name: itemName,
+                    price: price,
+                    quantity: 1,
+                    confidence_score: 0.7
+                });
+            }
+        }
+    });
+    
+    // Save extracted items
+    const stmt = db.prepare('INSERT INTO receipt_items (receipt_id, item_name, quantity, price, confidence_score) VALUES (?, ?, ?, ?, ?)');
+    items.forEach(item => {
+        stmt.run(receipt_id, item.item_name, item.quantity, item.price, item.confidence_score);
+    });
+    stmt.finalize();
+    
+    // Mark receipt as processed
+    db.run('UPDATE receipts SET processed = 1 WHERE id = ?', [receipt_id]);
+    
+    res.json({ items_extracted: items.length, items });
+});
+
+app.get('/api/receipts/:id/items', (req, res) => {
+    db.all('SELECT * FROM receipt_items WHERE receipt_id = ?', [req.params.id], (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.put('/api/receipt-items/:id', (req, res) => {
+    const { item_name, quantity, price, inventory_id, review_status } = req.body;
+    db.run('UPDATE receipt_items SET item_name = ?, quantity = ?, price = ?, inventory_id = ?, review_status = ? WHERE id = ?',
+        [item_name, quantity, price, inventory_id, review_status, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+});
+
+app.post('/api/receipts/add-to-inventory', (req, res) => {
+    const { receipt_id } = req.body;
+    
+    db.all('SELECT * FROM receipt_items WHERE receipt_id = ? AND review_status = "approved"', [receipt_id], (err, items) => {
+        if (err) return res.status(500).json({ error: err.message });
+        
+        let added = 0;
+        items.forEach(item => {
+            if (item.inventory_id) {
+                // Update existing inventory
+                db.get('SELECT * FROM inventory WHERE id = ?', [item.inventory_id], (err, inv) => {
+                    if (!err && inv) {
+                        const newStock = inv.current_stock + item.quantity;
+                        db.run('UPDATE inventory SET current_stock = ? WHERE id = ?', [newStock, item.inventory_id]);
+                        
+                        // Log inventory history
+                        db.run('INSERT INTO inventory_history (inventory_id, item_name, change_amount, previous_stock, new_stock, change_type, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                            [item.inventory_id, item.item_name, item.quantity, inv.current_stock, newStock, 'receipt', `Added from receipt`, new Date().toISOString()]);
+                        added++;
+                    }
+                });
+            }
+        });
+        
+        setTimeout(() => res.json({ items_added: added }), 500);
+    });
+});
+
+app.get('/api/receipt-categories', (req, res) => {
+    db.all('SELECT * FROM receipt_categories ORDER BY name', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.delete('/api/receipts/:id', (req, res) => {
+    db.get('SELECT filename, category, date FROM receipts WHERE id = ?', [req.params.id], (err, receipt) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (receipt) {
+            // Delete PDF file
+            const filePath = path.join(__dirname, 'receipts', receipt.category, receipt.date.substring(0, 7), receipt.filename);
+            if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+            }
+        }
+        
+        // Delete from database
+        db.run('DELETE FROM receipt_items WHERE receipt_id = ?', [req.params.id]);
+        db.run('DELETE FROM receipts WHERE id = ?', [req.params.id], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+    });
+});
+
+app.post('/api/receipt-categories', (req, res) => {
+    const { name, keywords } = req.body;
+    db.run('INSERT INTO receipt_categories (name, keywords) VALUES (?, ?)',
+        [name, keywords || ''],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ id: this.lastID });
+        });
+});
+
+app.delete('/api/receipt-categories/:name', (req, res) => {
+    db.run('DELETE FROM receipt_categories WHERE name = ?', [req.params.name], (err) => {
         if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true });
     });
