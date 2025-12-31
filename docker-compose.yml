@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  food-truck-app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - db-data:/app/data
+      - uploads:/app/public/uploads
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DB_PATH=/app/data/foodtruck.db
+    depends_on:
+      - db-init
+
+  db-init:
+    image: alpine:latest
+    volumes:
+      - db-data:/data
+    command: |
+      sh -c '
+        if [ ! -f /data/foodtruck.db ]; then
+          touch /data/foodtruck.db
+        fi
+      '
+
+volumes:
+  db-data:
+  uploads:

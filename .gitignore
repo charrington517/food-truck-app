@@ -1,6 +1,8 @@
 node_modules/
-*.db
 *.log
 .env
-public/uploads/*
-!public/uploads/.gitkeep
+foodtruck.db
+public/uploads/
+public/index.html.backup
+.DS_Store
+*.tmp

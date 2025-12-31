@@ -71,7 +71,8 @@ const upload = multer({
 });
 
 // Database setup
-const db = new sqlite3.Database('foodtruck.db');
+const dbPath = process.env.DB_PATH || 'foodtruck.db';
+const db = new sqlite3.Database(dbPath);
 
 // Initialize database tables
 db.serialize(() => {
@@ -261,15 +262,30 @@ db.serialize(() => {
         status TEXT DEFAULT 'Working'
     )`);
 
+    // Inventory transactions table for tracking usage
+    db.run(`CREATE TABLE IF NOT EXISTS inventory_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        inventory_id INTEGER,
+        item_name TEXT,
+        unit TEXT,
+        change_amount REAL,
+        transaction_type TEXT,
+        date TEXT,
+        notes TEXT,
+        FOREIGN KEY (inventory_id) REFERENCES inventory (id)
+    )`);
+
     // Files table
     db.run(`CREATE TABLE IF NOT EXISTS files (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        path TEXT NOT NULL,
-        size INTEGER,
-        type TEXT,
-        category TEXT DEFAULT 'General',
-        upload_date TEXT
+        inventory_id INTEGER,
+        item_name TEXT,
+        unit TEXT,
+        change_amount REAL,
+        transaction_type TEXT,
+        date TEXT,
+        notes TEXT,
+        FOREIGN KEY (inventory_id) REFERENCES inventory (id)
     )`);
 
     // Business info table
@@ -670,6 +686,17 @@ app.put('/api/inventory/:id', (req, res) => {
             
             if (oldItem && oldItem.current_stock !== current_stock) {
                 const change = current_stock - oldItem.current_stock;
+                const transactionType = change > 0 ? 'added' : 'used';
+                const today = new Date().toISOString().split('T')[0];
+                
+                db.run('INSERT INTO inventory_transactions (inventory_id, item_name, unit, change_amount, transaction_type, date, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [req.params.id, oldItem.name || name, oldItem.unit || unit, change, transactionType, today, notes || `Stock ${transactionType}: ${Math.abs(change)}`],
+                    (err) => {
+                        if (err) console.error('Transaction log error:', err);
+                    }
+                );
+                
+                // Keep old history table for compatibility
                 db.run('INSERT INTO inventory_history (inventory_id, item_name, change_amount, previous_stock, new_stock, change_type, notes, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
                     [req.params.id, oldItem.name || name, change, oldItem.current_stock, current_stock, change_type || 'adjustment', notes || '', new Date().toISOString()]
                 );
@@ -1959,7 +1986,38 @@ app.delete('/api/recipe-book/:id', (req, res) => {
     });
 });
 
-
+// Inventory report endpoint
+app.get('/api/inventory-report', (req, res) => {
+    const { start_date, end_date } = req.query;
+    
+    if (!start_date || !end_date) {
+        return res.status(400).json({ error: 'start_date and end_date are required' });
+    }
+    
+    const query = `
+        SELECT 
+            i.name as item_name,
+            i.unit,
+            i.current_stock,
+            i.category,
+            COALESCE(SUM(CASE WHEN it.change_amount < 0 THEN ABS(it.change_amount) ELSE 0 END), 0) as total_used,
+            COALESCE(SUM(CASE WHEN it.change_amount > 0 THEN it.change_amount ELSE 0 END), 0) as total_added,
+            COALESCE(COUNT(it.id), 0) as transaction_count
+        FROM inventory i
+        LEFT JOIN inventory_transactions it ON i.id = it.inventory_id 
+            AND it.date >= ? AND it.date <= ?
+        GROUP BY i.id, i.name, i.unit, i.current_stock, i.category
+        ORDER BY i.name
+    `;
+    
+    db.all(query, [start_date, end_date], (err, rows) => {
+        if (err) {
+            console.error('Inventory report error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(rows);
+    });
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
