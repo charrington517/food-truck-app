@@ -2034,4 +2034,5 @@ app.use((req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`✅ HTTP server running on http://0.0.0.0:${PORT}`);
     console.log('✅ Access via IP address or Cloudflare Tunnel');
+    console.log('🔒 Enable HTTPS in Cloudflare for PWA functionality');
 });

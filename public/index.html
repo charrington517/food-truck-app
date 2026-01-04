@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Birria Fusion - Food Truck Manager</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ff6b35">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <!-- HTML5-QR-Code library for barcode scanning -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 </head>
@@ -11045,6 +11050,14 @@ function exportInventoryReport() {
                 fetch(`/api/receipt-categories/${name}`, {method: 'DELETE'})
                     .then(() => loadReceiptCategories());
             }
+        }
+    </script>
+    <script>
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW registration failed'));
         }
     </script>
 </body>
