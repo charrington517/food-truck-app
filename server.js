@@ -537,9 +537,90 @@ db.serialize(() => {
             });
         }
     });
+    db.run(`CREATE TABLE IF NOT EXISTS plates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        description TEXT,
+        price REAL DEFAULT 0,
+        food_cost REAL DEFAULT 0,
+        target_margin REAL DEFAULT 30
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS plate_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        plate_id INTEGER NOT NULL,
+        menu_item_id INTEGER NOT NULL,
+        quantity INTEGER DEFAULT 1,
+        FOREIGN KEY (plate_id) REFERENCES plates (id),
+        FOREIGN KEY (menu_item_id) REFERENCES menu (id)
+    )`);
 });
 
 // API Routes
+
+// Plates API
+app.get('/api/plates', (req, res) => {
+    db.all('SELECT * FROM plates ORDER BY name', (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
+});
+
+app.get('/api/plates/:id', (req, res) => {
+    db.get('SELECT * FROM plates WHERE id = ?', [req.params.id], (err, plate) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (!plate) return res.status(404).json({ error: 'Plate not found' });
+        db.all('SELECT pi.*, m.name as item_name, m.cost as item_cost, m.price as item_price, m.recipe_type FROM plate_items pi JOIN menu m ON pi.menu_item_id = m.id WHERE pi.plate_id = ?', [req.params.id], (err2, items) => {
+            if (err2) return res.status(500).json({ error: err2.message });
+            plate.items = items;
+            res.json(plate);
+        });
+    });
+});
+
+app.post('/api/plates', (req, res) => {
+    const { name, description, price, food_cost, target_margin, items } = req.body;
+    db.run('INSERT INTO plates (name, description, price, food_cost, target_margin) VALUES (?, ?, ?, ?, ?)',
+        [name, description, price || 0, food_cost || 0, target_margin || 30],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            const plateId = this.lastID;
+            if (items && items.length > 0) {
+                const stmt = db.prepare('INSERT INTO plate_items (plate_id, menu_item_id, quantity) VALUES (?, ?, ?)');
+                items.forEach(item => stmt.run(plateId, item.menu_item_id, item.quantity || 1));
+                stmt.finalize();
+            }
+            res.json({ id: plateId });
+        });
+});
+
+app.put('/api/plates/:id', (req, res) => {
+    const { name, description, price, food_cost, target_margin, items } = req.body;
+    db.run('UPDATE plates SET name = ?, description = ?, price = ?, food_cost = ?, target_margin = ? WHERE id = ?',
+        [name, description, price, food_cost, target_margin, req.params.id],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            db.run('DELETE FROM plate_items WHERE plate_id = ?', [req.params.id], (err2) => {
+                if (err2) return res.status(500).json({ error: err2.message });
+                if (items && items.length > 0) {
+                    const stmt = db.prepare('INSERT INTO plate_items (plate_id, menu_item_id, quantity) VALUES (?, ?, ?)');
+                    items.forEach(item => stmt.run(req.params.id, item.menu_item_id, item.quantity || 1));
+                    stmt.finalize();
+                }
+                res.json({ success: true });
+            });
+        });
+});
+
+app.delete('/api/plates/:id', (req, res) => {
+    db.run('DELETE FROM plate_items WHERE plate_id = ?', [req.params.id], () => {
+        db.run('DELETE FROM plates WHERE id = ?', [req.params.id], (err) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ success: true });
+        });
+    });
+});
+
 app.get('/api/menu', (req, res) => {
     db.all('SELECT * FROM menu ORDER BY name', (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
